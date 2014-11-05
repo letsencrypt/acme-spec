@@ -27,7 +27,7 @@ Abstract
    document describes a protocol that a certificate authority (CA) and a
    applicant can use to automate the process of verification and
    certificate issuance.  The protocol also provides facilities for
-   other certficate management functions, such as certificate
+   other certificate management functions, such as certificate
    revocation.
 
 Status of this Memo
@@ -347,7 +347,7 @@ Internet-Draft                    ACME                    September 2014
    uses the protocol to request certificate management actions, such as
    issuance or revocation.  An ACME client therefore typically runs on a
    web server, mail server, or some other server system which requires
-   valid TLS certificates.  The ACME server is a certificate authoriy,
+   valid TLS certificates.  The ACME server is a certificate authority,
    or an interface to one, which responds to client requests, performing
    the requested actions if the client is authorized.
 
@@ -451,7 +451,7 @@ Internet-Draft                    ACME                    September 2014
 
          Client                                                  Server
 
-         Desired identitifier          ------->
+         Desired identifier            ------->
 
                                                               PoP nonce
                                                              Session ID
@@ -1022,9 +1022,8 @@ Internet-Draft                    ACME                    September 2014
          "x": "NJ15BoXput18sSwnXA3gJEEnqIAzxSEl9ga8wGM4mEU",
          "y": "6l_U9mals_dwt77tIxSiQ6oL_CyLVey4baa8wCn0V9k"
        }
-       "sig": "lxj0Ucdo4r5s1c1cuY2R7oKqWi4QuNJzdwe5/4m9zWQ" +
-              "xu0j4cpHWi+Cy2inaXKY5OfhYmhEZN_XgS2L5xwM5hQ"
-     }
+       "sig": "lxj0Ucdo4r5s1c1cuY2R7oKqWi4QuNJzdwe5/4m9zWQ"
+     },
      "responses": [
        {
          "type": "simpleHttps",
@@ -1035,7 +1034,7 @@ Internet-Draft                    ACME                    September 2014
          "type": "recovery",
          "token": "23029d88d9e123e"
        }
-     ]
+     ],
      "contact": [
        "mailto:cert-admin@example.com",
        "tel:+12025551212"
@@ -1057,6 +1056,7 @@ Internet-Draft                    ACME                    September 2014
    that the client controls the private key and identifier in question,
    then it sends an authorization message indicating the success of the
    authorization request, and providing a recovery token that the client
+   can use to help recover authorization if the private key of the
 
 
 
@@ -1065,7 +1065,6 @@ Barnes, et al.            Expires March 5, 2015                [Page 19]
 Internet-Draft                    ACME                    September 2014
 
 
-   can use to help recover authorization if the private key of the
    authorized key pair is lost.
 
    type (required, string):  "authorization"
@@ -1096,7 +1095,7 @@ Internet-Draft                    ACME                    September 2014
    router compromise which tend to inherently defeat all forms of Domain
    Validation.  So once a domain has begun using ACME, new DV-only
    authorization will not be performed without proof of continuity via
-   posession of an Authorized Private Key or potentially a Subject
+   possession of an Authorized Private Key or potentially a Subject
    Private Key for that domain.
 
    This higher state of security poses some risks.  From time to time,
@@ -1113,6 +1112,7 @@ Internet-Draft                    ACME                    September 2014
    such that fresh Domain Validation is sufficient for reauthorization.
 
    Recovery tokens are therefore only useful to an attacker who can also
+   perform Domain Validation against a target domain, and as a result
 
 
 
@@ -1121,7 +1121,6 @@ Barnes, et al.            Expires March 5, 2015                [Page 20]
 Internet-Draft                    ACME                    September 2014
 
 
-   perform Domain Validation against a target domain, and as a result
    client administrators may choose to handle them with somewhat fewer
    security precautions than Authorized and Subject private keys,
    decreasing the risk of their loss.
@@ -1172,6 +1171,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
+
 Barnes, et al.            Expires March 5, 2015                [Page 21]
 
 Internet-Draft                    ACME                    September 2014
@@ -1179,7 +1179,7 @@ Internet-Draft                    ACME                    September 2014
 
    {
      "type": "certificateRequest",
-     "csr": "5jNudRx6Ye4HzKEqT5...FS6aKdZeGsysoCo4H9P"
+     "csr": "5jNudRx6Ye4HzKEqT5...FS6aKdZeGsysoCo4H9P",
      "signature": {
        "alg": "RS256",
        "nonce": "h5aYpWVkq-xlJh6cpR-3cw",
@@ -1239,7 +1239,7 @@ Internet-Draft                    ACME                    September 2014
      "chain": [
        "WUn8L2vLT553pIWJ2...gJ574o2anls1k2p",
        "y3O4puZa9r5KBk1LX...Ya7jlaAZUfuYZGZ"
-     ]
+     ],
      "refresh": "https://example.com/refresh/Dr8eAwTVQfSS/"
    }
 
@@ -1265,7 +1265,7 @@ Internet-Draft                    ACME                    September 2014
    revocationRequest message that indicates the certificate to be
    revoked, with a signature by an authorized key:
 
-   type (required, string):  "certificate"
+   type (required, string):  "revocationRequest"
 
    certificate (required, string):  The certificate to be revoked.
 
@@ -1637,7 +1637,7 @@ Internet-Draft                    ACME                    September 2014
 
    A server may issue a recovery contact challenge to verify that the
    client is the same as the entity that previously requested
-   authorization, using contact information provided by the clientin a
+   authorization, using contact information provided by the client in a
    prior authorizationRequest message.
 
    The server's message to the client may request action in-band or out-
@@ -1687,7 +1687,7 @@ Internet-Draft                    ACME                    September 2014
       contact email or call into the client software, the client sends
       it here.  If it the client has received a 200 success response
       while polling the RecoveryContact Challenge's successURL, this
-      field SHOULD be ommitted.
+      field SHOULD be omitted.
 
 
    {
@@ -1989,7 +1989,7 @@ Internet-Draft                    ACME                    September 2014
 
 
    To validate a DNS challenge, the server queries for TXT records under
-   the validation domain name.  If it receieves a record whose contents
+   the validation domain name.  If it receives a record whose contents
    match the token in the challenge, then the validation succeeds.
    Otherwise, the validation fails.
 

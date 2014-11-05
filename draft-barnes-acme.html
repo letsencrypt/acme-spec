@@ -156,7 +156,7 @@
 
 <h3>Abstract</h3>
 
-<p>Certificates in the Web’s X.509 PKI (PKIX) are used for a number of purposes, the most significant of which is the authentication of domain names.  Thus, certificate authorities in the Web PKI are trusted to verify that an applicant for a certificate legitimately represents the domain name(s) in the certificate.  Today, this verification is done through a collection of ad-hoc mechanisms.  This document describes a protocol that a certificate authority (CA) and a applicant can use to automate the process of verification and certificate issuance.  The protocol also provides facilities for other certficate management functions, such as certificate revocation.
+<p>Certificates in the Web’s X.509 PKI (PKIX) are used for a number of purposes, the most significant of which is the authentication of domain names.  Thus, certificate authorities in the Web PKI are trusted to verify that an applicant for a certificate legitimately represents the domain name(s) in the certificate.  Today, this verification is done through a collection of ad-hoc mechanisms.  This document describes a protocol that a certificate authority (CA) and a applicant can use to automate the process of verification and certificate issuance.  The protocol also provides facilities for other certificate management functions, such as certificate revocation.
 </p>
 <h3>Status of this Memo</h3>
 <p>
@@ -326,7 +326,7 @@ Terminology</h3>
 
 <p>The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”, and “OPTIONAL” in this document are to be interpreted as described in RFC 2119 <a class='info' href='#RFC2119'>[RFC2119]<span> (</span><span class='info'>Bradner, S., &ldquo;Key words for use in RFCs to Indicate Requirement Levels,&rdquo; March&nbsp;1997.</span><span>)</span></a>.
 </p>
-<p>The two main roles in ACME are “client” and “server”   The ACME client uses the protocol to request certificate management actions, such as issuance or revocation.  An ACME client therefore typically runs on a web server, mail server, or some other server system which requires valid TLS certificates.  The ACME server is a certificate authoriy, or an interface to one, which responds to client requests, performing the requested actions if the client is authorized.
+<p>The two main roles in ACME are “client” and “server”   The ACME client uses the protocol to request certificate management actions, such as issuance or revocation.  An ACME client therefore typically runs on a web server, mail server, or some other server system which requires valid TLS certificates.  The ACME server is a certificate authority, or an interface to one, which responds to client requests, performing the requested actions if the client is authorized.
 </p>
 <p>For simplicity, in the HTTPS transactions used by ACME, the ACME client is the HTTPS client and the ACME server is the HTTPS server.
 </p>
@@ -369,7 +369,7 @@ Protocol Overview</h3>
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
       Client                                                  Server
 
-      Desired identitifier          -------&gt;
+      Desired identifier            -------&gt;
 
                                                            PoP nonce
                                                           Session ID
@@ -774,9 +774,8 @@ Key Authorization</h3>
       "x": "NJ15BoXput18sSwnXA3gJEEnqIAzxSEl9ga8wGM4mEU",
       "y": "6l_U9mals_dwt77tIxSiQ6oL_CyLVey4baa8wCn0V9k"
     }
-    "sig": "lxj0Ucdo4r5s1c1cuY2R7oKqWi4QuNJzdwe5/4m9zWQ" +
-           "xu0j4cpHWi+Cy2inaXKY5OfhYmhEZN_XgS2L5xwM5hQ"
-  }
+    "sig": "lxj0Ucdo4r5s1c1cuY2R7oKqWi4QuNJzdwe5/4m9zWQ"
+  },
   "responses": [
     {
       "type": "simpleHttps",
@@ -787,7 +786,7 @@ Key Authorization</h3>
       "type": "recovery",
       "token": "23029d88d9e123e"
     }
-  ]
+  ],
   "contact": [
     "mailto:cert-admin@example.com",
     "tel:+12025551212"
@@ -825,7 +824,7 @@ Recovery Tokens</h3>
 
 <p>A recovery token is a fallback authentication mechanism.  In the event that a client loses all other state, including authorized key pairs and key pairs bound to certificates, the client can use the recovery token to prove that it was previously authorized for the identifier in question.
 </p>
-<p>This mechanism is necessary because once an ACME server has issued an Authorization Key for a given identifier, that identifier enters a higher-security state, at least with respect the ACME server.  That state exists to protect against attacks such as DNS hijacking and router compromise which tend to inherently defeat all forms of Domain Validation.  So once a domain has begun using ACME, new DV-only authorization will not be performed without proof of continuity via posession of an Authorized Private Key or potentially a Subject Private Key for that domain.
+<p>This mechanism is necessary because once an ACME server has issued an Authorization Key for a given identifier, that identifier enters a higher-security state, at least with respect the ACME server.  That state exists to protect against attacks such as DNS hijacking and router compromise which tend to inherently defeat all forms of Domain Validation.  So once a domain has begun using ACME, new DV-only authorization will not be performed without proof of continuity via possession of an Authorized Private Key or potentially a Subject Private Key for that domain.
 </p>
 <p>This higher state of security poses some risks.  From time to time, the administrators and owners of domains may lose access to keys they have previously had issued or certified, including Authorized private keys and Subject private keys.  For instance, the disks on which this key material is stored may suffer failures, or passphrases for these keys may be forgotten.  In some cases, the security measures that are taken to protect this sensitive data may contribute to its loss.
 </p>
@@ -862,7 +861,7 @@ Certificate Issuance</h3>
 <div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
 {
   "type": "certificateRequest",
-  "csr": "5jNudRx6Ye4HzKEqT5...FS6aKdZeGsysoCo4H9P"
+  "csr": "5jNudRx6Ye4HzKEqT5...FS6aKdZeGsysoCo4H9P",
   "signature": {
     "alg": "RS256",
     "nonce": "h5aYpWVkq-xlJh6cpR-3cw",
@@ -908,7 +907,7 @@ Certificate Issuance</h3>
   "chain": [
     "WUn8L2vLT553pIWJ2...gJ574o2anls1k2p",
     "y3O4puZa9r5KBk1LX...Ya7jlaAZUfuYZGZ"
-  ]
+  ],
   "refresh": "https://example.com/refresh/Dr8eAwTVQfSS/"
 }
 
@@ -928,7 +927,7 @@ Certificate Revocation</h3>
 <blockquote class="text"><dl>
 <dt>type (required, string):</dt>
 <dd>
-  “certificate”
+  “revocationRequest”
 </dd>
 <dt>certificate (required, string):</dt>
 <dd>
@@ -1200,7 +1199,7 @@ Domain Validation with Server Name Indication</h3>
 <a name="rfc.section.6.3"></a><h3>6.3.&nbsp;
 Recovery Contact</h3>
 
-<p>A server may issue a recovery contact challenge to verify that the client is the same as the entity that previously requested authorization, using contact information provided by the clientin a prior authorizationRequest message.  
+<p>A server may issue a recovery contact challenge to verify that the client is the same as the entity that previously requested authorization, using contact information provided by the client in a prior authorizationRequest message.
 </p>
 <p>The server’s message to the client may request action in-band or out-of-band to ACME.  The server can provide a token in the message that the client provides in its response.  Or the server could provide some out-of-band response channel in its message, such as a URL to click in an email.
 </p>
@@ -1240,7 +1239,7 @@ Recovery Contact</h3>
 </dd>
 <dt>token (optional, string):</dt>
 <dd>
-  If the user transferred a token from a contact email or call into the client software, the client sends it here.  If it the client has received a 200 success response while polling the RecoveryContact Challenge’s successURL, this field SHOULD be ommitted.
+  If the user transferred a token from a contact email or call into the client software, the client sends it here.  If it the client has received a 200 success response while polling the RecoveryContact Challenge’s successURL, this field SHOULD be omitted.
 </dd>
 </dl></blockquote>
 <div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
@@ -1469,7 +1468,7 @@ _acme-challenge.example.com. IN TXT "17817c66b60ce2e4012dfad92657527a"
 }
 
 </pre></div>
-<p>To validate a DNS challenge, the server queries for TXT records under the validation domain name.  If it receieves a record whose contents match the token in the challenge, then the validation succeeds.  Otherwise, the validation fails.
+<p>To validate a DNS challenge, the server queries for TXT records under the validation domain name.  If it receives a record whose contents match the token in the challenge, then the validation succeeds.  Otherwise, the validation fails.
 </p>
 <a name="other-possibilities"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>

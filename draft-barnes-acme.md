@@ -478,7 +478,7 @@ contact (optional, array):
       "crv": "P-256",
       "x": "NJ15BoXput18sSwnXA3gJEEnqIAzxSEl9ga8wGM4mEU",
       "y": "6l_U9mals_dwt77tIxSiQ6oL_CyLVey4baa8wCn0V9k"
-    }
+    },
     "sig": "lxj0Ucdo4r5s1c1cuY2R7oKqWi4QuNJzdwe5/4m9zWQ"
   },
   "responses": [
@@ -488,7 +488,7 @@ contact (optional, array):
     },
     null,
     {
-      "type": "recovery",
+      "type": "recoveryToken",
       "token": "23029d88d9e123e"
     }
   ],
@@ -748,7 +748,7 @@ nonce (required, string):
 ~~~~~~~~~~
 
 {
-  "type": "dvsni"
+  "type": "dvsni",
   "r": "Tyq0La3slT7tqQ0wlOiXnCY2vyez7Zo5blgPJ1xt5xI",
   "nonce": "a82d5ff8ef740d12881f6d3c2277ab2e"
 }
@@ -779,8 +779,8 @@ s (required, string):
 ~~~~~~~~~~
 
 {
-  "type": "dvsni"
-  "s": "9dbjsl3gTAtOnEtKFEmhS6Mj-ajNjDcOmRkp3Lfzm3c",
+  "type": "dvsni",
+  "s": "9dbjsl3gTAtOnEtKFEmhS6Mj-ajNjDcOmRkp3Lfzm3c"
 }
 
 ~~~~~~~~~~
@@ -823,7 +823,7 @@ contact (optional, string)
   "type": "recoveryContact",
   "activationURL" : "https://example.ca/sendrecovery/a5bd99383fb0",
   "successURL" : "https://example.ca/confirmrecovery/bb1b9928932",
-  "contact" : "c********n@example.com",
+  "contact" : "c********n@example.com"
 }
 
 ~~~~~~~~~~
@@ -1002,7 +1002,7 @@ If the server is able to validate the signature and confirm that the jwk and alg
 When the identifier being validated is a domain name, the client can prove control of that domain by provisioning records under it.   The DNS challenge requires the client to provision a TXT record containing a validation token under a specific validation domain name.
 
 type (required, string):
-: The string "recoveryToken"
+: The string "dns"
 
 token (required, string):
 : An ASCII string that is to be provisioned in the TXT record.  This string SHOULD be randomly generated, with at least 128 bits of entropy (e.g., a hex-encoded random octet string).
@@ -1010,7 +1010,7 @@ token (required, string):
 ~~~~~~~~~~
 
 {
-  "type": "dns"
+  "type": "dns",
   "token": "17817c66b60ce2e4012dfad92657527a"
 }
 
@@ -1027,12 +1027,12 @@ _acme-challenge.example.com. IN TXT "17817c66b60ce2e4012dfad92657527a"
 The response to a DNS challenge is simply an acknowledgement that the relevant record has been provisioned.
 
 type (required, string):
-: The string "recoveryToken"
+: The string "dns"
 
 ~~~~~~~~~~
 
 {
-  "type": "dns",
+  "type": "dns"
 }
 
 ~~~~~~~~~~

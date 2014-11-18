@@ -64,7 +64,7 @@ informative:
 
 --- abstract
 
-Certificates in the Web's X.509 PKI (PKIX) are used for a number of purposes, the most significant of which is the authentication of domain names.  Thus, certificate authorities in the Web PKI are trusted to verify that an applicant for a certificate legitimately represents the domain name(s) in the certificate.  Today, this verification is done through a collection of ad-hoc mechanisms.  This document describes a protocol that a certificate authority (CA) and a applicant can use to automate the process of verification and certificate issuance.  The protocol also provides facilities for other certificate management functions, such as certificate revocation.
+Certificates in the Web's X.509 PKI (PKIX) are used for a number of purposes, the most significant of which is the authentication of domain names.  Thus, certificate authorities in the Web PKI are trusted to verify that an applicant for a certificate legitimately represents the domain name(s) in the certificate.  Today, this verification is done through a collection of ad hoc mechanisms.  This document describes a protocol that a certificate authority (CA) and an applicant can use to automate the process of verification and certificate issuance.  The protocol also provides facilities for other certificate management functions, such as certificate revocation.
 
 
 --- middle
@@ -73,12 +73,12 @@ Certificates in the Web's X.509 PKI (PKIX) are used for a number of purposes, th
 
 Certificates in the Web PKI are most commonly used to authenticate domain names.  Thus, certificate authorities in the Web PKI are trusted to verify that an applicant for a certificate legitimately represents the domain name(s) in the certificate.
 
-Existing Web PKI certificate authorities tend to run on a set of ad-hoc protocols for certificate issuance and identity verification.  A typical user experience is something like:
+Existing Web PKI certificate authorities tend to run on a set of ad hoc protocols for certificate issuance and identity verification.  A typical user experience is something like:
 
 * Generate a PKCS#10 {{RFC2314}} Certificate Signing Request (CSR).
 * Cut-and-paste the CSR into a CA web page.
 * Prove ownership of the domain by one of the following methods:
-   * Put a CA-provided challenge at a specific place on the web server
+   * Put a CA-provided challenge at a specific place on the web server.
    * Put a CA-provided challenge at a DNS location corresponding to the target domain.
    * Receive CA challenge at a (hopefully) administrator-controlled e-mail address corresponding to the domain and then respond to it on the CA's web page.
 * Download the issued certificate and install it on their Web Server.
@@ -119,7 +119,7 @@ The overall idea is that it's nearly as easy to deploy with a CA-issued certific
 # Terminology
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119 {{RFC2119}}.
 
-The two main roles in ACME are “client” and “server”   The ACME client uses the protocol to request certificate management actions, such as issuance or revocation.  An ACME client therefore typically runs on a web server, mail server, or some other server system which requires valid TLS certificates.  The ACME server is a certificate authority, or an interface to one, which responds to client requests, performing the requested actions if the client is authorized.
+The two main roles in ACME are “client” and “server”.  The ACME client uses the protocol to request certificate management actions, such as issuance or revocation.  An ACME client therefore typically runs on a web server, mail server, or some other server system which requires valid TLS certificates.  The ACME server is a certificate authority, or an interface to one, which responds to client requests, performing the requested actions if the client is authorized.
 
 For simplicity, in the HTTPS transactions used by ACME, the ACME client is the HTTPS client and the ACME server is the HTTPS server.
 
@@ -174,7 +174,7 @@ After the client has prepared responses to the server's challenges, it sends a s
 
 ~~~~~~~~~~
 
-Once the client has established an authorized key pair for an identifier, it can use the key pair to authorized the issuance of certificates for the identifier.  To do this, the client sends a PKCS#10 Certificate Signing Request (CSR) to the server (indicating the identifier(s) to be included in the issued certificate), and a signature over th CSR by the private key of the authorized key pair.
+Once the client has established an authorized key pair for an identifier, it can use the key pair to authorize the issuance of certificates for the identifier.  To do this, the client sends a PKCS#10 Certificate Signing Request (CSR) to the server (indicating the identifier(s) to be included in the issued certificate), and a signature over the CSR by the private key of the authorized key pair.
 
 If the server agrees to issue the certificate, then it creates the certificate and provides it in its response.  The server may also provide a URI that can be used to renew the certificate, if it allows renewal without re-validation.
 
@@ -328,7 +328,7 @@ TIMEOUT   GOT_FINAL   GOT_DEFER --+
 
 ~~~~~~~~~~
 
-The client begins by sending a request and awaiting the response.  If the response contains an ACME message of any type besides "defer", then the request is completed, and if no response arrives, the request times out.  If a defer request arrives, then the client waits some time and sends a polling request, whose response is handled in the same way as the original request.  
+The client begins by sending a request and awaiting the response.  If the response contains an ACME message of any type besides "defer", then the request is completed, and if no response arrives, the request times out.  If a defer request arrives, then the client waits some time and sends a polling request, whose response is handled in the same way as the original request.
 
 The following table summarizes the request and response types defined in this document.
 If the server provides the client with a non-error response of a type that does not match the request message type, then the client MUST treat it as an error message with code "serverInternal".
@@ -510,10 +510,10 @@ recoveryToken (optional, string):
 : An arbitrary server-generated string.  If the server provides a recovery token, it MUST generate a unique value for every authorization transaction, and this value MUST NOT be predictable or guessable by a third party.
 
 identifier (optional, string):
-: The identifier for which authorization has been granted
+: The identifier for which authorization has been granted.
 
 jwk (optional, object):
-: A JSON Web Key object describing the authorized public key
+: A JSON Web Key object describing the authorized public key.
 
 
 ### Recovery Tokens

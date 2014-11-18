@@ -78,7 +78,7 @@ Existing Web PKI certificate authorities tend to run on a set of ad-hoc protocol
 * Generate a PKCS#10 {{RFC2314}} Certificate Signing Request (CSR).
 * Cut-and-paste the CSR into a CA web page.
 * Prove ownership of the domain by one of the following methods:
-   * Put a CA-provided challenge at a specific place on the web server
+   * Put a CA-provided challenge at a specific place on the web server.
    * Put a CA-provided challenge at a DNS location corresponding to the target domain.
    * Receive CA challenge at a (hopefully) administrator-controlled e-mail address corresponding to the domain and then respond to it on the CA's web page.
 * Download the issued certificate and install it on their Web Server.
@@ -174,7 +174,7 @@ After the client has prepared responses to the server's challenges, it sends a s
 
 ~~~~~~~~~~
 
-Once the client has established an authorized key pair for an identifier, it can use the key pair to authorized the issuance of certificates for the identifier.  To do this, the client sends a PKCS#10 Certificate Signing Request (CSR) to the server (indicating the identifier(s) to be included in the issued certificate), and a signature over th CSR by the private key of the authorized key pair.
+Once the client has established an authorized key pair for an identifier, it can use the key pair to authorized the issuance of certificates for the identifier.  To do this, the client sends a PKCS#10 Certificate Signing Request (CSR) to the server (indicating the identifier(s) to be included in the issued certificate), and a signature over the CSR by the private key of the authorized key pair.
 
 If the server agrees to issue the certificate, then it creates the certificate and provides it in its response.  The server may also provide a URI that can be used to renew the certificate, if it allows renewal without re-validation.
 

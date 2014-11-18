@@ -95,7 +95,7 @@ Different types of certificates reflect different kinds of CA verification of in
 
 DV certificate validation commonly checks claims about properties related to control of a domain name -- properties that can be observed by the issuing authority in an interactive process that can be conducted purely online.  That means that under typical circumstances, all steps in the request, verification, and issuance process can be represented and performed by Internet protocols with no out-of-band human intervention.
 
-When an operator deploys a current HTTPS server, it generally prompts him to generate a self-signed certificate.  When an operator deploys an ACME-compatible web server, the experience would be something like this:
+When an operator deploys a current HTTPS server, it generally prompts them to generate a self-signed certificate.  When an operator deploys an ACME-compatible web server, the experience would be something like this:
 
 * The web server prompts the operator for the intended domain name(s)
   that the web server is to stand for.

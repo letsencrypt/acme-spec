@@ -362,7 +362,7 @@ Each usage of a signature object must specify the content being signed.  To avoi
 
 ~~~~~~~~~~
 
-      signature-input = nonce &#124;&#124; content
+      signature-input = nonce || content
 
 ~~~~~~~~~~
 
@@ -456,7 +456,7 @@ signature (required, object):
 
 ~~~~~~~~~~
 
-      signature-input = signature-nonce &#124;&#124; identifier &#124;&#124; server-nonce
+      signature-input = signature-nonce || identifier || server-nonce
 
 ~~~~~~~~~~
 
@@ -958,7 +958,7 @@ In this case the server is challenging the client to prove its control over the 
 
 ~~~~~~~~~~
 
-      signature-input = signature-nonce &#124;&#124; server-nonce
+      signature-input = signature-nonce || server-nonce
 
 ~~~~~~~~~~
 

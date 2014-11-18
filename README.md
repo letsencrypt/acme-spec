@@ -8,7 +8,7 @@ This spec is a work in progress.  Eventually, we hope to move it to the IETF pro
 
 ## Quickstart
 
-Just open `draft-barnes-acme.md` a text editor.
+Just open `draft-barnes-acme.md` in a text editor.
 
 If you want to reproduce the other files:
 

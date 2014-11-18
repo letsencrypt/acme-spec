@@ -374,7 +374,7 @@ The key authorization process establishes a key pair as an authorized key pair f
 
 As illustrated by the figure in the overview section above, the authorization process proceeds in two transactions.  The client first requests a list of challenges from the server, and then requests authorization based on its answers to those challenges.
 
-The first request in the key authorization process is a "challengeRequest" message, specifying the identifier for which the client will be requesting authorization.  The fields in a challengeRequest message are as follows:
+The first request in the key authorization process is a "challengeRequest" message, specifying the identifier for which the client will be requesting authorization.  The fields in a "challengeRequest" message are as follows:
 
 type (required, string):
 : "challengeRequest"
@@ -391,7 +391,7 @@ identifier (required, string):
 
 ~~~~~~~~~~
 
-On receiving a challengeRequest message, the server determines what sorts of challenges it will accept as proof that the client holds the identifier.  (The server could also decide that a particular identifier is invalid or that the server cannot possibly issue certificates related to that identifier, in which case the server may return an error.)  The set of challenges may be limited by the server's capabilities, and the server may require different challenges to be completed for different identifiers (e.g., requiring a higher standard for higher-value names).  In all cases, however, the server provides a nonce as a proof-of-possession challenge for the key pair being authorized.  The server returns this policy to the client in a "challenge" message:
+On receiving a "challengeRequest" message, the server determines what sorts of challenges it will accept as proof that the client holds the identifier.  (The server could also decide that a particular identifier is invalid or that the server cannot possibly issue certificates related to that identifier, in which case the server may return an error.)  The set of challenges may be limited by the server's capabilities, and the server may require different challenges to be completed for different identifiers (e.g., requiring a higher standard for higher-value names).  In all cases, however, the server provides a nonce as a proof-of-possession challenge for the key pair being authorized.  The server returns this policy to the client in a "challenge" message:
 
 type (required, string):
 : "challenge"
@@ -436,7 +436,7 @@ For example, if the server wants to have the client demonstrate both that the cl
 
 In order to avoid replay attacks, the server MUST generate a fresh nonce of at least 128 bits for each authorization transaction, and MUST NOT accept more than one authorizationRequest with the same nonce.
 
-<!-- NOTE: Should we allow multiple keys to sign over the same nonce?  Could be handy for authorizing multiple keys, but seems to also have replay risk.  This could also be addressed by having the challengeRequest contain the public key(s). -->
+<!-- NOTE: Should we allow multiple keys to sign over the same nonce?  Could be handy for authorizing multiple keys, but seems to also have replay risk.  This could also be addressed by having the "challengeRequest" contain the public key(s). -->
 
 The client SHOULD satisfy all challenges in one of sets expressed in the "combinations" array.  If a "combinations" field is not specified, the client SHOULD attempt to fulfill as many challenges as possible. 
 

@@ -347,7 +347,7 @@ If the server provides the client with a non-error response of a type that does 
 ACME uses a simple JSON-based structure for encoding signatures, based on the JSON Web Signature structure.  An ACME signature is a JSON object, with the following fields:
 
 alg (required, string):
-: A token indicating the cryptographic algorithm used to compute the signature {{I-D.ietf-jose-json-web-algorithms}} (MAC algorithms such as "HS*" MUST NOT be used.)
+: A token indicating the cryptographic algorithm used to compute the signature {{I-D.ietf-jose-json-web-algorithms}}. (MAC algorithms such as "HS*" MUST NOT be used.)
 
 sig (required, string):
 : The signature, base64-encoded.

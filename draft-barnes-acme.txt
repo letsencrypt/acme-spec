@@ -1439,7 +1439,7 @@ Internet-Draft                    ACME                    September 2014
    7.  Compute a nonce domain name by appending the suffix
        ".acme.invalid" to the nonce provided by the server.
 
-   8.  Configure the TLS server such that when a client present the
+   8.  Configure the TLS server such that when a client presents the
        nonce domain name in the SNI field, the server presents the
        generated certificate.
 

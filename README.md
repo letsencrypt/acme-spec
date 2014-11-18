@@ -13,7 +13,7 @@ Just open `draft-barnes-acme.md` a text editor.
 If you want to reproduce the other files:
 
 ```
-> sudo port instal xml2rfc
+> sudo port install xml2rfc
 > gem install kramdown-rfc2629
 > kramdown-rfc2629 draft-barnes-acme.md >draft-barnes-acme.xml
 > xml2rfc draft-barnes-acme.xml

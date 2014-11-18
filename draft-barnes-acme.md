@@ -288,6 +288,7 @@ For example, a deferral due to batch signing might be indicated with a message o
 {
   "type": "defer",
   "token": "O7-s9MNq1siZHlgrMzi9_A",
+  "interval": 60,
   "message": "Warming up the HSM"
 }
 

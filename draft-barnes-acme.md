@@ -215,7 +215,7 @@ In this section, we describe the four certificate management functions that ACME
   * Certificate Issuance
   * Certificate Revocation
 
-Each of these functions is accomplished by the client sending a sequence of HTTPS requests to the server, carrying JSON messages.  So each subsection below describes the message formats used by the function, and the order in which messages are sent.
+Each of these functions is accomplished by the client sending a sequence of HTTPS requests to the server, carrying JSON messages.  Each subsection below describes the message formats used by the function, and the order in which messages are sent.
 
 All ACME messages share some common structure.  At base, each ACME message is a JSON dictionary, and MUST include a "type" field to indicate which type of message it is.
 

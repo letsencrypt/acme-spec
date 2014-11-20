@@ -121,7 +121,7 @@ The overall idea is that it's nearly as easy to deploy with a CA-issued certific
 # Terminology
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119 {{RFC2119}}.
 
-The two main roles in ACME are “client” and “server”   The ACME client uses the protocol to request certificate management actions, such as issuance or revocation.  An ACME client therefore typically runs on a web server, mail server, or some other server system which requires valid TLS certificates.  The ACME server is a certificate authority, or an interface to one, which responds to client requests, performing the requested actions if the client is authorized.
+The two main roles in ACME are “client” and “server”   The ACME client uses the protocol to request certificate management actions, such as issuance or revocation.  An ACME client therefore typically runs on a web server, mail server, or some other server system which requires valid TLS certificates.  The ACME server runs at a certificate authority, and responds to client requests, performing the requested actions if the client is authorized.
 
 For simplicity, in the HTTPS transactions used by ACME, the ACME client is the HTTPS client and the ACME server is the HTTPS server.
 
@@ -136,6 +136,7 @@ Authorized Key Pair:
 Recovery Token:
 : A secret value that can be used to demonstrate prior authorization for an identifier, in a situation where all Subject Private Keys and Authorized Keys are lost.
 
+<!-- Why use padding-stripped Base64 instead of real Base64? The JOSE kludge is error-prone and completely unneeded because these are going into JSON strings. -->
 ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON is a text-based format, binary fields are Base64-encoded.  For Base64 encoding, we use the variant defined in {{I-D.ietf-jose-json-web-signature}}.  The important features of this encoding are (1) that it uses the URL-safe character set, and (2) that "=" padding characters are stripped.
 
 

@@ -91,27 +91,25 @@ This document describes an extensible framework for automating the issuance and 
 
 The major guiding use case for ACME is obtaining certificates for Web sites (HTTPS {{RFC2818}}).  In that case, the server is intended to speak for one or more domains, and the process of certificate issuance is intended to verify that the server actually speaks for the domain.
 
-Different types of certificates reflect different kinds of CA verification of information about the certificate subject.  "Domain Validation" (DV) certificates are by far the most common type.  For DV validation, the CA merely verifies that the requester has effective control of the web server and/or DNS server for the domain, but does not explicitly attempt to verify their real-world identity.  (This is as opposed to "Organization Validation" (OV) and "Extended Validation" (EV) certificates, where the process is intended to also verify the real-world identity of the requester.)
+Different types of certificates reflect different kinds of CA verification of information about the certificate subject.  "Domain Validation" (DV) certificates are by far the most common type.  For DV validation, the CA merely verifies that the requester has effective control of the domain, but does not explicitly attempt to verify their real-world identity.  (This is as opposed to "Organization Validation" (OV) and "Extended Validation" (EV) certificates, where the process is intended to also verify the real-world identity of the requester.)
 
 DV certificate validation commonly checks claims about properties related to control of a domain name -- properties that can be observed by the issuing authority in an interactive process that can be conducted purely online.  That means that under typical circumstances, all steps in the request, verification, and issuance process can be represented and performed by Internet protocols with no out-of-band human intervention.
 
-<!-- The following sentence seems completely wrong, but I don't know what you were trying to say. -->
 When an operator deploys a current HTTPS server, it generally prompts him to generate a self-signed certificate.  When an operator deploys an ACME-compatible web server, the experience would be something like this:
 
-* The ACME client prompts the operator for the intended domain name(s)
+* The web server prompts the operator for the intended domain name(s)
   that the web server is to stand for.
-* The ACME client presents the operator with a list of CAs from which it could
-  get a certificate.  
-  (This list will change over time based on the capabilities of CAs and updates to ACME configuration.)
-  The ACME client might prompt the operator for
+* The web server presents the operator with a list of CAs which it could
+  get a certificate from using ACME.  The web server might prompt the operator for
   payment information at this point.
-* The operator selects a CA.
-* In the background, the ACME client contacts the CA and requests that
+* Once the operator has selected a CA, the web server tells the operator that he
+  will have a certificate shortly.
+* In the background, the web server contacts the CA and uses ACME to request that
   a certificate be issued for the intended domain name(s).
-* Once the CA is satisfied, the certificate is issued and the ACME client
+* Once the CA is satisfied, the certificate is issued and the web server
   automatically downloads and installs it, potentially notifying the
   operator via e-mail, SMS, etc.
-* The ACME client periodically contacts the CA to get updated
+* The web server periodically contacts the CA to get updated
   certificates, stapled OCSP responses, or whatever else would be
   required to keep the server functional and its credentials up-to-date.
 

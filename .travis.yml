@@ -1,0 +1,18 @@
+language: python
+
+before_install:
+ - sudo apt-get update -qq
+ - sudo apt-get install -y python-lxml python-pip
+install:
+ # here we don't use the travis default virtualenv because that
+ # causes us to install lxml again below, doubling the build time
+ # when it compiles the native modules from source
+ - deactivate
+ - gem install kramdown-rfc2629
+ - sudo pip install xml2rfc
+
+script: make ghpages
+
+env:
+  global:
+    - secure: "<insert encrypted GH_TOKEN=blah here>"

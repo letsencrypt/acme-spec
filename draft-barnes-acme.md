@@ -71,7 +71,7 @@ Certificates in the Web's X.509 PKI (PKIX) are used for a number of purposes, th
 
 # Introduction
 
-Certificates in the Web PKI are most commonly used to authenticate domain names.  Thus, certificate authorities in the Web PKI are trusted to verify that an applicant for a certificate legitimately represents the domain name(s) in the certificate.
+Certificates in the Web PKI are most commonly used to authenticate domain names for TLS servers and e-mail addresses. Thus, certificate authorities in the Web PKI are trusted to verify that an applicant for a certificate legitimately represents the domain name(s) in the certificate.
 
 Existing Web PKI certificate authorities tend to run on a set of ad-hoc protocols for certificate issuance and identity verification.  A typical user experience is something like:
 
@@ -85,7 +85,9 @@ Existing Web PKI certificate authorities tend to run on a set of ad-hoc protocol
 
 With the exception of the CSR itself and the certificates that are issued, these are all completely ad hoc procedures and are accomplished by getting the human user to follow interactive natural-language instructions from the CA rather than by machine-implemented published protocols.  In many cases, the instructions are difficult to follow and cause significant confusion.  Informal usability tests by the authors indicate that webmasters often need 1-3 hours to obtain and install a certificate for a domain.  Even in the best case, the lack of published, standardized mechanisms presents an obstacle to the wide deployment of HTTPS and other PKIX-dependent systems because it inhibits mechanization of tasks related to certificate issuance, deployment, and revocation.
 
-This document describes an extensible framework for automating the issuance and domain validation procedure, thereby allowing servers and infrastructural software to obtain certificates without user interaction.  Use of this protocol should radically simplify the deployment of HTTPS and the practicality of PKIX authentication for other TLS based protocols.
+The rise of technologies for named virtual hosts (due to the SNI extension), ongoing deprecation of crypto algorithms in the area of certification patch checking, large-scale low-cost CAs, increased number of TLS protocol exposures and a general tendency to mitigate risks by shorter certificate lifetimes are all arguments for an much more automated open issuance protocol.
+
+This document describes an extensible framework for automating the issuance and domain validation procedure, thereby allowing servers and infrastructural software to obtain certificates without user interaction.  Use of this protocol should radically simplify the deployment of HTTPS and the practicality of PKIX authentication for other TLS and X.509 based protocols.
 
 # Deployment Model and Operator Experience
 
@@ -119,7 +121,7 @@ The overall idea is that it's nearly as easy to deploy with a CA-issued certific
 # Terminology
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119 {{RFC2119}}.
 
-The two main roles in ACME are “client” and “server”   The ACME client uses the protocol to request certificate management actions, such as issuance or revocation.  An ACME client therefore typically runs on a web server, mail server, or some other server system which requires valid TLS certificates.  The ACME server is a certificate authority, or an interface to one, which responds to client requests, performing the requested actions if the client is authorized.
+The two main roles in ACME are “client” and “server”   The ACME client uses the protocol to request certificate management actions, such as issuance or revocation.  An ACME client therefore typically runs on a web server, mail server, or some other server system which requires valid certificates.  The ACME server is a certificate authority, or an interface to one, which responds to client requests, performing the requested actions if the client is authorized.
 
 For simplicity, in the HTTPS transactions used by ACME, the ACME client is the HTTPS client and the ACME server is the HTTPS server.
 
@@ -141,13 +143,13 @@ ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON i
 
 ACME allows a client to request certificate management actions using a set of JSON messages carried over HTTPS.  It is a prerequisite for this process that the client be configured with the HTTPS URI for the server.  ACME messages MUST NOT be carried over "plain" HTTP, without HTTPS semantics.
 
-In some ways, ACME functions much like a traditional CA, in which a user creates an account, adds domains to that account (proving control of the domains), and requests certificate issuance for those domains while logged in to the account.  In ACME, the account is represented by a key pair.  The "add a domain" function is accomplished by authorizing the key pair for a given domain, and certificate issuance is authorized by a signature with the key pair.
+In some ways, ACME functions much like a traditional CA, in which a user creates an account, adds domains (identifers) to that account (proving control of the domains), and requests certificate issuance for those domains while logged in to the account.  In ACME, the account is represented by a key pair.  The "add a domain" function is accomplished by authorizing the key pair for a given domain, and certificate issuance is authorized by a signature with the key pair.
 
 The first phase of ACME is for the client to establish an authorized key pair with the server for the identifier(s) it wishes to include in the certificate.  To do this, the client must demonstrate to the server both (1) that it holds the private key of the key pair being authorized, and (2) that it has authority over the identifier being claimed.
 
 In the key authorization process, then, the server presents the client with two tests.  First, a task to demonstrate that the client holds the private key of key pair being authorized, and second, a set of challenges that the client can perform to demonstrate its authority over the domain in question.
 
-Because there are many different ways to validate possession of different types of identifiers, the server will choose from an extensible set of challenges that are appropriate for the identifier being claimed.  For example, if the client requests a domain name, the server might challenge the client to provision a record in the DNS under that name, or to provision a file on a web server reference by an A or AAAA record under that name.
+Because there are many different ways to validate possession of different types of identifiers, the server will choose from an extensible set of challenges that are appropriate for the identifier being claimed.  For example, if the client requests a domain name, the server might challenge the client to provision a record in the DNS under that name, or to provision a file on a web server referenced by a DNS resource record under that name.
 
 After the client has prepared responses to the server's challenges, it sends a second request with its responses to these challenges.  The server's response indicates whether the request for authorization has succeeded or failed.  If the authorization request succeeded, the server also provides a recovery token, which the client can use in a later authorization transaction to show that it is the same as the entity that participated in this authorization.
 
@@ -174,7 +176,7 @@ After the client has prepared responses to the server's challenges, it sends a s
 
 ~~~~~~~~~~
 
-Once the client has established an authorized key pair for an identifier, it can use the key pair to authorized the issuance of certificates for the identifier.  To do this, the client sends a PKCS#10 Certificate Signing Request (CSR) to the server (indicating the identifier(s) to be included in the issued certificate), and a signature over th CSR by the private key of the authorized key pair.
+Once the client has established an authorized key pair for an identifier, it can use the key pair to authorized the issuance of certificates for the identifier.  To do this, the client sends a PKCS#10 Certificate Signing Request (CSR) to the server (indicating the identifier(s) to be included in the issued certificate), and a signature over the CSR by the private key of the authorized key pair.
 
 If the server agrees to issue the certificate, then it creates the certificate and provides it in its response.  The server may also provide a URI that can be used to renew the certificate, if it allows renewal without re-validation.
 
@@ -355,21 +357,23 @@ nonce (required, string):
 : A signer-provided random nonce of at least 16 bytes, base64-encoded.  (For anti-replay.)
 
 jwk (required, object):
-: A JSON Web Key object describing the key used to verify the signature {{I-D.ietf-jose-json-web-key}}.
+: A JSON Web Key object describing the key used for the signature {{I-D.ietf-jose-json-web-key}}.
 
-Each usage of a signature object must specify the content being signed.  To avoid replay risk, the input to the signature algorithm is the concatenation of the nonce with the content to be signed.
-
-~~~~~~~~~~
-
-      signature-input = nonce &#124;&#124; content
+Each usage of a signature object must specify the content being signed.  To avoid replay risk, the input to the signature algorithm is the concatenation of the signature nonce with the content to be signed (which can include server nonces as well).
 
 ~~~~~~~~~~
 
-A verifier computes the same input before verifying the signature.  Note that while an signature object contains all of the information required to verify the signature, the verifier must also check that the public key encoded in the JWK object is the correct key for a given context.
+      signature-input = signature-nonce &#124;&#124; content
+
+~~~~~~~~~~
+
+A verifier computes the same input before verifying the signature.  Note that while an signature object contains all of the information required to verify the signature, the verifier must also check that the public key encoded in the JWK object is the correct key for a given context. <!-- The verifier also needs to check the signature nonce was not seen before. -->
+
+<!-- NOTE: might be better to include a timestamp for a verifier to detect replay stateless? -->
 
 ## Key Authorization
 
-The key authorization process establishes a key pair as an authorized key pair for a given identifier.  This process must assure the server of two things: First, that the client controls the private key of the key pair, and second, that the client holds the identifier in question.  This process may be repeated to associate multiple identifiers to a key pair (e.g., to request certificates with multiple identifiers), or to associate multiple key pairs with an identifier (e.g., for load balancing).
+The key authorization process establishes a key pair as an authorized key pair for a given identifier.  This process must assure the server of two things: First, that the client controls the private key of the key pair, and second, that the client holds the identifier in question.  This process may be repeated to associate multiple identifiers to a key pair (e.g., to request certificates with multiple identifiers), or to associate multiple key pairs with an identifier (e.g., for backup or key roll-over).
 
 As illustrated by the figure in the overview section above, the authorization process proceeds in two transactions.  The client first requests a list of challenges from the server, and then requests authorization based on its answers to those challenges.
 
@@ -380,6 +384,8 @@ type (required, string):
 
 identifier (required, string):
 : The identifier for which authorization is being sought.  For implementations of this specification, this identifier MUST be a domain name.  (If other types of identifier are supported, then an extension to this protocol will need to add a field to distinguish types of identifier.)
+
+<!-- I would like to see email addresses as a second option, but I can also draft an extension for it. I just wonder if the identifierType (required, string); "dnsname"(,"email") could already be added here? -->
 
 ~~~~~~~~~~
 
@@ -499,6 +505,8 @@ contact (optional, array):
 }
 ~~~~~~~~~~
 
+<!-- should the whole request be signed to avoid the risk of intercepting/altering "contact" or adding responses? (Or does this rely on https integrity protection?) -->
+
 Once it has received the client's responses, the server verifies them according to procedures specific to each challenge type.  Because some of these procedures take time to verify, it is likely that the server will respond to an authorizationRequest message with a defer message.
 
 If there is a problem with the authorizationRequest (e.g., the signature object does not verify), or if the available responses are not sufficient to convince the server that the client controls the identifier, then the server responds with an error message.  The server should use the "unauthorized" error code for cases where the client's responses were insufficient.   If the server is satisfied that the client controls the private key and identifier in question, then it sends an authorization message indicating the success of the authorization request, and providing a recovery token that the client can use to help recover authorization if the private key of the authorized key pair is lost.
@@ -568,6 +576,7 @@ signature (required, object):
 The CSR encodes the client's requests with regard to the content of the certificate to be issued.  The CSR MUST contain at least one extensionRequest attribute {{RFC2985}} requesting a subjectAltName extension, containing the requested identifiers.
 
 <!-- TODO: Any other constraints on the CSR? -->
+<!-- It is quite typical that all but the key parameters in a CSR are ignored. This has the benefit that creating them is rather easy: this would require out-of-band listing the idendities requested. This does has the benefit that the CSR parser gets easier. -->
 
 The values provided in the CSR are only a request, and are not guaranteed.  The server or CA may alter any fields in the certificate before issuance.  For example, the CA may remove identifiers that are not authorized for the key indicated in the "authorization" field.
 
@@ -637,6 +646,8 @@ signature (required, object):
 }
 
 ~~~~~~~~~~
+
+<!-- I would add a revocation reason at least offering "administrative" and "compromise". Think Chrome's revocation sets which only want to include the later. -->
 
 Before revoking a certificate, the server MUST verify that the public key indicated in the signature object is authorized to act for all of the identifier(s) in the certificate.  The server MAY also accept a signature by the private key corresponding to the public key in the certificate.
 
@@ -721,18 +732,20 @@ Given a Challenge/Response pair, the server verifies the client's control of the
 1. Form a URI by populating the URI template "https://{domain}/.well-known/acme-challenge/{path}", where the domain field is set to the domain name being verified and the path field is the path provided in the challenge {{RFC6570}}.
 2. Verify that the resulting URI is well-formed.
 3. Dereference the URI using an HTTPS GET request.
-4. Verify that the certificate presented by the HTTPS server is a valid self-signed certificate, and contains the domain name being validated as well as the public key of the key pair being authorized.
+4. Verify that the certificate presented by the HTTPS server is a valid self-signed certificate, and contains the domain name being validated (as well as records the public key to compare with later "certificateRequest").
 5. Verify that the Content-Type header of the response is either absent, or has the value "text/plain"
 6. Compare the entity body of the response with the nonce.  This comparison MUST be performed in terms of Unicode code points, taking into account the encodings of the stored nonce and the body of the request.
 
 If the GET request succeeds and the entity body is equal to the nonce, then the validation is successful.  If the request fails, or the body does not match the nonce, then it has failed.
+
+It is RECOMMENDED that the ACME server verify the entity body using multi-path probing techniques to reduce the risk of DNS hijacking attacks.
 
 
 ## Domain Validation with Server Name Indication
 
 The Domain Validation with Server Name Indication (DVSNI) validation method aims to ensure that the ACME client has administrative access to the web server at the domain name being validated, and possession of the private key being authorized. The ACME server verifies that the operator can reconfigure the web server by having the client create a new self-signed challenge certificate and respond to TLS connections from the ACME server with it. 
 
-The challenge proceeds as follows: The ACME server sends the client a random value R and a nonce used to identify the transaction. The client responds with another random value S.  The server initiates a TLS connection on port 443 to a host with the domain name being validated.  In the handshake, the ACME server sets the Server Name Indication extension set to "\<nonce\>.acme.invalid". The TLS server (i.e., the ACME client) should respond with a valid self-signed certificate containing both the domain name being validated and the domain name "\<Z\>.acme.invalid", where Z = SHA-256(R &#124;&#124; S). 
+The challenge proceeds as follows: The ACME server sends the client a random value R and a nonce used to identify the transaction. The client responds with another random value S.  The server initiates a TLS connection on port 443 to a host with the domain name being validated.  In the handshake, the ACME server sets the Server Name Indication extension set to "\<nonce\>.acme.invalid". The TLS server (i.e., the ACME client) should respond with a valid self-signed certificate containing both the domain name being validated and the domain name "\<Z\>.acme.invalid", where Z = hex(SHA-256(R &#124;&#124; S)). 
 
 The ACME server's Challenge provides its random value R, and a random nonce used to identify the transaction:
 
@@ -768,13 +781,13 @@ The client responds to this Challenge by configuring a TLS server on port 443 of
 5. Compute a nonce domain name by appending the suffix ".acme.invalid" to the nonce provided by the server.
 6. Configure the TLS server such that when a client present the nonce domain name in the SNI field, the server presents the generated certificate.
 
-The client's response provides its random value S:
+The client's response (after step 6) provides its random value S:
 
 type (required, string):
 : The string "dvsni"
 
 s (required, string):
-: A random 32-byte secret octet string, base64-encoded
+: A random 32-byte octet string, base64-encoded
 
 ~~~~~~~~~~
 

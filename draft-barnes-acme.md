@@ -263,7 +263,7 @@ The possible error codes are as follows:
 | malformed       | The request message was malformed                        |
 | unauthorized    | The client lacks sufficient authorization                |
 | serverInternal  | The server experienced an internal error                 |
-| notSupported    | The request type is not supported                        |
+| notSupported    | The request or identifier type is not supported          |
 | unknown         | The server does not recognize an ID/token in the request |
 | badCSR          | The CSR is unacceptable (e.g., due to a short key)       |
 
@@ -378,13 +378,17 @@ The first request in the key authorization process is a "challengeRequest" messa
 type (required, string):
 : "challengeRequest"
 
+identifierType (required, string):
+: The type of identifier used. All implementations MUST at least support "dnsname". If other types are to be supported, they must be defined in an extension together with the description of the format of the identifier. If an implementation does not know about the "identifierType" proposed, it must reject the request with error code "notSupported".
+
 identifier (required, string):
-: The identifier for which authorization is being sought.  For implementations of this specification, this identifier MUST be a domain name.  (If other types of identifier are supported, then an extension to this protocol will need to add a field to distinguish types of identifier.)
+: The identifier for which authorization is being sought. The actual format depends on the identifierType. The type "dnsname" expects the identifier to be a DNS name (as used in Subject Alternate Names in X.509 certificates). This is used for TLS servers.
 
 ~~~~~~~~~~
 
 {
   "type": "challengeRequest",
+  "identifierType": "dnsname"
   "identifier": "example.com"
 }
 

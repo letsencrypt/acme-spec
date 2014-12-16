@@ -337,6 +337,7 @@ If the server provides the client with a non-error response of a type that does 
 
 | Request              | Response      |
 |:=====================|:==============|
+| serverInfoRequest    | serverInfo    |
 | challengeRequest     | challenge     |
 | authorizationRequest | authorization |
 | certificateRequest   | certificate   |
@@ -368,6 +369,77 @@ Each usage of a signature object must specify the content being signed.  To avoi
 ~~~~~~~~~~
 
 A verifier computes the same input before verifying the signature.  Note that while an signature object contains all of the information required to verify the signature, the verifier must also check that the public key encoded in the JWK object is the correct key for a given context.
+
+## ACME Server Info
+
+Prior to beginning the key request workflow, it may be helpful to a client to query the ACME server to determine its capabilities and decide whether or not to proceed with the request. In its request, the client may optionally specify an identifier that it is interested in acquiring a certificate for so that the server's response can be tailored to match its challenge policy for that particular identifier, should the server define multipe policies depending on the class of identifier requested. The client sends a "serverInfoRequest" message with the following fields:
+
+type (required, string):
+: "serverInfoRequest"
+
+identifier (optional, string):
+: The identifier for which authorization might be sought in the future.
+
+~~~~~~~~~~
+
+{
+  "type": "serverInfoRequest",
+  "identifier": "example.com"
+}
+
+~~~~~~~~~~
+
+When the server receives a serverInfoRequest message, it will respond with information about the server and how it might respond to a key request. Since the server's challenge policies or other information could change between the serverInfo response and the time the client initiates the authorization workflow, the client MUST NOT cache this information for use in the authorization workflow, nor should it be treated as definitive. In a serverInfo response, the following fields are specified:
+
+type (required, string):
+: "serverInfo"
+
+serverName (required, string):
+: An arbitrary human-readable server name, such as "XYZ Company ACME Server."
+
+serverSoftware (optional, string):
+: A brief description of the server software.
+
+website (optional, string):
+: A URL where more information about the server can be obtained.
+
+challenges (required, array):
+: The challenges that might be required by the server had the client made a challengeRequest. If an identifier is not provided in the request and the server has differing challenge policies, the server SHOULD provide the challenges from its default policy.
+
+combinations (required, array of arrays):
+: A collection of sets of challenges, each of which would be sufficient to prove possession of the identifier. Challenges are represented by their associated zero-based index in the challenges array.
+
+jwk (required, object):
+: A JSON Web Key Set representing the certificates that may be used by the server to sign the issued certificate. For this application, the "alg" and "x5c" parameters are required in addition to the "kty" parameter.
+
+~~~~~~~~~~
+
+{
+  "type": "serverInfo",
+  "serverName": "XYZ Company ACME Server",
+  "serverSoftware": "node-acme 1.0.0",
+  "website": "https://ca.example.com/acme/",
+  "challenges": [ "simpleHttps", "dns", "recoveryToken" ],
+  "combinations": [
+    [0, 2],
+    [1, 2]
+  ],
+  "jwk": {
+    "keys": [
+      {
+        "kty": "RSA",
+        "alg": "RS256",
+        "x5c": [
+          "MIIDQjCCAiqgAwIB....IVfOWA==",
+          "FuLiMA0GCSqGSIb3....EPMA0G==",
+          "MQswCQYDVQQIEwJD....UEBxMG=="
+        ]
+      }
+    ]
+  }
+}
+
+~~~~~~~~~~
 
 ## Key Authorization
 

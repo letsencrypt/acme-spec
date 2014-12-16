@@ -174,7 +174,7 @@ After the client has prepared responses to the server's challenges, it sends a s
 
 ~~~~~~~~~~
 
-Once the client has established an authorized key pair for an identifier, it can use the key pair to authorized the issuance of certificates for the identifier.  To do this, the client sends a PKCS#10 Certificate Signing Request (CSR) to the server (indicating the identifier(s) to be included in the issued certificate), and a signature over th CSR by the private key of the authorized key pair.
+Once the client has established an authorized key pair for an identifier, it can use the key pair to authorized the issuance of certificates for the identifier.  To do this, the client sends a PKCS#10 Certificate Signing Request (CSR) to the server (indicating the identifier(s) to be included in the issued certificate), and a signature over the CSR by the private key of the authorized key pair.
 
 If the server agrees to issue the certificate, then it creates the certificate and provides it in its response.  The server may also provide a URI that can be used to renew the certificate, if it allows renewal without re-validation.
 
@@ -437,7 +437,7 @@ In order to avoid replay attacks, the server MUST generate a fresh nonce of at l
 
 <!-- NOTE: Should we allow multiple keys to sign over the same nonce?  Could be handy for authorizing multiple keys, but seems to also have replay risk.  This could also be addressed by having the challengeRequest contain the public key(s). -->
 
-The client SHOULD satisfy all challenges in one of sets expressed in the "combinations" array.  If a "combinations" field is not specified, the client SHOULD attempt to fulfill as many challenges as possible. 
+The client SHOULD satisfy all challenges in one of the sets expressed in the "combinations" array.  If a "combinations" field is not specified, the client SHOULD attempt to fulfill as many challenges as possible. 
 
 Once the client believes that it has fulfilled enough challenges, it creates an authorizationRequest object requesting authorization of a key pair for this identifier based on its responses.  The authorizationRequest also contains the public key to be authorized, and the signature by the corresponding private key over the nonce in the challenge.
 
@@ -1066,3 +1066,4 @@ TODO
 * Clients need to protect recovery key
 * CA needs to perform a very wide range of issuance policy enforcement and sanity-check steps
 * Parser safety (for JSON, JWK, ASN.1, and any other formats that can be parsed by the ACME server)
+

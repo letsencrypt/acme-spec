@@ -599,7 +599,7 @@ refresh (optional, string):
 
 ~~~~~~~~~~
 
-The certificate message allows the server to provide the certificate itself, as well as some associated management information. The chain of CA certificates can simplify TLS server configuration, by allowing the server to suggest the certificate chain that a TLS server using the issued certificate should present.  
+The certificate message allows the server to provide the certificate itself, as well as some associated management information.  The chain of CA certificates can simplify TLS server configuration, by allowing the server to suggest the certificate chain that a TLS server using the issued certificate should present.
 
 The refresh URI allows the client to download updated versions of the issued certificate, in the sense of certificates with different validity intervals, but otherwise the same contents (in particular, the same names and public key).  This can be useful in cases where a CA wishes to issue short-lived certificates, but is still willing to vouch for an identifier-key binding over a longer period of time.  To download an updated certificate, the client simply sends a GET request to the refresh URI.
 
@@ -678,7 +678,7 @@ The choice of which Challenges to offer to a client under which circumstances is
 | Ongoing ACME usage, lost Authorized key       | DV + (Recovery or PoP of ACME-certified Subject key)  |
 | ACME usage, all keys and recovery tokens lost | Recertification by another CA + PoP of that key       |
 
-The identifier validation challenges described in this section all relate to validation of domain names.  If ACME is extended in the future to support other types of identifier, there will need to be new Challenge types, and they will need to specify which types of identifier they apply to. 
+The identifier validation challenges described in this section all relate to validation of domain names.  If ACME is extended in the future to support other types of identifier, there will need to be new Challenge types, and they will need to specify which types of identifier they apply to.
 
 ## Simple HTTPS
 
@@ -730,9 +730,9 @@ If the GET request succeeds and the entity body is equal to the nonce, then the 
 
 ## Domain Validation with Server Name Indication
 
-The Domain Validation with Server Name Indication (DVSNI) validation method aims to ensure that the ACME client has administrative access to the web server at the domain name being validated, and possession of the private key being authorized. The ACME server verifies that the operator can reconfigure the web server by having the client create a new self-signed challenge certificate and respond to TLS connections from the ACME server with it. 
+The Domain Validation with Server Name Indication (DVSNI) validation method aims to ensure that the ACME client has administrative access to the web server at the domain name being validated, and possession of the private key being authorized.  The ACME server verifies that the operator can reconfigure the web server by having the client create a new self-signed challenge certificate and respond to TLS connections from the ACME server with it.
 
-The challenge proceeds as follows: The ACME server sends the client a random value R and a nonce used to identify the transaction. The client responds with another random value S.  The server initiates a TLS connection on port 443 to a host with the domain name being validated.  In the handshake, the ACME server sets the Server Name Indication extension set to "\<nonce\>.acme.invalid". The TLS server (i.e., the ACME client) should respond with a valid self-signed certificate containing both the domain name being validated and the domain name "\<Z\>.acme.invalid", where Z = SHA-256(R &#124;&#124; S). 
+The challenge proceeds as follows: The ACME server sends the client a random value R and a nonce used to identify the transaction.  The client responds with another random value S.  The server initiates a TLS connection on port 443 to a host with the domain name being validated.  In the handshake, the ACME server sets the Server Name Indication extension set to "\<nonce\>.acme.invalid".  The TLS server (i.e., the ACME client) should respond with a valid self-signed certificate containing both the domain name being validated and the domain name "\<Z\>.acme.invalid", where Z = SHA-256(R &#124;&#124; S).
 
 The ACME server's Challenge provides its random value R, and a random nonce used to identify the transaction:
 
@@ -895,7 +895,7 @@ type (required, string):
 : The string "proofOfPossession"
 
 alg (required, string):
-: A token indicating the cryptographic algorithm that should be used by the client to compute the signature {{I-D.ietf-jose-json-web-algorithms}}. (MAC algorithms such as "HS*" MUST NOT be used.)  The client MUST verify that this algorithm is supported for the indicated key before responding to this challenge.
+: A token indicating the cryptographic algorithm that should be used by the client to compute the signature {{I-D.ietf-jose-json-web-algorithms}}.  (MAC algorithms such as "HS*" MUST NOT be used.)  The client MUST verify that this algorithm is supported for the indicated key before responding to this challenge.
 
 nonce (required, string):
 : A random 16-byte octet string, base64-encoded

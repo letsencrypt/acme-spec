@@ -78,7 +78,7 @@ Existing Web PKI certificate authorities tend to run on a set of ad-hoc protocol
 * Generate a PKCS#10 {{RFC2314}} Certificate Signing Request (CSR).
 * Cut-and-paste the CSR into a CA web page.
 * Prove ownership of the domain by one of the following methods:
-   * Put a CA-provided challenge at a specific place on the web server
+   * Put a CA-provided challenge at a specific place on the web server.
    * Put a CA-provided challenge at a DNS location corresponding to the target domain.
    * Receive CA challenge at a (hopefully) administrator-controlled e-mail address corresponding to the domain and then respond to it on the CA's web page.
 * Download the issued certificate and install it on their Web Server.
@@ -119,7 +119,7 @@ The overall idea is that it's nearly as easy to deploy with a CA-issued certific
 # Terminology
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119 {{RFC2119}}.
 
-The two main roles in ACME are “client” and “server”   The ACME client uses the protocol to request certificate management actions, such as issuance or revocation.  An ACME client therefore typically runs on a web server, mail server, or some other server system which requires valid TLS certificates.  The ACME server is a certificate authority, or an interface to one, which responds to client requests, performing the requested actions if the client is authorized.
+The two main roles in ACME are “client” and “server”.   The ACME client uses the protocol to request certificate management actions, such as issuance or revocation.  An ACME client therefore typically runs on a web server, mail server, or some other server system which requires valid TLS certificates.  The ACME server is a certificate authority, or an interface to one, which responds to client requests, performing the requested actions if the client is authorized.
 
 For simplicity, in the HTTPS transactions used by ACME, the ACME client is the HTTPS client and the ACME server is the HTTPS server.
 
@@ -204,7 +204,7 @@ To revoke a certificate, the client simply sends a revocation request, signed wi
 ~~~~~~~~~~
 
 
-Note that while ACME is defined with enough flexibility to handle different types of identifiers in principle, the primary use case addressed by this document is the case where domain names are used as identifiers.  For example, all of the identifier validation challenges described in Section {#validation} below address validation of domain names.  The use of ACME for other protocols will require further specification, in order to describe how these identifiers are encoded in the protocol, and what types of validation challenges the server might require.
+Note that while ACME is defined with enough flexibility to handle different types of identifiers in principle, the primary use case addressed by this document is the case where domain names are used as identifiers.  For example, all of the identifier validation challenges described in Section {{identifier-validation-challenges}} below address validation of domain names.  The use of ACME for other protocols will require further specification, in order to describe how these identifiers are encoded in the protocol, and what types of validation challenges the server might require.
 
 
 # Certificate Management
@@ -215,7 +215,7 @@ In this section, we describe the four certificate management functions that ACME
   * Certificate Issuance
   * Certificate Revocation
 
-Each of these functions is accomplished by the client sending a sequence of HTTPS requests to the server, carrying JSON messages.  So each subsection below describes the message formats used by the function, and the order in which messages are sent.
+Each of these functions is accomplished by the client sending a sequence of HTTPS requests to the server, carrying JSON messages.  Each subsection below describes the message formats used by the function, and the order in which messages are sent.
 
 All ACME messages share some common structure.  At base, each ACME message is a JSON dictionary, and MUST include a "type" field to indicate which type of message it is.
 
@@ -288,6 +288,7 @@ For example, a deferral due to batch signing might be indicated with a message o
 {
   "type": "defer",
   "token": "O7-s9MNq1siZHlgrMzi9_A",
+  "interval": 60,
   "message": "Warming up the HSM"
 }
 
@@ -346,7 +347,7 @@ If the server provides the client with a non-error response of a type that does 
 ACME uses a simple JSON-based structure for encoding signatures, based on the JSON Web Signature structure.  An ACME signature is a JSON object, with the following fields:
 
 alg (required, string):
-: A token indicating the cryptographic algorithm used to compute the signature {{I-D.ietf-jose-json-web-algorithms}} (MAC algorithms such as "HS*" MUST NOT be used.)
+: A token indicating the cryptographic algorithm used to compute the signature {{I-D.ietf-jose-json-web-algorithms}}. (MAC algorithms such as "HS*" MUST NOT be used.)
 
 sig (required, string):
 : The signature, base64-encoded.
@@ -361,7 +362,7 @@ Each usage of a signature object must specify the content being signed.  To avoi
 
 ~~~~~~~~~~
 
-      signature-input = nonce &#124;&#124; content
+      signature-input = nonce || content
 
 ~~~~~~~~~~
 
@@ -373,7 +374,7 @@ The key authorization process establishes a key pair as an authorized key pair f
 
 As illustrated by the figure in the overview section above, the authorization process proceeds in two transactions.  The client first requests a list of challenges from the server, and then requests authorization based on its answers to those challenges.
 
-The first request in the key authorization process is a "challengeRequest" message, specifying the identifier for which the client will be requesting authorization.  The fields in a challengeRequest message are as follows:
+The first request in the key authorization process is a "challengeRequest" message, specifying the identifier for which the client will be requesting authorization.  The fields in a "challengeRequest" message are as follows:
 
 type (required, string):
 : "challengeRequest"
@@ -390,7 +391,7 @@ identifier (required, string):
 
 ~~~~~~~~~~
 
-On receiving a challengeRequest message, the server determines what sorts of challenges it will accept as proof that the client holds the identifier.  (The server could also decide that a particular identifier is invalid or that the server cannot possibly issue certificates related to that identifier, in which case the server may return an error.)  The set of challenges may be limited by the server's capabilities, and the server may require different challenges to be completed for different identifiers (e.g., requiring a higher standard for higher-value names).  In all cases, however, the server provides a nonce as a proof-of-possession challenge for the key pair being authorized.  The server returns this policy to the client in a "challenge" message:
+On receiving a "challengeRequest" message, the server determines what sorts of challenges it will accept as proof that the client holds the identifier.  (The server could also decide that a particular identifier is invalid or that the server cannot possibly issue certificates related to that identifier, in which case the server may return an error.)  The set of challenges may be limited by the server's capabilities, and the server may require different challenges to be completed for different identifiers (e.g., requiring a higher standard for higher-value names).  In all cases, however, the server provides a nonce as a proof-of-possession challenge for the key pair being authorized.  The server returns this policy to the client in a "challenge" message:
 
 type (required, string):
 : "challenge"
@@ -435,7 +436,7 @@ For example, if the server wants to have the client demonstrate both that the cl
 
 In order to avoid replay attacks, the server MUST generate a fresh nonce of at least 128 bits for each authorization transaction, and MUST NOT accept more than one authorizationRequest with the same nonce.
 
-<!-- NOTE: Should we allow multiple keys to sign over the same nonce?  Could be handy for authorizing multiple keys, but seems to also have replay risk.  This could also be addressed by having the challengeRequest contain the public key(s). -->
+<!-- NOTE: Should we allow multiple keys to sign over the same nonce?  Could be handy for authorizing multiple keys, but seems to also have replay risk.  This could also be addressed by having the "challengeRequest" contain the public key(s). -->
 
 The client SHOULD satisfy all challenges in one of the sets expressed in the "combinations" array.  If a "combinations" field is not specified, the client SHOULD attempt to fulfill as many challenges as possible.
 
@@ -455,7 +456,7 @@ signature (required, object):
 
 ~~~~~~~~~~
 
-      signature-input = signature-nonce &#124;&#124; identifier &#124;&#124; server-nonce
+      signature-input = signature-nonce || identifier || server-nonce
 
 ~~~~~~~~~~
 
@@ -957,7 +958,7 @@ In this case the server is challenging the client to prove its control over the 
 
 ~~~~~~~~~~
 
-      signature-input = signature-nonce &#124;&#124; server-nonce
+      signature-input = signature-nonce || server-nonce
 
 ~~~~~~~~~~
 

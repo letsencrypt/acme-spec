@@ -64,7 +64,7 @@ informative:
 
 --- abstract
 
-Certificates in the Web's X.509 PKI (PKIX) are used for a number of purposes, the most significant of which is the authentication of domain names.  Thus, certificate authorities in the Web PKI are trusted to verify that an applicant for a certificate legitimately represents the domain name(s) in the certificate.  Today, this verification is done through a collection of ad-hoc mechanisms.  This document describes a protocol that a certificate authority (CA) and an applicant can use to automate the process of verification and certificate issuance.  The protocol also provides facilities for other certificate management functions, such as certificate revocation.
+Certificates in the Web's X.509 PKI (PKIX) are used for a number of purposes, the most significant of which is the authentication of domain names.  Thus, certificate authorities in the Web PKI are trusted to verify that an applicant for a certificate legitimately represents the domain name(s) in the certificate.  Today, this verification is done through a collection of ad hoc mechanisms.  This document describes a protocol that a certificate authority (CA) and an applicant can use to automate the process of verification and certificate issuance.  The protocol also provides facilities for other certificate management functions, such as certificate revocation.
 
 
 --- middle
@@ -73,7 +73,7 @@ Certificates in the Web's X.509 PKI (PKIX) are used for a number of purposes, th
 
 Certificates in the Web PKI are most commonly used to authenticate domain names.  Thus, certificate authorities in the Web PKI are trusted to verify that an applicant for a certificate legitimately represents the domain name(s) in the certificate.
 
-Existing Web PKI certificate authorities tend to run on a set of ad-hoc protocols for certificate issuance and identity verification.  A typical user experience is something like:
+Existing Web PKI certificate authorities tend to run on a set of ad hoc protocols for certificate issuance and identity verification.  A typical user experience is something like:
 
 * Generate a PKCS#10 {{RFC2314}} Certificate Signing Request (CSR).
 * Cut-and-paste the CSR into a CA web page.
@@ -329,7 +329,7 @@ TIMEOUT   GOT_FINAL   GOT_DEFER --+
 
 ~~~~~~~~~~
 
-The client begins by sending a request and awaiting the response.  If the response contains an ACME message of any type besides "defer", then the request is completed, and if no response arrives, the request times out.  If a defer request arrives, then the client waits some time and sends a polling request, whose response is handled in the same way as the original request.  
+The client begins by sending a request and awaiting the response.  If the response contains an ACME message of any type besides "defer", then the request is completed, and if no response arrives, the request times out.  If a defer request arrives, then the client waits some time and sends a polling request, whose response is handled in the same way as the original request.
 
 The following table summarizes the request and response types defined in this document.
 If the server provides the client with a non-error response of a type that does not match the request message type, then the client MUST treat it as an error message with code "serverInternal".
@@ -511,10 +511,10 @@ recoveryToken (optional, string):
 : An arbitrary server-generated string.  If the server provides a recovery token, it MUST generate a unique value for every authorization transaction, and this value MUST NOT be predictable or guessable by a third party.
 
 identifier (optional, string):
-: The identifier for which authorization has been granted
+: The identifier for which authorization has been granted.
 
 jwk (optional, object):
-: A JSON Web Key object describing the authorized public key
+: A JSON Web Key object describing the authorized public key.
 
 
 ### Recovery Tokens

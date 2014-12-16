@@ -102,8 +102,8 @@ When an operator deploys a current HTTPS server, it generally prompts him to gen
 * The web server presents the operator with a list of CAs which it could
   get a certificate from using ACME.  The web server might prompt the operator for
   payment information at this point.
-* Once the operator has selected a CA, the web server tells the operator that he
-  will have a certificate shortly.
+* Once the operator has selected a CA, the web server tells the operator that a
+  certificate will be issued shortly.
 * In the background, the web server contacts the CA and uses ACME to request that
   a certificate be issued for the intended domain name(s).
 * Once the CA is satisfied, the certificate is issued and the web server
@@ -407,7 +407,7 @@ challenges (required, array):
 combinations (optional, array of arrays):
 : A collection of sets of challenges, each of which would be sufficient to prove possession of the identifier.  Clients SHOULD complete a set of challenges that that covers at least one set in this array.  Challenges are represented by their associated zero-based index in the challenges array.
 
-For example, if the server wants to have the client demonstrate both that the client controls the domain name in question, and that he is the same client that previously requested authorization for the domain name, it might issue the following request.  The client is expected to provide "simpleHttps" and "recoveryToken" responses ("[0,2]"), or else "dns" and "recoveryToken" responses ("[1,2]"), or all three.
+For example, if the server wants to have the client demonstrate both that the client controls the domain name in question, and that this client is the same client that previously requested authorization for the domain name, it might issue the following request.  The client is expected to provide "simpleHttps" and "recoveryToken" responses ("[0,2]"), or else "dns" and "recoveryToken" responses ("[1,2]"), or all three.
 
 ~~~~~~~~~~
 {
@@ -534,7 +534,7 @@ Recovery tokens are employed in response to Recovery Challenges.  Such challenge
 
 ## Certificate Issuance
 
-The holder of an authorized key pair for an identifier may use ACME to request that a certificate be issued for that identifier.  He does so using a "certificateRequest" message, which contains a Certificate Signing Request (CSR) {{RFC2986}} and a signature by the authorized key pair.
+The holder of an authorized key pair for an identifier may use ACME to request that a certificate be issued for that identifier.  The client makes this request using a "certificateRequest" message, which contains a Certificate Signing Request (CSR) {{RFC2986}} and a signature by the authorized key pair.
 
 type (required, string):
 : "certificateRequest"
@@ -682,7 +682,7 @@ The identifier validation challenges described in this section all relate to val
 
 ## Simple HTTPS
 
-With Simple HTTPS validation, the client in an ACME transaction proves his control over a domain name by proving that he can provision resources on an HTTPS server that responds for that domain name.  The ACME server challenges the client to provision a file with a specific string as its contents.
+With Simple HTTPS validation, the client in an ACME transaction proves its control over a domain name by proving that it can provision resources on an HTTPS server that responds for that domain name.  The ACME server challenges the client to provision a file with a specific string as its contents.
 
 type (required, string):
 : The string "simpleHttps"

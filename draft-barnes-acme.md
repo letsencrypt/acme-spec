@@ -47,6 +47,7 @@ normative:
   RFC2314:
   RFC2985:
   RFC2986:
+  RFC3339:
   RFC3986:
   RFC4514:
   RFC5226:
@@ -54,9 +55,11 @@ normative:
   RFC5280:
   RFC6570:
   RFC7159:
-  I-D.ietf-jose-json-web-algorithms:
+  RFC7386:
   I-D.ietf-jose-json-web-key:
+  I-D.ietf-jose-json-web-algorithms:
   I-D.ietf-jose-json-web-signature:
+  I-D.ietf-appsawg-http-problem:
 
 informative:
   RFC2818:
@@ -129,65 +132,62 @@ In the discussion below, we will refer to three different types of keys / key pa
 Subject Public Key:
 : A public key to be included in a certificate.
 
-Authorized Key Pair:
+Account Key Pair:
 : A key pair for which the ACME server considers the holder of the private key authorized to manage certificates for a given identifier.  The same key pair may be authorized for multiple identifiers.
 
 Recovery Token:
-: A secret value that can be used to demonstrate prior authorization for an identifier, in a situation where all Subject Private Keys and Authorized Keys are lost.
+: A secret value that can be used to demonstrate prior authorization for an identifier, in a situation where all Subject Private Keys and Account Keys are lost.
 
 ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON is a text-based format, binary fields are Base64-encoded.  For Base64 encoding, we use the variant defined in {{I-D.ietf-jose-json-web-signature}}.  The important features of this encoding are (1) that it uses the URL-safe character set, and (2) that "=" padding characters are stripped.
 
+Some HTTPS bodies in ACME are authenticated and integrity-protected by being encapsulated in a JSON Web Signature (JWS) object {{I-D.ietf-jose-json-web-signature}}.  ACME uses a profile of JWS, with the following restrictions:
+
+* The JWS MUST use the Flattened JSON Serialization
+* The JWS Header MUST include "alg" and "jwk" fields
 
 # Protocol Overview
 
-ACME allows a client to request certificate management actions using a set of JSON messages carried over HTTPS.  It is a prerequisite for this process that the client be configured with the HTTPS URI for the server.  ACME messages MUST NOT be carried over "plain" HTTP, without HTTPS semantics.
+ACME allows a client to request certificate management actions using a set of JSON messages carried over HTTPS.   In some ways, ACME functions much like a traditional CA, in which a user creates an account, adds identifiers to that account (proving control of the domains), and requests certificate issuance for those domains while logged in to the account.  
 
-In some ways, ACME functions much like a traditional CA, in which a user creates an account, adds domains to that account (proving control of the domains), and requests certificate issuance for those domains while logged in to the account.  In ACME, the account is represented by a key pair.  The "add a domain" function is accomplished by authorizing the key pair for a given domain, and certificate issuance is authorized by a signature with the key pair.
+In ACME, the account is represented by a account key pair.  The "add a domain" function is accomplished by authorizing the key pair for a given domain.  Certificate issuance and revocation are authorized by a signature with the key pair.
 
-The first phase of ACME is for the client to establish an authorized key pair with the server for the identifier(s) it wishes to include in the certificate.  To do this, the client must demonstrate to the server both (1) that it holds the private key of the key pair being authorized, and (2) that it has authority over the identifier being claimed.
+The first phase of ACME is for the client to establish an authorization with the server for an account key pair to act for the identifier(s) that it wishes to include in the certificate.  To do this, the client must demonstrate to the server both (1) that it holds the private key of the account key pair, and (2) that it has authority over the identifier being claimed.
 
-In the key authorization process, then, the server presents the client with two tests.  First, a task to demonstrate that the client holds the private key of key pair being authorized, and second, a set of challenges that the client can perform to demonstrate its authority over the domain in question.
+Proof of possession of the account key is built into the ACME protocol.  All messages from the client to the server are signed by the client, and the server verifies them using the public key of the account key pair.
 
-Because there are many different ways to validate possession of different types of identifiers, the server will choose from an extensible set of challenges that are appropriate for the identifier being claimed.  For example, if the client requests a domain name, the server might challenge the client to provision a record in the DNS under that name, or to provision a file on a web server reference by an A or AAAA record under that name.
+To verify that the client controls the identifier being claimed, the server issues the client a set of challenges.  Because there are many different ways to validate possession of different types of identifiers, the server will choose from an extensible set of challenges that are appropriate for the identifier being claimed.  The client responds with a set of responses that tell the server which challenges the client has completed.  The server then validate the challenges to check that the client has accomplished the challenge.
 
-After the client has prepared responses to the server's challenges, it sends a second request with its responses to these challenges.  The server's response indicates whether the request for authorization has succeeded or failed.  If the authorization request succeeded, the server also provides a recovery token, which the client can use in a later authorization transaction to show that it is the same as the entity that participated in this authorization.
-
-<!-- NOTE: This flow assumes that the authorization state is stored on the server.  It would also be possible for the server to pass a token back to the client that encodes the state. -->
+For example, if the client requests a domain name, the server might challenge the client to provision a record in the DNS under that name, or to provision a file on a web server reference by an A or AAAA record under that name.  The server would then query the DNS for the record in question, or send an HTTP request for the file.  If the client provisioned the DNS or the web server as expected, then the server considers the client authorized for the domain name.
 
 ~~~~~~~~~~
 
       Client                                                  Server
 
-      Desired identifier            ------->
+      (identifier, key)
+      Signature                     ------->
 
-                                                           PoP nonce
-                                                          Session ID
-                                    <-------   Identifier Challenges
+                                    <-------              Challenges
 
-      Public key
-      Session ID
-      PoP nonce
-      PoP signature
-      [Contact information]
-      Responses to challenges       ------->
+      Responses
+      Signature                     ------->
 
-                                    <-------          Recovery token
+                                    <-------           Authorization
 
 ~~~~~~~~~~
 
-Once the client has established an authorized key pair for an identifier, it can use the key pair to authorize the issuance of certificates for the identifier.  To do this, the client sends a PKCS#10 Certificate Signing Request (CSR) to the server (indicating the identifier(s) to be included in the issued certificate), and a signature over the CSR by the private key of the authorized key pair.
+Once the client has authorized an account key pair for an identifier, it can use the key pair to authorize the issuance of certificates for the identifier.  To do this, the client sends a PKCS#10 Certificate Signing Request (CSR) to the server (indicating the identifier(s) to be included in the issued certificate), a set of links to any required authorizations, and a signature over the CSR by the private key of the authorized key pair.
 
-If the server agrees to issue the certificate, then it creates the certificate and provides it in its response.  The server may also provide a URI that can be used to renew the certificate, if it allows renewal without re-validation.
+If the server agrees to issue the certificate, then it creates the certificate and provides it in its response.  The certificate is assigned a URI, which the client can use to renew the certificate as long as the authorizations that underlie it are valid.
 
 ~~~~~~~~~~
 
       Client                                                 Server
 
       CSR
-      Signature by auth'd key      -------->
+      Authorization URIs
+      Signature                    -------->
 
-                                                        Certificate
-                                   <--------            Renewal URI
+                                   <--------            Certificate
 
 ~~~~~~~~~~
 
@@ -198,7 +198,7 @@ To revoke a certificate, the client simply sends a revocation request, signed wi
       Client                                                 Server
 
       Revocation request
-      Signature by auth'd key      -------->
+      Signature                    -------->
 
                                    <--------                 Result
 
@@ -210,7 +210,7 @@ Note that while ACME is defined with enough flexibility to handle different type
 
 # Certificate Management
 
-In this section, we describe the four certificate management functions that ACME enables:
+In this section, we describe the certificate management functions that ACME enables:
 
   * Key Authorization
   * Certificate Issuance
@@ -218,304 +218,273 @@ In this section, we describe the four certificate management functions that ACME
 
 Each of these functions is accomplished by the client sending a sequence of HTTPS requests to the server, carrying JSON messages.  Each subsection below describes the message formats used by the function, and the order in which messages are sent.
 
-All ACME messages share some common structure.  At base, each ACME message is a JSON dictionary, and MUST include a "type" field to indicate which type of message it is.
+ACME is structured as a REST application with four types of resources:
 
-type (required, string):
-: The type of ACME message encoded in this JSON dictionary.
+* Authorization resources, representing an account key's authorization to act for an identifier
+* Certificate resources, represnting issued certificates
+* A "new-authorization" resource
+* A "new-certificate" resource
 
-All other fields in an ACME message are defined by the type, as described below.  Unrecognized fields in ACME messages MUST be ignored.  Creators of ACME messages MUST NOT create messages with duplicate fields.  Parsers of ACME messages MAY be tolerant of duplicate fields, but the behavior of the protocol in this case is undefined.
+The remainder of this section provides the details of how these resources are structured and how the ACME protocol makes use of them.
 
+At the beginning of the ACME process, the client must be configured with URLs for the server's new-authorization and new-certificate resources.  The client learns URIs for any authorization and certificate resources it requires through the ACME protocol.
 
-## General Request/Response Lifecycle
+All ACME requests with a non-empty body MUST encapsulate the body in a JWS object.  The server MUST verify the JWS before processing the request.  (For readability, however, the examples below omit this encapsulation.)
 
-Client-server interactions in ACME are logically request/response transactions, corresponding directly to HTTPS requests and responses.  The client sends a request message of a particular type, and the server sends response of a corresponding type.
+## Authorization Resources
 
-All requests for a given ACME server are sent to the same HTTPS URI.  It is assumed that clients are configured with this URI out of band.  ACME requests MUST use the POST method, and since they carry JSON payloads, SHOULD set the Content-Type header field to "application/json".  ACME responses MUST be carried in HTTP responses with the status code 200.  ACME clients SHOULD follow HTTP redirects (301 or 302 responses), in case an ACME server is relocated.
+An ACME authorization resource represents server's authorization for an account key pair to represent an identifier.  In addition to a public key and identifier, an authorization includes several metadata fields, such as the status of the authorization (e.g., "pending", "valid", or "revoked") and which challenges were used to validate possession of the identifier.
 
-ACME provides three general message types -- "error", "defer", and "statusRequest" -- to cover cases where the server is not able to return a successful result immediately.  If there is a problem that prevents the request from succeeding, then the server sends an error message.  The fields in an error message are as follows:
+The structure of an ACME authorization resource is as follows:
 
-type (required, string):
-: "error"
+identifier (required, dictionary of string):
+: The identifier that the account key is authorized to represent
+  
+  type (required, string):
+  : The type of identifier.  
+  
+  value (required, string):
+  : The identifier itself.  
 
-error (required, string):
-: A token from the below list indicating what type of error occurred.
+key (required, dictionary):
+: The public key of the account key pair, encoded as a JSON Web Key object {{I-D.ietf-jose-json-web-key}}.
 
-message (optional, string):
-: A human-readable string describing the error.
+status (optional, string):
+: The status of this authorization.  Possible values are: "pending", "valid", and "invalid".  If this field is missing, then the default value is "pending".
 
-moreInfo (optional, string):
-: A URL of a resource containing additional human-readable documentation about the error, such as advice on how to revise the request or adjust the client configuration to allow the request to succeed, or documentation of CA issuance policies that describe why the request cannot be fulfilled.
+expires (optional, string):
+: The date after which the server will consider this authorization invalid, encoded in the format specified in RFC 3339 {{RFC3339}}.
 
-~~~~~~~~~~
-
-{
-  "type": "error",
-  "error": "badCSR",
-  "message": "RSA keys must be at least 2048 bits long",
-  "moreInfo": "https://ca.example.com/documentation/csr-requirements"
-}
-
-~~~~~~~~~~
-
-The possible error codes are as follows:
-
-| Code            | Semantic                                                 |
-|:================|:=========================================================|
-| malformed       | The request message was malformed                        |
-| unauthorized    | The client lacks sufficient authorization                |
-| serverInternal  | The server experienced an internal error                 |
-| notSupported    | The request type is not supported                        |
-| unknown         | The server does not recognize an ID/token in the request |
-| badCSR          | The CSR is unacceptable (e.g., due to a short key)       |
-
-The server may also defer providing a response by sending a defer message.  For example, in the key authorization process, the server may need additional time to validate the client's responses to its challenges.  Or in the issuance process, there may be some delay due to batch signing.  The fields in a defer message are as follows:
-
-type (required, string):
-: "defer"
-
-token (required, string):
-: An opaque value that the client uses to check on the status of the request (using a statusRequest message).
-
-interval (optional, number):
-: The amount of time, in seconds, that the client should wait before checking on the status of the request.  (This is a recommendation only, and clients SHOULD enforce minimum and maximum deferral times.)
-
-message (optional, string):
-: A human-readable string describing the reason for the deferral.
-
-For example, a deferral due to batch signing might be indicated with a message of the following form:
-
-~~~~~~~~~~
-
-{
-  "type": "defer",
-  "token": "O7-s9MNq1siZHlgrMzi9_A",
-  "interval": 60,
-  "message": "Warming up the HSM"
-}
-
-~~~~~~~~~~
-
-When a client receives a defer message, it periodically sends a statusRequest message to the server, with the token provided in the defer message.
-
-type (required, string):
-: "statusRequest"
-
-token (required, string):
-: An opaque value that was provided in a defer message.
-
-~~~~~~~~~~
-
-{
-  "type": "statusRequest",
-  "token": "O7-s9MNq1siZHlgrMzi9_A"
-}
-
-~~~~~~~~~~
-
-If the server responds with another defer message, then the server still does not have a final response.  The client MUST ignore the "token" value in defer responses provided in responses to status requests, and continue polling with the original token.  Any non-defer response (error or success) is considered final, and the client MUST cease polling.
-
-In summary, the client goes through the following state machine to perform an ACME transaction:
-
-~~~~~~~~~~
-
-            START
-              |
-              V
-        RESPONSE_WAIT <-----------+
-              |                   |
-   +----------+-----------+       |
-   |          |           |       |
-   V          V           V       |
-TIMEOUT   GOT_FINAL   GOT_DEFER --+
-
-~~~~~~~~~~
-
-The client begins by sending a request and awaiting the response.  If the response contains an ACME message of any type besides "defer", then the request is completed, and if no response arrives, the request times out.  If a defer request arrives, then the client waits some time and sends a polling request, whose response is handled in the same way as the original request.
-
-The following table summarizes the request and response types defined in this document.
-If the server provides the client with a non-error response of a type that does not match the request message type, then the client MUST treat it as an error message with code "serverInternal".
-
-| Request              | Response      |
-|:=====================|:==============|
-| challengeRequest     | challenge     |
-| authorizationRequest | authorization |
-| certificateRequest   | certificate   |
-| revocationRequest    | revocation    |
-| statusRequest        | (any)         |
-
-## Signatures
-
-ACME uses a simple JSON-based structure for encoding signatures, based on the JSON Web Signature structure.  An ACME signature is a JSON object, with the following fields:
-
-alg (required, string):
-: A token indicating the cryptographic algorithm used to compute the signature {{I-D.ietf-jose-json-web-algorithms}}. (MAC algorithms such as "HS*" MUST NOT be used.)
-
-sig (required, string):
-: The signature, base64-encoded.
-
-nonce (required, string):
-: A signer-provided random nonce of at least 16 bytes, base64-encoded.  (For anti-replay.)
-
-jwk (required, object):
-: A JSON Web Key object describing the key used to verify the signature {{I-D.ietf-jose-json-web-key}}.
-
-Each usage of a signature object must specify the content being signed.  To avoid replay risk, the input to the signature algorithm is the concatenation of the nonce with the content to be signed.
-
-~~~~~~~~~~
-
-      signature-input = nonce || content
-
-~~~~~~~~~~
-
-A verifier computes the same input before verifying the signature.  Note that while an signature object contains all of the information required to verify the signature, the verifier must also check that the public key encoded in the JWK object is the correct key for a given context.
-
-## Key Authorization
-
-The key authorization process establishes a key pair as an authorized key pair for a given identifier.  This process must assure the server of two things: First, that the client controls the private key of the key pair, and second, that the client holds the identifier in question.  This process may be repeated to associate multiple identifiers to a key pair (e.g., to request certificates with multiple identifiers), or to associate multiple key pairs with an identifier (e.g., for load balancing).
-
-As illustrated by the figure in the overview section above, the authorization process proceeds in two transactions.  The client first requests a list of challenges from the server, and then requests authorization based on its answers to those challenges.
-
-The first request in the key authorization process is a "challengeRequest" message, specifying the identifier for which the client will be requesting authorization.  The fields in a "challengeRequest" message are as follows:
-
-type (required, string):
-: "challengeRequest"
-
-identifier (required, string):
-: The identifier for which authorization is being sought.  For implementations of this specification, this identifier MUST be a domain name.  (If other types of identifier are supported, then an extension to this protocol will need to add a field to distinguish types of identifier.)
-
-~~~~~~~~~~
-
-{
-  "type": "challengeRequest",
-  "identifier": "example.com"
-}
-
-~~~~~~~~~~
-
-On receiving a "challengeRequest" message, the server determines what sorts of challenges it will accept as proof that the client holds the identifier.  (The server could also decide that a particular identifier is invalid or that the server cannot possibly issue certificates related to that identifier, in which case the server may return an error.)  The set of challenges may be limited by the server's capabilities, and the server may require different challenges to be completed for different identifiers (e.g., requiring a higher standard for higher-value names).  In all cases, however, the server provides a nonce as a proof-of-possession challenge for the key pair being authorized.  The server returns this policy to the client in a "challenge" message:
-
-type (required, string):
-: "challenge"
-
-sessionID (required, string):
-: An opaque string that allows the server to correlate transactions related to this challenge request.
-
-nonce (required, string):
-: A base64-encoded octet string that the client is expected to sign with the private key of the key pair being authorized.
-
-challenges (required, array):
-: A list of challenges to be fulfilled by the client in order to prove possession of the identifier.  The syntax for challenges is described in Section {{identifier-validation-challenges}}.
+challenges (required, dictionary):
+: The challenges that the client needs to fulfill in order to prove possession of the identifier (for pending authorizations).  For final authorizations, the challenges that were used.  Each key in the dictionary is a type of challenge, and the value is a dictionary with parameters required to validate the challenge, as specified in Section {identifier-validation-challenges}.
 
 combinations (optional, array of arrays):
-: A collection of sets of challenges, each of which would be sufficient to prove possession of the identifier.  Clients SHOULD complete a set of challenges that that covers at least one set in this array.  Challenges are represented by their associated zero-based index in the challenges array.
+: A collection of sets of challenges, each of which would be sufficient to prove possession of the identifier. Clients SHOULD complete a set of challenges that that covers at least one set in this array. Challenges are represented by their keys in the challenges dictionary (i.e., by type).
 
-For example, if the server wants to have the client demonstrate both that the client controls the domain name in question, and that this client is the same client that previously requested authorization for the domain name, it might issue the following request.  The client is expected to provide "simpleHttps" and "recoveryToken" responses ("[0,2]"), or else "dns" and "recoveryToken" responses ("[1,2]"), or all three.
+contact (optional, array of string PRIVATE):
+: An array of URIs that the server can use to contact the client for issues related to this authorization. For example, the server may wish to notify the client about server-initiated revocation, or check with the client on future authorizations (see the "recoveryContact" challenge type).
+
+recoveryToken (optional, string PRIVATE):
+: An opaque token that the client can present to demonstrate that it participated in a prior authorization transaction.  This field MUST NOT be present in an authorization object with a status other than "valid".
+
+
+The only type of identifier defined by this specification is a fully-qualified domain name (type: "dns").  The value of the identifier MUST be the ASCII representation of the domain name.
+
+By default, ACME authorization resources are represented as JSON objects.  Implementations MUST support this representation.
 
 ~~~~~~~~~~
+
 {
-  "type": "challenge",
-  "sessionID": "aefoGaavieG9Wihuk2aufai3aeZ5EeW4",
-  "nonce": "czpsrF0KMH6dgajig3TGHw",
-  "challenges": [
-    {
-      "type": "simpleHttps",
-      "token": "IlirfxKKXAsHtmzK29Pj8A"
-    },
-    {
-      "type": "dns",
-      "token": "DGyRejmCefe7v4NfDGDKfA"
-    },
-    {
-      "type": "recoveryToken"
-    }
-  ],
-  "combinations": [
-    [0, 2], [1, 2]
-  ]
-}
-~~~~~~~~~~
+  "status": "valid",
+  "expires": "2015-03-01",
 
-In order to avoid replay attacks, the server MUST generate a fresh nonce of at least 128 bits for each authorization transaction, and MUST NOT accept more than one authorizationRequest with the same nonce.
-
-<!-- NOTE: Should we allow multiple keys to sign over the same nonce?  Could be handy for authorizing multiple keys, but seems to also have replay risk.  This could also be addressed by having the "challengeRequest" contain the public key(s). -->
-
-The client SHOULD satisfy all challenges in one of the sets expressed in the "combinations" array.  If a "combinations" field is not specified, the client SHOULD attempt to fulfill as many challenges as possible.
-
-Once the client believes that it has fulfilled enough challenges, it creates an authorizationRequest object requesting authorization of a key pair for this identifier based on its responses.  The authorizationRequest also contains the public key to be authorized, and the signature by the corresponding private key over the nonce in the challenge.
-
-type (required, string):
-: "authorizationRequest"
-
-sessionID (required, string):
-: The session ID provided by the server in the challenge message (to allow the server to correlate the two transactions).
-
-nonce (required, string):
-: The nonce provided by the server in the challenge message.
-
-signature (required, object):
-: A signature object reflecting a signature over the identifier being authorized and the  nonce provided by the server.  Thus, for this authorization:
-
-~~~~~~~~~~
-
-      signature-input = signature-nonce || identifier || server-nonce
-
-~~~~~~~~~~
-
-responses (required, array):
-: The client's responses to the server's challenges, in the same order as the challenges.  If the client chooses not to respond to a given challenge, then the corresponding entry in the response array is set to null.  Otherwise, it is set to a value defined by the challenge type.
-
-contact (optional, array):
-: An array of URIs that the server can use to contact the client for issues related to this authorization.  For example, the server may wish to notify the client about server-initiated revocation, or check with the client on future authorizations (see the "recoveryContact" challenge type).
-
-~~~~~~~~~~
-{
-  "type": "authorizationRequest",
-  "sessionID": "aefoGaavieG9Wihuk2aufai3aeZ5EeW4",
-  "nonce": "czpsrF0KMH6dgajig3TGHw",
-  "signature": {
-    "nonce": "Aenb3DvfvOPImdXdnxHMlp7Jh4qsgYeTEM-dFgFOGxU",
-    "alg": "ES256",
-    "jwk": {
-      "kty": "EC",
-      "crv": "P-256",
-      "x": "NJ15BoXput18sSwnXA3gJEEnqIAzxSEl9ga8wGM4mEU",
-      "y": "6l_U9mals_dwt77tIxSiQ6oL_CyLVey4baa8wCn0V9k"
-    },
-    "sig": "lxj0Ucdo4r5s1c1cuY2R7oKqWi4QuNJzdwe5/4m9zWQ"
+  "identifier": {
+    "type": "domain",
+    "value": "example.org"
   },
-  "responses": [
-    {
-      "type": "simpleHttps",
-      "path": "Hf5GrX4Q7EBax9hc2jJnfw"
-    },
-    null,
-    {
-      "type": "recoveryToken",
-      "token": "23029d88d9e123e"
-    }
-  ],
+
+  "key": { /* JWK */ },
+
   "contact": [
     "mailto:cert-admin@example.com",
     "tel:+12025551212"
-  ]
+  ],
+
+  "challenges": [
+    "simpleHttps": {
+      "status": "valid",
+      "validated": "2014-12-01T12:05Z",
+      "token": "IlirfxKKXAsHtmzK29Pj8A"
+      "path": "Hf5GrX4Q7EBax9hc2jJnfw"
+    },
+    "recoveryToken": {
+      "status": "valid",
+      "validated": "2014-12-01T12:07Z",
+      "token": "23029d88d9e123e"
+    }
+  ],
 }
+
 ~~~~~~~~~~
 
-Once it has received the client's responses, the server verifies them according to procedures specific to each challenge type.  Because some of these procedures take time to verify, it is likely that the server will respond to an authorizationRequest message with a defer message.
+### Private Information in Authorizations
 
-If there is a problem with the authorizationRequest (e.g., the signature object does not verify), or if the available responses are not sufficient to convince the server that the client controls the identifier, then the server responds with an error message.  The server should use the "unauthorized" error code for cases where the client's responses were insufficient.   If the server is satisfied that the client controls the private key and identifier in question, then it sends an authorization message indicating the success of the authorization request, and providing a recovery token that the client can use to help recover authorization if the private key of the authorized key pair is lost.
+Within ACME, authorization resources are only sent between the client and the server, over a secure channel.  However, most of the contents of an authorization do not need to be secret for security reasons, especially after an authorization has been completed.  CAs that are interested in full transparency might consider publishing the set of authorizations they have established.
 
-type (required, string):
-: "authorization"
+In that case, certain private information must be expunged from the authorization before publication:
 
-recoveryToken (optional, string):
-: An arbitrary server-generated string.  If the server provides a recovery token, it MUST generate a unique value for every authorization transaction, and this value MUST NOT be predictable or guessable by a third party.
+* The "recoveryToken" field, since this value could be used to hijack the client's authorization
+* The "contact" field, since this information could be used to target the client for spam, phishing, etc.
 
-identifier (optional, string):
-: The identifier for which authorization has been granted.
+These fields are marked PRIVATE in the definitions above.  
 
-jwk (optional, object):
-: A JSON Web Key object describing the authorized public key.
+In addition, some fields within the "challenges" object might contain private data.  Private fields for specific challenges are noted in the specific challenge definitions below, using the same PRIVATE notation.
+
+## Errors
+
+Errors can be reported in ACME both at the HTTP layer and within ACME payloads.  ACME servers can return responses with an HTTP error response codes (4XX or 5XX).  For example:  If the client submits a request using a method not allowed in this document, then the server MAY return status code 405 (Method Not Allowed).
+
+When the server responds with an error status, it SHOULD provide additional information using problem document {{I-D.ietf-appsawg-http-problem}}.  The "type", "detail", and "instance" fields MUST be populated.  To facilitate automatic response to errors, this document defines the following standard tokens for use in the "type" field (within the "urn:acme:" namespace):
+
+| Code           | Semantic                                           |
+|:===============|:===================================================|
+| malformed      | The request message was malformed                  |
+| unauthorized   | The client lacks sufficient authorization          |
+| serverInternal | The server experienced an internal error           |
+| badCSR         | The CSR is unacceptable (e.g., due to a short key) |
+
+Authorization and challenge objects can also contain error information to indicate why the server was unable to validate authorization.
+
+TODO: Flesh out errors and syntax for them
+
+## Key Authorization
+
+The key authorization process establishes the authorization of an account key pair to manage certificates for a given identifier.  This process must assure the server of two things: First, that the client controls the private key of the key pair, and second, that the client holds the identifier in question.  This process may be repeated to associate multiple identifiers to a key pair (e.g., to request certificates with multiple identifiers), or to associate multiple key pairs with an identifier (e.g., for load balancing).
+
+As illustrated by the figure in the overview section above, the authorization process proceeds in two phases.  The client first requests a new authorization, and then the server issues challenges that the client responds to.
+
+To begin the key authorization process, the client sends a POST request to the server's new-authorization resource.  The body of the POST request MUST contain a JWS object, whose payload MUST be an initial authorization object.  This JWS object MUST contain the "identifier" field, so that the server knows what identifier is being authorized.  The client MAY provide contact information in the "contact" field in this or any subsequent request.
+
+~~~~~~~~~~
+
+POST /acme/new-authorization HTTP/1.1
+Host: example.com
+
+{
+  "identifier": {
+    "type": "domain",
+    "value": "example.org"
+  },
+
+  "contact": [
+    "mailto:cert-admin@example.com",
+    "tel:+12025551212"
+  ],
+}
+/* Signed as JWS */
+
+~~~~~~~~~~
+
+Before processing the authorization further, the server SHOULD determine whether it is willing to issue certificates for the identifier.  For example, the server should check that the identifier is of a supported type.  Servers might also check names against a blacklist of known high-value identifiers.  If the server is unwilling to issue for the identifier, it SHOULD return a 403 (Forbidden) error, with a problem document describing the reason for the rejection.
+
+If the server is willing to proceed, it builds a pending authorization object from the initial authorization object submitted by the client.
+
+* "identifier" the identifier submitted by the client.
+* "key": the key used to verify the client's JWS request (i.e., the contents of the "jwk" field in the JWS header)
+* "status": SHOULD be "pending" (MAY be omitted)
+* "challenges" and "combinations": As selected by the server's policy for this identifier
+* "contact": the "contact" field submitted by the client, if provided
+* The "expires" and "recoveryToken" fields MUST be absent.
+
+The server allocates a new URI for this authorization, and returns a 201 (Created) response, with the authorization URI in a Location header field, and the JSON authorization object in the body.
+
+~~~~~~~~~~
+
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: https://example.com/authz/asdf
+
+{
+  "identifier": {
+    "type": "domain",
+    "value": "example.org"
+  },
+
+  "key": { /* JWK from JWS header */ },
+
+  "contact": [
+    "mailto:cert-admin@example.com",
+    "tel:+12025551212"
+  ],
+
+  "challenges": {
+    "simpleHttps": {
+      "token": "IlirfxKKXAsHtmzK29Pj8A"
+    },
+    "dns": {
+      "token": "DGyRejmCefe7v4NfDGDKfA"
+    },
+    "recoveryToken": {}
+  },
+
+  "combinations": [ 
+    ["simpleHttps", "recoveryToken"],
+    ["dns", "recoveryToken"]
+  ]
+}
+
+~~~~~~~~~~
+
+The client needs to respond with information to complete the challenges.  To do this, the client updates the authorization object received from the server by filling in any required information in the elements of the "challenges" dictionary.  For example, if the client wishes to complete the "simpleHttps" challenge, it needs to provide the "path" component.  (This is also the stage where the client should perform any actions required by the challenge.)
+
+The client sends these updates back to the server in the form of a JSON merge patch {{RFC7386}} to the authorization document, carried in a POST request to the authorization URI (not the new-authorization URI).  Using a patch allows the client to send information only for challenges it is responding to.  (It is also harmless to send the whole authorization document.)
+
+~~~~~~~~~~
+
+POST /acme/authz/asdf HTTP/1.1
+Host: example.com
+
+{
+  "challenges": {
+    "simpleHttps": {
+      "path": "Hf5GrX4Q7EBax9hc2jJnfw"
+    },
+    "recoveryToken": {
+      "token": "23029d88d9e123e"
+    }
+  }
+}
+/* Signed as JWS */
+
+~~~~~~~~~~
+
+The server updates the authorization document by applying the patch.  Before applying the patch, however, the server MUST delete any fields in the patch besides "challenges" and "contact", since these are the only fields that the client may modify.  Similar constraints may need to be applied to individual challenges (e.g., not letting the client modify the "token" field in a "simpleHttps" challenge).
+
+Presumably, the client's responses provide the server with enough information to validate one or more challenges.  The server is said to "finalize" the authorization when it has completed all the validations it is going to complete, and assigns the authorization a status of "valid" or "invalid", corresponding to whether it considers the account key  authorized for the identifier.  If the final state is "valid", the server MUST add an "expires" field to the authorization.  When finalizing an authorization, the server MAY remove the "combinations" field (if present), remove any unfulfilled challenges, or add a "recoveryToken" field.
+
+Usually, the validation process will take some time, in which case the server MUST provide the updated pending authorization object in a 202 (Accepted) response and process the validations asynchronously.  The server MAY provide a Retry-After header in its 202 response to indicate how long it expects the validation to take.  If the server is able to finalize authorization immediately, it MUST return the authorization in a 200 (OK) response.
+
+If the server's response to the client contains a pending authorization, it will need to periodically send a GET request to the authorization URI  until the authorization is returned with a "status" value of "valid" or "invalid", or until the client times out.
+
+~~~~~~~~~~
+
+GET /acme/authz/asdf HTTP/1.1
+Host: example.com
+
+HTTP/1.1 200 OK
+
+{
+  "status": "valid",
+  "expires": "2015-03-01",
+
+  "identifier": {
+    "type": "domain",
+    "value": "example.org"
+  },
+
+  "key": { /* JWK */ },
+
+  "contact": [
+    "mailto:cert-admin@example.com",
+    "tel:+12025551212"
+  ],
+
+  "challenges": [
+    "simpleHttps": {
+      "status": "valid",
+      "validated": "2014-12-01T12:05Z",
+      "token": "IlirfxKKXAsHtmzK29Pj8A"
+      "path": "Hf5GrX4Q7EBax9hc2jJnfw"
+    },
+    "recoveryToken": {
+      "status": "valid",
+      "validated": "2014-12-01T12:07Z",
+      "token": "23029d88d9e123e"
+    }
+  ],
+}
+
+~~~~~~~~~~
 
 
 ### Recovery Tokens
@@ -1068,4 +1037,6 @@ TODO
 * Clients need to protect recovery key
 * CA needs to perform a very wide range of issuance policy enforcement and sanity-check steps
 * Parser safety (for JSON, JWK, ASN.1, and any other formats that can be parsed by the ACME server)
+
+
 

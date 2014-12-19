@@ -53,13 +53,14 @@ normative:
   RFC5226:
   RFC5246:
   RFC5280:
+  RFC5988:
   RFC6570:
   RFC7159:
   RFC7386:
-  I-D.ietf-jose-json-web-key:
-  I-D.ietf-jose-json-web-algorithms:
-  I-D.ietf-jose-json-web-signature:
   I-D.ietf-appsawg-http-problem:
+  I-D.ietf-jose-json-web-algorithms:
+  I-D.ietf-jose-json-web-key:
+  I-D.ietf-jose-json-web-signature:
 
 informative:
   RFC2818:
@@ -229,7 +230,9 @@ The remainder of this section provides the details of how these resources are st
 
 At the beginning of the ACME process, the client must be configured with URLs for the server's new-authorization and new-certificate resources.  The client learns URIs for any authorization and certificate resources it requires through the ACME protocol.
 
-All ACME requests with a non-empty body MUST encapsulate the body in a JWS object.  The server MUST verify the JWS before processing the request.  (For readability, however, the examples below omit this encapsulation.)
+All ACME requests with a non-empty body MUST encapsulate the body in a JWS object, signed using the account key pair.  The server MUST verify the JWS before processing the request.  (For readability, however, the examples below omit this encapsulation.)  Encapsulating request bodies in JWS provides a simple authentication of requests by way of key continuity.
+
+Note that this implies that GET requests are not authenticated.  For the most part, this is not an issue, since the ACME resources that can be accessed in this way (authorizations and certificates) usually do not contain sensitive information.  Servers that are concerned about parties other than the client gaining access to information via GET requests can create high-entropy authorization URLs and certificate URLs, so that they URLs themselves act as a shared secret between the client and server.
 
 ## Authorization Resources
 
@@ -326,12 +329,12 @@ Errors can be reported in ACME both at the HTTP layer and within ACME payloads. 
 
 When the server responds with an error status, it SHOULD provide additional information using problem document {{I-D.ietf-appsawg-http-problem}}.  The "type", "detail", and "instance" fields MUST be populated.  To facilitate automatic response to errors, this document defines the following standard tokens for use in the "type" field (within the "urn:acme:" namespace):
 
-| Code           | Semantic                                           |
-|:===============|:===================================================|
-| malformed      | The request message was malformed                  |
-| unauthorized   | The client lacks sufficient authorization          |
-| serverInternal | The server experienced an internal error           |
-| badCSR         | The CSR is unacceptable (e.g., due to a short key) |
+| Code            | Semantic                                                 |
+|:================|:=========================================================|
+| malformed       | The request message was malformed                        |
+| unauthorized    | The client lacks sufficient authorization                |
+| serverInternal  | The server experienced an internal error                 |
+| badCSR          | The CSR is unacceptable (e.g., due to a short key)       |
 
 Authorization and challenge objects can also contain error information to indicate why the server was unable to validate authorization.
 
@@ -505,121 +508,101 @@ Recovery tokens are employed in response to Recovery Challenges.  Such challenge
 
 ## Certificate Issuance
 
-The holder of an authorized key pair for an identifier may use ACME to request that a certificate be issued for that identifier.  The client makes this request using a "certificateRequest" message, which contains a Certificate Signing Request (CSR) {{RFC2986}} and a signature by the authorized key pair.
-
-type (required, string):
-: "certificateRequest"
+The holder of an authorized key pair for an identifier may use ACME to request that a certificate be issued for that identifier.  The client makes this request by sending a POST request to the server's new-certificate resource.  The body of the POST is a JWS object whose JSON payload contains a Certificate Signing Request (CSR) {{RFC2986}} and set of authorization URIs.  The CSR encodes the parameters of the requested certificate; authority to issue is demonstrated by the JWS signature and the linked authorizations.
 
 csr (required, string):
 : A CSR encoding the parameters for the certificate being requested.  The CSR is sent in base64-encoded version the DER format.  (Note: This field uses the same modified base64-encoding rules used elsewhere in this document, so it is different from PEM.)
 
-signature (required, object):
-: A signature object reflecting a signature by an authorized key pair over the CSR.
-
+authorizations (required, array of string):
+: An array of URIs for authorization resources.
 
 ~~~~~~~~~~
 
+POST /acme/new-cert HTTP/1.1
+Host: example.com
+Accept: application/pkix-cert
+
 {
-  "type": "certificateRequest",
   "csr": "5jNudRx6Ye4HzKEqT5...FS6aKdZeGsysoCo4H9P",
-  "signature": {
-    "alg": "RS256",
-    "nonce": "h5aYpWVkq-xlJh6cpR-3cw",
-    "sig": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ",
-    "jwk": {
-      "kty":"RSA",
-      "e":"AQAB",
-      "n":"KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ"
-    }
-  }
+  "authorizations": [
+    "https://example.com/acme/authz/asdf"
+  ]
 }
+/* Signed as JWS */
 
 ~~~~~~~~~~
 
 The CSR encodes the client's requests with regard to the content of the certificate to be issued.  The CSR MUST contain at least one extensionRequest attribute {{RFC2985}} requesting a subjectAltName extension, containing the requested identifiers.
 
-<!-- TODO: Any other constraints on the CSR? -->
-
 The values provided in the CSR are only a request, and are not guaranteed.  The server or CA may alter any fields in the certificate before issuance.  For example, the CA may remove identifiers that are not authorized for the key indicated in the "authorization" field.
 
-If the CA decides to issue a certificate, then the server responds with a certificate message.  (Of course, the server may also respond with an error message if issuance is denied, or a defer message if there may be some delay in issuance.)
+If the CA decides to issue a certificate, then the server returns the certificate in a response with status code 201 (Created).  The server MUST indicate a URL for this certificate in a Location header.
 
-type (required, string):
-: "certificate"
+The default format of the certificate is DER (application/pkix-cert).  The client may request other formats by including an Accept header in its request.
 
-certificate (required, string):
-: The issued certificate, as a base64-encoded DER certificate.
-
-chain (optional, array of string):
-: A chain of CA certificates which are parents of the issued certificate.  Each certificate is in base64-encoded DER form (not PEM, as for CSRs above).  This array MUST be presented in the same order as would be required in a TLS handshake {{RFC5246}}.
-
-refresh (optional, string):
-: An HTTP or HTTPS URI from which updated versions of this certificate can be fetched.
+The server can provide metadata about the certificate in HTTP headers.  For example, the server can include a Link header {{RFC5988}} with relation "up" to provide a certificate under which this certificate was issued.  Or the server can include an Expires header as a hint to the client about when to re-query to refresh the certificate.  (Of course, the real expiration of the certificate is controlled by the notAfter time in the certificate itself.)
 
 ~~~~~~~~~~
 
-{
-  "type": "certificate",
-  "certificate": "Zmzdx7UKvwDJ6bk...YBX22NPGQZyYcg",
-  "chain": [
-    "WUn8L2vLT553pIWJ2...gJ574o2anls1k2p",
-    "y3O4puZa9r5KBk1LX...Ya7jlaAZUfuYZGZ"
-  ],
-  "refresh": "https://example.com/refresh/Dr8eAwTVQfSS/"
-}
+HTTP/1.1 201 Created
+Content-Type: application/pkix-cert
+Link: <https://example.com/acme/ca-cert>;rel="up"
+Location: https://example.com/acme/cert/asdf
+
+[DER-encoded certificate]
 
 ~~~~~~~~~~
 
-The certificate message allows the server to provide the certificate itself, as well as some associated management information.  The chain of CA certificates can simplify TLS server configuration, by allowing the server to suggest the certificate chain that a TLS server using the issued certificate should present.
+## Certificate Refresh
 
-The refresh URI allows the client to download updated versions of the issued certificate, in the sense of certificates with different validity intervals, but otherwise the same contents (in particular, the same names and public key).  This can be useful in cases where a CA wishes to issue short-lived certificates, but is still willing to vouch for an identifier-key binding over a longer period of time.  To download an updated certificate, the client simply sends a GET request to the refresh URI.
+The certificate URL (provided in the Location header of the server's response) is used to refresh or revoke the certificate.  To refresh the certificate, the client simply sends a GET request to the certificate URL.  This allows the server to provide the client with updated certificates with the same content and different validity intervals, for as long as the server considers the client authorized.
 
+If a client sends a refresh request and the server is not willing to refresh the certificate, the server MUST respond with status code 403 (Forbidden).  If the client still wishes to obtain a certificate, it can re-initiate the authorization process for any expired authorizations related to the certificate.
 
 ## Certificate Revocation
 
-To request that a certificate be revoked, the client sends a revocationRequest message that indicates the certificate to be revoked, with a signature by an authorized key:
+To request that a certificate be revoked, the client sends a POST request to the certificate URL.  The body of the POST is a JWS object whose JSON payload contains an indication when the client would like the certificate to be revoked:
 
-type (required, string):
-: "revocationRequest"
+revoke (required, string):
+: The time at which the certificate should be revoked.  The value of this field MUST be either the literal string "now", or a date in RFC 3339 format {{RFC3339}}.
 
-certificate (required, string):
-: The certificate to be revoked.
-
-signature (required, object):
-: A signature object reflecting a signature by an authorized key pair over the certificate.
-
-<!-- TODO: Add other ways to identify a cert, e.g., fingerprint or serial number? -->
+authorizations (required, array of string):
+: An array of URIs for authorization resources.
 
 ~~~~~~~~~~
 
+POST /acme/cert/asdf HTTP/1.1
+Host: example.com
+
 {
-  "type": "revocationRequest",
-  "certificate": "Zmzdx7UKvwDJ6bk...YBX22NPGQZyYcg",
-  "signature": {
-    "alg": "RS256",
-    "nonce": "OQqU4VlhXhvZW9FIqNW-jg",
-    "sig": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ",
-    "jwk": {
-      "kty":"RSA",
-      "e":"AQAB",
-      "n":"KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ"
-    }
-  }
+  "revoke": "now",
+  "authorizations": [
+    "https://example.com/acme/authz/asdf"
+  ]
 }
+/* Signed as JWS */
 
 ~~~~~~~~~~
 
-Before revoking a certificate, the server MUST verify that the public key indicated in the signature object is authorized to act for all of the identifier(s) in the certificate.  The server MAY also accept a signature by the private key corresponding to the public key in the certificate.
+Before revoking a certificate, the server MUST verify that the account key pair used to sign the request is authorized to act for all of the identifier(s) in the certificate.  The server MAY also accept a signature by the private key corresponding to the public key in the certificate.
 
-If the revocation fails, the server returns an error message, e.g., an "unauthorized" error if the signing key was not authorized to revoke this certificate.  If the revocation succeeds, then the server confirms with a "revocation" message, which has no payload.
-
-type (required, string):
-: "revocation"
+If the revocation succeeds, the server responds with status code 200 (OK).  If the revocation fails, the server returns an error.
 
 ~~~~~~~~~~
+
+HTTP/1.1 200 OK
+Content-Length: 0
+
+--- or ---
+
+HTTP/1.1 403 Forbidden
+Content-Type: application/problem+json
+Content-Language: en
 
 {
-  "type": "revocation"
+  "type": "urn:acme:error:unauthorized"
+  "detail": "No authorization provided for name example.net"
+  "instance": "http://example.com/doc/unauthorized"
 }
 
 ~~~~~~~~~~
@@ -912,7 +895,9 @@ authorizedFor (optional, array):
       "16d95b7b63f1972b980b14c20291f3c0d1855d95",
       "48b46570d9fc6358108af43ad1649484def0debf"
     ],
-    "subjectKeyIdentifiers":  ["d0083162dcc4c8a23ecb8aecbd86120e56fd24e5"],
+    "subjectKeyIdentifiers":  [
+      "d0083162dcc4c8a23ecb8aecbd86120e56fd24e5"
+    ],
     "serialNumbers": [34234239832, 23993939911, 17],
     "issuers": [
       "C=US, O=SuperT LLC, CN=SuperTrustworthy Public CA",
@@ -1037,6 +1022,4 @@ TODO
 * Clients need to protect recovery key
 * CA needs to perform a very wide range of issuance policy enforcement and sanity-check steps
 * Parser safety (for JSON, JWK, ASN.1, and any other formats that can be parsed by the ACME server)
-
-
 

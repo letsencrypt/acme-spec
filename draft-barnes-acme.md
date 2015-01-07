@@ -223,14 +223,13 @@ All ACME messages share some common structure.  At base, each ACME message is a 
 type (required, string):
 : The type of ACME message encoded in this JSON dictionary.
 
-All other fields in an ACME message are defined by the type, as described below.  Unrecognized fields in ACME messages MUST be ignored.  Creators of ACME messages MUST NOT create messages with duplicate fields.  Parsers of ACME messages MAY be tolerant of duplicate fields, but the behavior of the protocol in this case is undefined.
-
+All other fields in an ACME message are defined by the type, as described below.  Unrecognized fields in ACME messages MUST be ignored.  Creators of ACME messages MUST NOT create messages with duplicate fields.  Parsers of ACME messages MUST reject messages with duplicate fields, to prevent attacks that rely on differing interpretation between different components. Parsers of ACME messages MUST reject messages that lack a "type" field or any fields that are specified as "required" for their message type.
 
 ## General Request/Response Lifecycle
 
 Client-server interactions in ACME are logically request/response transactions, corresponding directly to HTTPS requests and responses.  The client sends a request message of a particular type, and the server sends response of a corresponding type.
 
-All requests for a given ACME server are sent to the same HTTPS URI.  It is assumed that clients are configured with this URI out of band.  ACME requests MUST use the POST method, and since they carry JSON payloads, SHOULD set the Content-Type header field to "application/json".  ACME responses MUST be carried in HTTP responses with the status code 200.  ACME clients SHOULD follow HTTP redirects (301 or 302 responses), in case an ACME server is relocated.
+All requests for a given ACME server are sent to the same HTTPS URI.  It is assumed that clients are configured with this URI out of band.  ACME requests MUST use the POST method, and since they carry JSON payloads, SHOULD set the Content-Type header field to "application/json".  ACME responses MUST be carried in HTTP responses with the status code 200.  ACME clients SHOULD follow HTTP redirects (status codes 301, 302, 303, 307, and 308), in case an ACME server is relocated. Clients should follow {{RFC7231}}-style redirection: 307 and 308 indicate to retry with the same method, 303 indicates GET, and 301 and 302 are undefined. ACME servers SHOULD strongly prefer status codes 303, 307, and 308.
 
 ACME provides three general message types -- "error", "defer", and "statusRequest" -- to cover cases where the server is not able to return a successful result immediately.  If there is a problem that prevents the request from succeeding, then the server sends an error message.  The fields in an error message are as follows:
 
@@ -407,7 +406,7 @@ challenges (required, array):
 : A list of challenges to be fulfilled by the client in order to prove possession of the identifier.  The syntax for challenges is described in Section {{identifier-validation-challenges}}.
 
 combinations (optional, array of arrays):
-: A collection of sets of challenges, each of which would be sufficient to prove possession of the identifier.  Clients SHOULD complete a set of challenges that that covers at least one set in this array.  Challenges are represented by their associated zero-based index in the challenges array.
+: A collection of sets of challenges, each of which would be sufficient to prove possession of the identifier.  Clients SHOULD complete a set of challenges that that covers at least one set in this array.  Challenges are represented by their associated zero-based index in the challenges array, in increasing order.
 
 For example, if the server wants to have the client demonstrate both that the client controls the domain name in question, and that this client is the same client that previously requested authorization for the domain name, it might issue the following request.  The client is expected to provide "simpleHttps" and "recoveryToken" responses ("[0,2]"), or else "dns" and "recoveryToken" responses ("[1,2]"), or all three.
 
@@ -439,7 +438,7 @@ In order to avoid replay attacks, the server MUST generate a fresh nonce of at l
 
 <!-- NOTE: Should we allow multiple keys to sign over the same nonce?  Could be handy for authorizing multiple keys, but seems to also have replay risk.  This could also be addressed by having the "challengeRequest" contain the public key(s). -->
 
-The client SHOULD satisfy all challenges in one of the sets expressed in the "combinations" array.  If a "combinations" field is not specified, the client SHOULD attempt to fulfill as many challenges as possible.
+The client SHOULD satisfy all challenges in one of the sets expressed in the "combinations" array.  If a "combinations" field is not specified, the client SHOULD satisfy all challenges.
 
 Once the client believes that it has fulfilled enough challenges, it creates an authorizationRequest object requesting authorization of a key pair for this identifier based on its responses.  The authorizationRequest also contains the public key to be authorized, and the signature by the corresponding private key over the nonce in the challenge.
 
@@ -462,7 +461,7 @@ signature (required, object):
 ~~~~~~~~~~
 
 responses (required, array):
-: The client's responses to the server's challenges, in the same order as the challenges.  If the client chooses not to respond to a given challenge, then the corresponding entry in the response array is set to null.  Otherwise, it is set to a value defined by the challenge type.
+: The client's responses to the server's challenges, in the same order as the challenges (note: note challenge combinations, but challenges). This array MUST be exactly the same length as the list of challenges from the server, with the entry for any skipped challenges set to null. The entry for each fulfilled challenges is set to a value defined by the challenge type.
 
 contact (optional, array):
 : An array of URIs that the server can use to contact the client for issues related to this authorization.  For example, the server may wish to notify the client about server-initiated revocation, or check with the client on future authorizations (see the "recoveryContact" challenge type).
@@ -526,13 +525,13 @@ This mechanism is necessary because once an ACME server has issued an Authorizat
 
 This higher state of security poses some risks.  From time to time, the administrators and owners of domains may lose access to keys they have previously had issued or certified, including Authorized private keys and Subject private keys.  For instance, the disks on which this key material is stored may suffer failures, or passphrases for these keys may be forgotten.  In some cases, the security measures that are taken to protect this sensitive data may contribute to its loss.
 
-Recovery Tokens and Recovery Challenges exist to provide a fallback mechanism to restore the state of the domain to the server-side administrative security state it was in prior to the use of ACME, such that fresh Domain Validation is sufficient for reauthorization.
+Recovery Tokens and Challenges exist to provide a fallback mechanism in case an operator loses their Authorized Private Key, so they can authorize a new key pair using the combination of a Recovery Token / Challenge and a fresh Domain Validation for the identifier.
 
 Recovery tokens are therefore only useful to an attacker who can also perform Domain Validation against a target domain, and as a result client administrators may choose to handle them with somewhat fewer security precautions than Authorized and Subject private keys, decreasing the risk of their loss.
 
 Recovery tokens come in several types, including high-entropy passcodes (which need to be safely preserved by the client admin) and email addresses (which are inherently hard to lose, and which can be used for verification, though they may be a little less secure).
 
-Recovery tokens are employed in response to Recovery Challenges.  Such challenges will be available if the server has issued Recovery Tokens for a given domain, and the combination of a Recovery Challenge and a domain validation Challenge is a plausible alternative to other challenge sets for domains that already have extant Authorized keys.
+Recovery tokens are employed in response to Recovery Challenges.  Such challenges will be available if the requested identifier (a) already has Authorized Keys, (b) the server has issued Recovery Tokens for the identifier, and (c) the combination of a Recovery Challenge and a domain validation Challenge is sufficient to authorize a new key for the identifier, according to server policy.
 
 ## Certificate Issuance
 
@@ -797,7 +796,7 @@ Given a Challenge/Response pair, the ACME server verifies the client's control o
   * It contains the domain name being validated as a subjectAltName
   * It contains a subjectAltName matching the hex-encoding of Z, with the suffix ".acme.invalid"
 
-It is RECOMMENDED that the ACME server verify the challenge certificate using multi-path probing techniques to reduce the risk of DNS hijacking attacks.
+It is RECOMMENDED that the ACME server verify the challenge certificate using multi-path probing techniques to reduce the risk of DNS hijacking attacks. It is RECOMMENDED that the ACME server connect to and validate each IP listed in DNS, and if any IPs fail to validate, include those IPs in its error messages.
 
 If the server presents a certificate matching all of the above criteria, then the validation is successful.  Otherwise, the validation fails.
 
@@ -814,7 +813,7 @@ activationURL (optional, string):
 : A URL the client can visit to cause a recovery message to be sent to client's contact address.
 
 successURL (optional, string):
-: A URL the client may poll to determine if the user has successfully clicked a link or completed other tasks specified by the recovery message.  This URL will return a 200 success code if the required tasks have been completed.  The client SHOULD NOT poll the URL more than once every three seconds.
+: A URL the client may poll to determine if the user has successfully clicked a link or completed other tasks specified by the recovery message. This URL SHOULD return a 202 status code with a Retry-After header until the required tasks have been completed. The client SHOULD retry this URL obeying the Retry-After interval until it receives a 200 OK status, 4xx status, or 5xx status. This URL MUST return a 200 success code after the required tasks have been completed, for a reasonable amount of time determined by the server, after which it MAY return 404.
 
 contact (optional, string)
 : A full or partly obfuscated version of the contact URI that the server will use to contact the client.  Client software may present this to a user in order to suggest what contact point the user should check (e.g., an email address).
@@ -963,7 +962,7 @@ In this case the server is challenging the client to prove its control over the 
 
 ~~~~~~~~~~
 
-The client's response includes the server-provided nonce, together with a signature over that nonce by one of the private keys requested by the server.
+The client's response includes the server-provided nonce, together with a signature over that nonce by the private key requested by the server.
 
 type (required, string):
 : The string "proofOfPossession"
@@ -972,6 +971,10 @@ nonce (required, string):
 : The server nonce that the server previously associated with this challenge
 
 signature (required, object):
+: A signature object reflecting a signature over the signature-input by the
+requested private key. The algorithm used in this signature object MUST match
+the algorithm requested by the server.
+
 : The ACME signature computed over the signature-input using the server-specified algorithm
 
 
@@ -979,7 +982,7 @@ signature (required, object):
 
 {
   "type": "proofOfPossession",
-  "nonce": "eET5udtV7aoX8Xl8gYiZIA",
+  "nonce": "aWFNLMw9mFjA6YxVW6qfZx",
   "signature": {
     "alg": "RS256",
     "nonce": "eET5udtV7aoX8Xl8gYiZIA",
@@ -994,7 +997,7 @@ signature (required, object):
 
 ~~~~~~~~~~
 
-Note that just as in the authorizationRequest message, there are two nonces here, once provided by the client (inside the signature object) and one provided by the server in its challenge (outside the signature object).  The signature covers the concatenation of these two nonces (as specified in the signature-input above).
+Note that just as in the authorizationRequest message, there are two nonces here, one provided by the client (inside the signature object) and one provided by the server in its challenge (outside the signature object).  The signature covers the concatenation of these two nonces (as specified in the signature-input above).
 
 If the server is able to validate the signature and confirm that the jwk and alg objects are unchanged from the original challenge, the server can conclude that the client is in control of the private key that corresponds to the specified public key.  The server can use this evidence in support of its authorization and certificate issuance policies.
 
@@ -1026,7 +1029,14 @@ _acme-challenge.example.com. IN TXT "17817c66b60ce2e4012dfad92657527a"
 
 ~~~~~~~~~~
 
-The response to a DNS challenge is simply an acknowledgement that the relevant record has been provisioned.
+The response to a DNS challenge SHOULD be sent once the DNS record
+has been provisioned and the client verifies it is visible on the
+public Internet (since caches may slow the appearance of new DNS
+records). There may be multiple pending authorization requests for the
+same identifer, but the ACME server can look up the correct token by
+the sessionID provided in the Authorization Request object (in which
+the challenge responses are contained), so only the challenge type
+is included in the response here.
 
 type (required, string):
 : The string "dns"

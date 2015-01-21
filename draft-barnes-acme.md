@@ -187,7 +187,7 @@ If the server agrees to issue the certificate, then it creates the certificate a
       Signature by auth'd key      -------->
 
                                                         Certificate
-                                   <--------            Renewal URI
+                                   <--------            [Renewal URI]
 
 ~~~~~~~~~~
 

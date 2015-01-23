@@ -152,7 +152,21 @@ ACME allows a client to request certificate management actions using a set of JS
 
 In ACME, the account is represented by a account key pair.  The "add a domain" function is accomplished by authorizing the key pair for a given domain.  Certificate issuance and revocation are authorized by a signature with the key pair.
 
-The first phase of ACME is for the client to establish an authorization with the server for an account key pair to act for the identifier(s) that it wishes to include in the certificate.  To do this, the client must demonstrate to the server both (1) that it holds the private key of the account key pair, and (2) that it has authority over the identifier being claimed.
+The first phase of ACME is for the client to register with the ACME server.  The client generates an asymmetric key pair and associates this key pair with a set of contact information by signing the contact information.  The server acknowledges the
+registration by replying with a recovery token that the client can provide later to associate a new account key pair in the event that the first account key pair is lost.
+
+~~~~~~~~~~
+
+      Client                                                  Server
+
+      Contact Information
+      Signature                     ------->
+
+                                    <-------          Recovery Token
+
+~~~~~~~~~~
+
+Before a client can issue certificates, it must establish an authorization with the server for an account key pair to act for the identifier(s) that it wishes to include in the certificate.  To do this, the client must demonstrate to the server both (1) that it holds the private key of the account key pair, and (2) that it has authority over the identifier being claimed.
 
 Proof of possession of the account key is built into the ACME protocol.  All messages from the client to the server are signed by the client, and the server verifies them using the public key of the account key pair.
 
@@ -164,13 +178,17 @@ For example, if the client requests a domain name, the server might challenge th
 
       Client                                                  Server
 
-      (identifier, key)
+      Identifier
       Signature                     ------->
 
                                     <-------              Challenges
 
       Responses
       Signature                     ------->
+
+                                    <-------       Updated Challenge
+
+      Poll                          ------->
 
                                     <-------           Authorization
 
@@ -185,7 +203,7 @@ If the server agrees to issue the certificate, then it creates the certificate a
       Client                                                 Server
 
       CSR
-      Authorization URIs
+      Authorization URI(s)
       Signature                    -------->
 
                                    <--------            Certificate
@@ -213,18 +231,28 @@ Note that while ACME is defined with enough flexibility to handle different type
 
 In this section, we describe the certificate management functions that ACME enables:
 
+  * Registration
   * Key Authorization
   * Certificate Issuance
   * Certificate Revocation
 
 Each of these functions is accomplished by the client sending a sequence of HTTPS requests to the server, carrying JSON messages.  Each subsection below describes the message formats used by the function, and the order in which messages are sent.
 
-ACME is structured as a REST application with four types of resources:
+ACME is structured as a REST application with a few types of resources:
 
+* Registration resources, representing information about an account key
 * Authorization resources, representing an account key's authorization to act for an identifier
 * Certificate resources, representing issued certificates
+* A "new-registration" resource
 * A "new-authorization" resource
 * A "new-certificate" resource
+
+In general, the intent is for authorization and certificate resources to contain only public information, so that CAs may publish these resoruces to document what certificates have been issued and how they were authorized.  Non-public information, such as
+contact information, is stored in registration resources.
+
+In order to accomplish ACME transactions, a client needs to have the server's new-registration, new-authorization, and new-ceritificate URIs; the remaining URIs are provided to the client as a result of requests to these URIs.  To simplify
+configuration, ACME uses the "next" link relation to indicate URI to contact for the next step in processing: From registration to authorization, and from authorization to certificate issuance.  In this way, a client need only be configured with the
+registration URI.
 
 The remainder of this section provides the details of how these resources are structured and how the ACME protocol makes use of them.
 
@@ -234,94 +262,6 @@ All ACME requests with a non-empty body MUST encapsulate the body in a JWS objec
 
 Note that this implies that GET requests are not authenticated.  For the most part, this is not an issue, since the ACME resources that can be accessed in this way (authorizations and certificates) usually do not contain sensitive information.  Servers that are concerned about parties other than the client gaining access to information via GET requests can create high-entropy authorization URLs and certificate URLs, so that they URLs themselves act as a shared secret between the client and server.
 
-## Authorization Resources
-
-An ACME authorization resource represents server's authorization for an account key pair to represent an identifier.  In addition to a public key and identifier, an authorization includes several metadata fields, such as the status of the authorization (e.g., "pending", "valid", or "revoked") and which challenges were used to validate possession of the identifier.
-
-The structure of an ACME authorization resource is as follows:
-
-identifier (required, dictionary of string):
-: The identifier that the account key is authorized to represent
-  
-  type (required, string):
-  : The type of identifier.  
-  
-  value (required, string):
-  : The identifier itself.  
-
-key (required, dictionary):
-: The public key of the account key pair, encoded as a JSON Web Key object {{I-D.ietf-jose-json-web-key}}.
-
-status (optional, string):
-: The status of this authorization.  Possible values are: "pending", "valid", and "invalid".  If this field is missing, then the default value is "pending".
-
-expires (optional, string):
-: The date after which the server will consider this authorization invalid, encoded in the format specified in RFC 3339 {{RFC3339}}.
-
-challenges (required, dictionary):
-: The challenges that the client needs to fulfill in order to prove possession of the identifier (for pending authorizations).  For final authorizations, the challenges that were used.  Each key in the dictionary is a type of challenge, and the value is a dictionary with parameters required to validate the challenge, as specified in Section {identifier-validation-challenges}.
-
-combinations (optional, array of arrays of strings):
-: A collection of sets of challenges, each of which would be sufficient to prove possession of the identifier. Clients complete a set of challenges that that covers at least one set in this array. Challenges are identified by their keys in the challenges dictionary (i.e., by type).  If no "combinations" element is included in an authorization object, the client completes all challenges.
-
-contact (optional, array of string PRIVATE):
-: An array of URIs that the server can use to contact the client for issues related to this authorization. For example, the server may wish to notify the client about server-initiated revocation, or check with the client on future authorizations (see the "recoveryContact" challenge type).
-
-recoveryToken (optional, string PRIVATE):
-: An opaque token that the client can present to demonstrate that it participated in a prior authorization transaction.  This field MUST NOT be present in an authorization object with a status other than "valid".
-
-
-The only type of identifier defined by this specification is a fully-qualified domain name (type: "dns").  The value of the identifier MUST be the ASCII representation of the domain name.
-
-By default, ACME authorization resources are represented as JSON objects.  Implementations MUST support this representation.
-
-~~~~~~~~~~
-
-{
-  "status": "valid",
-  "expires": "2015-03-01",
-
-  "identifier": {
-    "type": "domain",
-    "value": "example.org"
-  },
-
-  "key": { /* JWK */ },
-
-  "contact": [
-    "mailto:cert-admin@example.com",
-    "tel:+12025551212"
-  ],
-
-  "challenges": [
-    "simpleHttps": {
-      "status": "valid",
-      "validated": "2014-12-01T12:05Z",
-      "token": "IlirfxKKXAsHtmzK29Pj8A"
-      "path": "Hf5GrX4Q7EBax9hc2jJnfw"
-    },
-    "recoveryToken": {
-      "status": "valid",
-      "validated": "2014-12-01T12:07Z",
-      "token": "23029d88d9e123e"
-    }
-  ],
-}
-
-~~~~~~~~~~
-
-### Private Information in Authorizations
-
-Within ACME, authorization resources are only sent between the client and the server, over a secure channel.  However, most of the contents of an authorization do not need to be secret for security reasons, especially after an authorization has been completed.  CAs that are interested in full transparency might consider publishing the set of authorizations they have established.
-
-In that case, certain private information must be expunged from the authorization before publication:
-
-* The "recoveryToken" field, since this value could be used to hijack the client's authorization
-* The "contact" field, since this information could be used to target the client for spam, phishing, etc.
-
-These fields are marked PRIVATE in the definitions above.  
-
-In addition, some fields within the "challenges" object might contain private data.  Private fields for specific challenges are noted in the specific challenge definitions below, using the same PRIVATE notation.
 
 ## Errors
 
@@ -340,13 +280,134 @@ Authorization and challenge objects can also contain error information to indica
 
 TODO: Flesh out errors and syntax for them
 
+## Registration
+
+An ACME registration resource represents a set of metadata associated to an account key pair, most importantly contact information and a recovery token.  Registration resources have the following structure:
+
+key (required, dictionary):
+: The public key of the account key pair, encoded as a JSON Web Key object {{I-D.ietf-jose-json-web-key}}.
+
+contact (optional, array of string):
+: An array of URIs that the server can use to contact the client for issues related to this authorization. For example, the server may wish to notify the client about server-initiated revocation, or check with the client on future authorizations (see the "recoveryContact" challenge type).
+
+recoveryToken (optional, string):
+: An opaque token that the client can present to demonstrate that it participated in a prior authorization transaction.
+
+A client creates a new account with the server by sending a POST request to the server's new-registration URI.  The body of the request is a registration object containing only the "contact" field.
+
+~~~~~~~~~~
+
+POST /acme/new-registration HTTP/1.1
+Host: example.com
+
+{
+  "contact": [
+    "mailto:cert-admin@example.com",
+    "tel:+12025551212"
+  ],
+}
+/* Signed as JWS */
+
+~~~~~~~~~~
+
+The server then creates a registration object with the included contact information.  The "key" element of the registration is set to the public key used to verify the JWS (i.e., the "jwk" element of the JWS header).  The server also provides a random
+recovery token.  The server returns this registration object in a 201 (Created) response, with the registration URI in a Location header field.  The server may also indicate its new-authorization URI using the "next" link relation.
+
+~~~~~~~~~~
+
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: https://example.com/reg/asdf
+Link: <https://example.com/acme/new-authz>;rel="next"
+
+{
+  "key": { /* JWK from JWS header */ },
+
+  "contact": [
+    "mailto:cert-admin@example.com",
+    "tel:+12025551212"
+  ],
+
+  "recoveryToken": "uV2Aph7-sghuCcFVmvsiZw"
+}
+
+~~~~~~~~~~
+
+If the client wishes to update this information in the future, it sends a POST request with updated information to the registration URI.  The server MUST ignore any updates to the "key" or "recoveryToken" fields, and MUST verify that the request is signed
+with the private key corresponding to the "key" field of the request before updating the registration.
+
+
+## Authorization Resources
+
+An ACME authorization resource represents server's authorization for an account key pair to represent an identifier.  In addition to a public key and identifier, an authorization includes several metadata fields, such as the status of the authorization (e.g., "pending", "valid", or "revoked") and which challenges were used to validate possession of the identifier.
+
+The structure of an ACME authorization resource is as follows:
+
+identifier (required, dictionary of string):
+: The identifier that the account key is authorized to represent
+
+  type (required, string):
+  : The type of identifier.
+
+  value (required, string):
+  : The identifier itself.
+
+key (required, dictionary):
+: The public key of the account key pair, encoded as a JSON Web Key object {{I-D.ietf-jose-json-web-key}}.
+
+status (optional, string):
+: The status of this authorization.  Possible values are: "pending", "valid", and "invalid".  If this field is missing, then the default value is "pending".
+
+expires (optional, string):
+: The date after which the server will consider this authorization invalid, encoded in the format specified in RFC 3339 {{RFC3339}}.
+
+challenges (required, dictionary):
+: The challenges that the client needs to fulfill in order to prove possession of the identifier (for pending authorizations).  For final authorizations, the challenges that were used.  Each key in the dictionary is a type of challenge, and the value is a dictionary with parameters required to validate the challenge, as specified in Section {identifier-validation-challenges}.
+
+combinations (optional, array of arrays of strings):
+: A collection of sets of challenges, each of which would be sufficient to prove possession of the identifier. Clients complete a set of challenges that that covers at least one set in this array. Challenges are identified by their keys in the challenges dictionary (i.e., by type).  If no "combinations" element is included in an authorization object, the client completes all challenges.
+
+
+The only type of identifier defined by this specification is a fully-qualified domain name (type: "dns").  The value of the identifier MUST be the ASCII representation of the domain name.
+
+~~~~~~~~~~
+
+{
+  "status": "valid",
+  "expires": "2015-03-01",
+
+  "identifier": {
+    "type": "domain",
+    "value": "example.org"
+  },
+
+  "key": { /* JWK */ },
+
+  "challenges": [
+    "simpleHttps": {
+      "status": "valid",
+      "validated": "2014-12-01T12:05Z",
+      "token": "IlirfxKKXAsHtmzK29Pj8A"
+      "path": "Hf5GrX4Q7EBax9hc2jJnfw"
+    },
+    "recoveryToken": {
+      "status": "valid",
+      "validated": "2014-12-01T12:07Z",
+      "token": "23029d88d9e123e"
+    }
+  ],
+}
+
+~~~~~~~~~~
+
+
 ## Key Authorization
 
 The key authorization process establishes the authorization of an account key pair to manage certificates for a given identifier.  This process must assure the server of two things: First, that the client controls the private key of the key pair, and second, that the client holds the identifier in question.  This process may be repeated to associate multiple identifiers to a key pair (e.g., to request certificates with multiple identifiers), or to associate multiple key pairs with an identifier (e.g., for load balancing).
 
 As illustrated by the figure in the overview section above, the authorization process proceeds in two phases.  The client first requests a new authorization, and then the server issues challenges that the client responds to.
 
-To begin the key authorization process, the client sends a POST request to the server's new-authorization resource.  The body of the POST request MUST contain a JWS object, whose payload MUST be a partial authorization object.  This JWS object MUST contain only the "identifier" field, so that the server knows what identifier is being authorized.  The client MAY provide contact information in the "contact" field in this or any subsequent request.
+To begin the key authorization process, the client sends a POST request to the server's new-authorization resource.  The body of the POST request MUST contain a JWS object, whose payload is a partial authorization object.  This JWS object MUST contain only the "identifier" field, so that the server knows what identifier is being authorized.  The client MAY provide contact information in the "contact" field in this or any subsequent request.
 
 ~~~~~~~~~~
 
@@ -357,12 +418,7 @@ Host: example.com
   "identifier": {
     "type": "domain",
     "value": "example.org"
-  },
-
-  "contact": [
-    "mailto:cert-admin@example.com",
-    "tel:+12025551212"
-  ],
+  }
 }
 /* Signed as JWS */
 
@@ -376,8 +432,7 @@ If the server is willing to proceed, it builds a pending authorization object fr
 * "key": the key used to verify the client's JWS request (i.e., the contents of the "jwk" field in the JWS header)
 * "status": SHOULD be "pending" (MAY be omitted)
 * "challenges" and "combinations": As selected by the server's policy for this identifier
-* "contact": the "contact" field submitted by the client, if provided
-* The "expires" and "recoveryToken" fields MUST be absent.
+* The "expires" field MUST be absent.
 
 The server allocates a new URI for this authorization, and returns a 201 (Created) response, with the authorization URI in a Location header field, and the JSON authorization object in the body.
 
@@ -386,6 +441,7 @@ The server allocates a new URI for this authorization, and returns a 201 (Create
 HTTP/1.1 201 Created
 Content-Type: application/json
 Location: https://example.com/authz/asdf
+Link: <https://example.com/acme/new-cert>;rel="next"
 
 {
   "identifier": {
@@ -394,11 +450,6 @@ Location: https://example.com/authz/asdf
   },
 
   "key": { /* JWK from JWS header */ },
-
-  "contact": [
-    "mailto:cert-admin@example.com",
-    "tel:+12025551212"
-  ],
 
   "challenges": {
     "simpleHttps": {

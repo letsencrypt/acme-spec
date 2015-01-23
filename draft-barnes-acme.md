@@ -158,7 +158,7 @@ Proof of possession of the account key is built into the ACME protocol.  All mes
 
 To verify that the client controls the identifier being claimed, the server issues the client a set of challenges.  Because there are many different ways to validate possession of different types of identifiers, the server will choose from an extensible set of challenges that are appropriate for the identifier being claimed.  The client responds with a set of responses that tell the server which challenges the client has completed.  The server then validate the challenges to check that the client has accomplished the challenge.
 
-For example, if the client requests a domain name, the server might challenge the client to provision a record in the DNS under that name, or to provision a file on a web server reference by an A or AAAA record under that name.  The server would then query the DNS for the record in question, or send an HTTP request for the file.  If the client provisioned the DNS or the web server as expected, then the server considers the client authorized for the domain name.
+For example, if the client requests a domain name, the server might challenge the client to provision a record in the DNS under that name, or to provision a file on a web server referenced by an A or AAAA record under that name.  The server would then query the DNS for the record in question, or send an HTTP request for the file.  If the client provisioned the DNS or the web server as expected, then the server considers the client authorized for the domain name.
 
 ~~~~~~~~~~
 
@@ -176,9 +176,9 @@ For example, if the client requests a domain name, the server might challenge th
 
 ~~~~~~~~~~
 
-Once the client has authorized an account key pair for an identifier, it can use the key pair to authorize the issuance of certificates for the identifier.  To do this, the client sends a PKCS#10 Certificate Signing Request (CSR) to the server (indicating the identifier(s) to be included in the issued certificate), a set of links to any required authorizations, and a signature over the CSR by the private key of the authorized key pair.
+Once the client has authorized an account key pair for an identifier, it can use the key pair to authorize the issuance of certificates for the identifier.  To do this, the client sends a PKCS#10 Certificate Signing Request (CSR) to the server (indicating the identifier(s) to be included in the issued certificate), a set of links to any required authorizations, and a signature over the CSR by the private key of the account key pair.
 
-If the server agrees to issue the certificate, then it creates the certificate and provides it in its response.  The certificate is assigned a URI, which the client can use to renew the certificate as long as the authorizations that underlie it are valid.
+If the server agrees to issue the certificate, then it creates the certificate and provides it in its response.  The certificate is assigned a URI, which the client can use to fetch updated versions of the certificate.
 
 ~~~~~~~~~~
 
@@ -222,7 +222,7 @@ Each of these functions is accomplished by the client sending a sequence of HTTP
 ACME is structured as a REST application with four types of resources:
 
 * Authorization resources, representing an account key's authorization to act for an identifier
-* Certificate resources, represnting issued certificates
+* Certificate resources, representing issued certificates
 * A "new-authorization" resource
 * A "new-certificate" resource
 
@@ -261,8 +261,8 @@ expires (optional, string):
 challenges (required, dictionary):
 : The challenges that the client needs to fulfill in order to prove possession of the identifier (for pending authorizations).  For final authorizations, the challenges that were used.  Each key in the dictionary is a type of challenge, and the value is a dictionary with parameters required to validate the challenge, as specified in Section {identifier-validation-challenges}.
 
-combinations (optional, array of arrays):
-: A collection of sets of challenges, each of which would be sufficient to prove possession of the identifier. Clients SHOULD complete a set of challenges that that covers at least one set in this array. Challenges are represented by their keys in the challenges dictionary (i.e., by type).
+combinations (optional, array of arrays of strings):
+: A collection of sets of challenges, each of which would be sufficient to prove possession of the identifier. Clients complete a set of challenges that that covers at least one set in this array. Challenges are identified by their keys in the challenges dictionary (i.e., by type).  If no "combinations" element is included in an authorization object, the client completes all challenges.
 
 contact (optional, array of string PRIVATE):
 : An array of URIs that the server can use to contact the client for issues related to this authorization. For example, the server may wish to notify the client about server-initiated revocation, or check with the client on future authorizations (see the "recoveryContact" challenge type).
@@ -346,7 +346,7 @@ The key authorization process establishes the authorization of an account key pa
 
 As illustrated by the figure in the overview section above, the authorization process proceeds in two phases.  The client first requests a new authorization, and then the server issues challenges that the client responds to.
 
-To begin the key authorization process, the client sends a POST request to the server's new-authorization resource.  The body of the POST request MUST contain a JWS object, whose payload MUST be an initial authorization object.  This JWS object MUST contain the "identifier" field, so that the server knows what identifier is being authorized.  The client MAY provide contact information in the "contact" field in this or any subsequent request.
+To begin the key authorization process, the client sends a POST request to the server's new-authorization resource.  The body of the POST request MUST contain a JWS object, whose payload MUST be a partial authorization object.  This JWS object MUST contain only the "identifier" field, so that the server knows what identifier is being authorized.  The client MAY provide contact information in the "contact" field in this or any subsequent request.
 
 ~~~~~~~~~~
 
@@ -536,17 +536,17 @@ The CSR encodes the client's requests with regard to the content of the certific
 
 The values provided in the CSR are only a request, and are not guaranteed.  The server or CA may alter any fields in the certificate before issuance.  For example, the CA may remove identifiers that are not authorized for the key indicated in the "authorization" field.
 
-If the CA decides to issue a certificate, then the server returns the certificate in a response with status code 201 (Created).  The server MUST indicate a URL for this certificate in a Location header.
+If the CA decides to issue a certificate, then the server returns the certificate in a response with status code 201 (Created).  The server MUST indicate a URL for this certificate in a Location header field.
 
 The default format of the certificate is DER (application/pkix-cert).  The client may request other formats by including an Accept header in its request.
 
-The server can provide metadata about the certificate in HTTP headers.  For example, the server can include a Link header {{RFC5988}} with relation "up" to provide a certificate under which this certificate was issued.  Or the server can include an Expires header as a hint to the client about when to re-query to refresh the certificate.  (Of course, the real expiration of the certificate is controlled by the notAfter time in the certificate itself.)
+The server can provide metadata about the certificate in HTTP headers.  For example, the server can include a Link relation header field {{RFC5988}} with relation "up" to provide a certificate under which this certificate was issued.  Or the server can include an Expires header as a hint to the client about when to re-query to refresh the certificate.  (Of course, the real expiration of the certificate is controlled by the notAfter time in the certificate itself.)
 
 ~~~~~~~~~~
 
 HTTP/1.1 201 Created
 Content-Type: application/pkix-cert
-Link: <https://example.com/acme/ca-cert>;rel="up"
+Link: <https://example.com/acme/ca-cert>;rel="up";title="issuer"
 Location: https://example.com/acme/cert/asdf
 
 [DER-encoded certificate]
@@ -555,7 +555,7 @@ Location: https://example.com/acme/cert/asdf
 
 ## Certificate Refresh
 
-The certificate URL (provided in the Location header of the server's response) is used to refresh or revoke the certificate.  To refresh the certificate, the client simply sends a GET request to the certificate URL.  This allows the server to provide the client with updated certificates with the same content and different validity intervals, for as long as the server considers the client authorized.
+The certificate URL (provided in the Location header of the server's response) is used to refresh or revoke the certificate.  To refresh the certificate, the client simply sends a GET request to the certificate URL.  This allows the server to provide the client with updated certificates with the same content and different validity intervals, for as long as all of the authorization objects underlying the certificate are valid.
 
 If a client sends a refresh request and the server is not willing to refresh the certificate, the server MUST respond with status code 403 (Forbidden).  If the client still wishes to obtain a certificate, it can re-initiate the authorization process for any expired authorizations related to the certificate.
 

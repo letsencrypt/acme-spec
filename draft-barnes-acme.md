@@ -238,10 +238,13 @@ In this section, we describe the certificate management functions that ACME enab
 
 Each of these functions is accomplished by the client sending a sequence of HTTPS requests to the server, carrying JSON messages.  Each subsection below describes the message formats used by the function, and the order in which messages are sent.
 
+# Resources and Requests
+
 ACME is structured as a REST application with a few types of resources:
 
 * Registration resources, representing information about an account key
 * Authorization resources, representing an account key's authorization to act for an identifier
+* Challenge resources, representing a challenge to prove control of an identifier
 * Certificate resources, representing issued certificates
 * A "new-registration" resource
 * A "new-authorization" resource
@@ -251,17 +254,32 @@ In general, the intent is for authorization and certificate resources to contain
 contact information, is stored in registration resources.
 
 In order to accomplish ACME transactions, a client needs to have the server's new-registration, new-authorization, and new-ceritificate URIs; the remaining URIs are provided to the client as a result of requests to these URIs.  To simplify
-configuration, ACME uses the "next" link relation to indicate URI to contact for the next step in processing: From registration to authorization, and from authorization to certificate issuance.  In this way, a client need only be configured with the
-registration URI.
+configuration, ACME uses the "next" link relation to indicate URI to contact for the next step in processing: From registration to authorization, and from authorization to certificate issuance.  In this way, a client need only be configured with the registration URI.
+
+The "up" link relation is used with challenge resources to indicate the authorization resource to which a challenge belongs.  It is also used from certificate resources to indicate a resource from which the client may fetch a chain of CA certificates that could be used to validate the certificate in the original resource.
+
+The following diagram illustrates the relations between resources on an ACME server.  The solid lines indicate link relations, and the dotted lines correspond to relationships expressed in other ways, e.g., the Location header in a 201 (Created) response.
+
+~~~~~~~~~~
+             "next"              "next"
+    new-reg ---+----> new-authz ---+----> new-cert    cert-chain
+       .       |          .        |         .            ^
+       .       |          .        |         .            | "up"
+       V       |          V        |         V            |
+      reg* ----+        authz -----+       cert-----------+
+                         . ^
+                         . | "up"
+                         V |
+                       challenge
+
+~~~~~~~~~~
+
 
 The remainder of this section provides the details of how these resources are structured and how the ACME protocol makes use of them.
 
-At the beginning of the ACME process, the client must be configured with URLs for the server's new-authorization and new-certificate resources.  The client learns URIs for any authorization and certificate resources it requires through the ACME protocol.
-
 All ACME requests with a non-empty body MUST encapsulate the body in a JWS object, signed using the account key pair.  The server MUST verify the JWS before processing the request.  (For readability, however, the examples below omit this encapsulation.)  Encapsulating request bodies in JWS provides a simple authentication of requests by way of key continuity.
 
-Note that this implies that GET requests are not authenticated.  For the most part, this is not an issue, since the ACME resources that can be accessed in this way (authorizations and certificates) usually do not contain sensitive information.  Servers that are concerned about parties other than the client gaining access to information via GET requests can create high-entropy authorization URLs and certificate URLs, so that they URLs themselves act as a shared secret between the client and server.
-
+Note that this implies that GET requests are not authenticated.  Servers MUST NOT respond to GET requests for resources that might be considered sensitive.
 
 ## Errors
 
@@ -581,7 +599,7 @@ Accept: application/pkix-cert
 }
 /* Signed as JWS */
 
-~~~~~~~~~~
+~~~~~~~~~
 
 The CSR encodes the client's requests with regard to the content of the certificate to be issued.  The CSR MUST contain at least one extensionRequest attribute {{RFC2985}} requesting a subjectAltName extension, containing the requested identifiers.
 

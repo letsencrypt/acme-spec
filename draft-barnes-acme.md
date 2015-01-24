@@ -16,11 +16,6 @@ author:
     org: Mozilla
     email: rlb@ipv.sx
  -
-    ins: E. Rescorla
-    name: Eric Rescorla
-    org: Mozilla
-    email: ekr@rtfm.com
- -
     ins: P. Eckersley
     name: Peter Eckersley
     org: EFF

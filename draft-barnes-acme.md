@@ -276,6 +276,18 @@ All ACME requests with a non-empty body MUST encapsulate the body in a JWS objec
 
 Note that this implies that GET requests are not authenticated.  Servers MUST NOT respond to GET requests for resources that might be considered sensitive.
 
+The following table illustrates a typical sequence of requests required to establish a new account with the server, prove control of an identifier, issue a certificate, and fetch an updated certificate some time after issuance:
+
+| Action             | Request        | Response     |
+|:-------------------|:---------------|:-------------|
+| Register           | POST new-reg   | 201 -> reg   |
+| Request challenges | POST new-authz | 201 -> authz |
+| Answer challenges  | POST challenge | 200          |
+| Poll for status    | GET  authz     | 200          |
+| Request issuane    | POST new-cert  | 201 -> cert  |
+| Check for new cert | GET  cert      | 200          |
+
+
 ## Errors
 
 Errors can be reported in ACME both at the HTTP layer and within ACME payloads.  ACME servers can return responses with an HTTP error response codes (4XX or 5XX).  For example:  If the client submits a request using a method not allowed in this document, then the server MAY return status code 405 (Method Not Allowed).
@@ -457,6 +469,8 @@ Location: https://example.com/authz/asdf
 Link: <https://example.com/acme/new-cert>;rel="next"
 
 {
+  "status": "pending",
+
   "identifier": {
     "type": "domain",
     "value": "example.org"
@@ -464,19 +478,26 @@ Link: <https://example.com/acme/new-cert>;rel="next"
 
   "key": { /* JWK from JWS header */ },
 
-  "challenges": {
-    "simpleHttps": {
+  "challenges": [
+    {
+      "type": "simpleHttps",
+      "uri": "https://example.com/authz/asdf/0",
       "token": "IlirfxKKXAsHtmzK29Pj8A"
     },
-    "dns": {
+    {
+      "type": "dns",
+      "uri": "https://example.com/authz/asdf/1"
       "token": "DGyRejmCefe7v4NfDGDKfA"
     },
-    "recoveryToken": {}
+    {
+      "type": "recoveryToken",
+      "uri": "https://example.com/authz/asdf/2"
+    }
   },
 
   "combinations": [ 
-    ["simpleHttps", "recoveryToken"],
-    ["dns", "recoveryToken"]
+    [0, 2],
+    [1, 2]
   ]
 }
 
@@ -484,34 +505,29 @@ Link: <https://example.com/acme/new-cert>;rel="next"
 
 The client needs to respond with information to complete the challenges.  To do this, the client updates the authorization object received from the server by filling in any required information in the elements of the "challenges" dictionary.  For example, if the client wishes to complete the "simpleHttps" challenge, it needs to provide the "path" component.  (This is also the stage where the client should perform any actions required by the challenge.)
 
-The client sends these updates back to the server in the form of a JSON merge patch {{RFC7386}} to the authorization document, carried in a POST request to the authorization URI (not the new-authorization URI).  Using a patch allows the client to send information only for challenges it is responding to.  (It is also harmless to send the whole authorization document.)
+The client sends these updates back to the server in the form of a JSON object with the response fields required by the challenge type, carried in a POST request to the challenge URI (not authorization URI or the new-authorization URI).  This allows the client to send information only for challenges it is responding to.
+
+For example, if the client were to respond to the "simpleHttps" challenge in the above authorization, it would send the following request:
 
 ~~~~~~~~~~
 
-POST /acme/authz/asdf HTTP/1.1
+POST /acme/authz/asdf/0 HTTP/1.1
 Host: example.com
 
 {
-  "challenges": {
-    "simpleHttps": {
-      "path": "Hf5GrX4Q7EBax9hc2jJnfw"
-    },
-    "recoveryToken": {
-      "token": "23029d88d9e123e"
-    }
-  }
+  "path": "Hf5GrX4Q7EBax9hc2jJnfw"
 }
 /* Signed as JWS */
 
 ~~~~~~~~~~
 
-The server updates the authorization document by applying the patch.  Before applying the patch, however, the server MUST delete any fields in the patch besides "challenges" and "contact", since these are the only fields that the client may modify.  Similar constraints may need to be applied to individual challenges (e.g., not letting the client modify the "token" field in a "simpleHttps" challenge).
+The server updates the authorization document by updating its representation of the challenge with the response fields provided by the client.  The server MUST ignore any fields in the response object that are not specified as response fields for this type of challenge.  The server provides a 200 response including the updated challenge.
 
 Presumably, the client's responses provide the server with enough information to validate one or more challenges.  The server is said to "finalize" the authorization when it has completed all the validations it is going to complete, and assigns the authorization a status of "valid" or "invalid", corresponding to whether it considers the account key  authorized for the identifier.  If the final state is "valid", the server MUST add an "expires" field to the authorization.  When finalizing an authorization, the server MAY remove the "combinations" field (if present), remove any unfulfilled challenges, or add a "recoveryToken" field.
 
-Usually, the validation process will take some time, in which case the server MUST provide the updated pending authorization object in a 202 (Accepted) response and process the validations asynchronously.  The server MAY provide a Retry-After header in its 202 response to indicate how long it expects the validation to take.  If the server is able to finalize authorization immediately, it MUST return the authorization in a 200 (OK) response.
+Usually, the validation process will take some time, so the client will need to poll the authorization resource to see when it is finalized.  For challenges where the client can tell when the server has validated the challenge (e.g., by seeing an HTTP or DNS request from the server), the client SHOULD NOT begin polling until it has seen the validation request from the server.
 
-If the server's response to the client contains a pending authorization, it will need to periodically send a GET request to the authorization URI  until the authorization is returned with a "status" value of "valid" or "invalid", or until the client times out.
+To check on the status of an authorization, the client sends a GET request to the authorization URI, and the server responds with the current  authorization object.  To provide some degree of control over polling, the server MAY provide a Retry-After header field to indicate how long it expect to take in finalizing the response.
 
 ~~~~~~~~~~
 

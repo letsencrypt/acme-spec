@@ -1087,3 +1087,7 @@ TODO
 * CA needs to perform a very wide range of issuance policy enforcement and sanity-check steps
 * Parser safety (for JSON, JWK, ASN.1, and any other formats that can be parsed by the ACME server)
 
+
+# Acknowledgements
+
+This document draws on many concepts established by Eric Rescorla's "Automated Certificate Issuance Protocol" draft.  Martin Thomson provided helpful guidance in the use of HTTP.

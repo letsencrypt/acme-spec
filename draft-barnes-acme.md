@@ -139,7 +139,7 @@ ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON i
 Some HTTPS bodies in ACME are authenticated and integrity-protected by being encapsulated in a JSON Web Signature (JWS) object {{I-D.ietf-jose-json-web-signature}}.  ACME uses a profile of JWS, with the following restrictions:
 
 * The JWS MUST use the JSON or Flattened JSON Serialization
-* If the JWS is in the JSON Serialization, it MUST NOT include more than one signature in the "signatures" array.
+* If the JWS is in the JSON Serialization, it MUST NOT include more than one signature in the "signatures" array
 * The JWS Header MUST include "alg" and "jwk" fields
 
 

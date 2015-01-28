@@ -138,8 +138,10 @@ ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON i
 
 Some HTTPS bodies in ACME are authenticated and integrity-protected by being encapsulated in a JSON Web Signature (JWS) object {{I-D.ietf-jose-json-web-signature}}.  ACME uses a profile of JWS, with the following restrictions:
 
-* The JWS MUST use the Flattened JSON Serialization
+* The JWS MUST use the JSON or Flattened JSON Serialization
+* If the JWS is in the JSON Serialization, it MUST NOT include more than one signature in the "signatures" array.
 * The JWS Header MUST include "alg" and "jwk" fields
+
 
 # Protocol Overview
 
@@ -233,7 +235,7 @@ In this section, we describe the certificate management functions that ACME enab
 
 Each of these functions is accomplished by the client sending a sequence of HTTPS requests to the server, carrying JSON messages.  Each subsection below describes the message formats used by the function, and the order in which messages are sent.
 
-# Resources and Requests
+## Resources and Requests
 
 ACME is structured as a REST application with a few types of resources:
 
@@ -276,7 +278,8 @@ All ACME requests with a non-empty body MUST encapsulate the body in a JWS objec
 
 Note that this implies that GET requests are not authenticated.  Servers MUST NOT respond to GET requests for resources that might be considered sensitive.
 
-The following table illustrates a typical sequence of requests required to establish a new account with the server, prove control of an identifier, issue a certificate, and fetch an updated certificate some time after issuance:
+The following table illustrates a typical sequence of requests required to establish a new account with the server, prove control of an identifier, issue a certificate, and fetch an updated certificate some time after issuance.  The "->" is a mnemonic for
+ a Location header pointing to a created resource.
 
 | Action             | Request        | Response     |
 |:-------------------|:---------------|:-------------|
@@ -335,7 +338,10 @@ Host: example.com
 
 ~~~~~~~~~~
 
-The server then creates a registration object with the included contact information.  The "key" element of the registration is set to the public key used to verify the JWS (i.e., the "jwk" element of the JWS header).  The server also provides a random
+The server MUST ignore any values provided in the "key" or "recoveryToken" fields, as well as any other fields that it does not recognize.  If new fields are specified in the future, the specification of those fields MUST describe whether they may be
+provided by the client.
+
+The server creates a registration object with the included contact information.  The "key" element of the registration is set to the public key used to verify the JWS (i.e., the "jwk" element of the JWS header).  The server also provides a random
 recovery token.  The server returns this registration object in a 201 (Created) response, with the registration URI in a Location header field.  The server may also indicate its new-authorization URI using the "next" link relation.
 
 ~~~~~~~~~~
@@ -360,6 +366,8 @@ Link: <https://example.com/acme/new-authz>;rel="next"
 
 If the client wishes to update this information in the future, it sends a POST request with updated information to the registration URI.  The server MUST ignore any updates to the "key" or "recoveryToken" fields, and MUST verify that the request is signed
 with the private key corresponding to the "key" field of the request before updating the registration.
+
+Servers SHOULD NOT respond to GET requests for registration resources, since these requests not authenticated.
 
 
 ## Authorization Resources
@@ -428,7 +436,7 @@ The only type of identifier defined by this specification is a fully-qualified d
 
 ## Key Authorization
 
-The key authorization process establishes the authorization of an account key pair to manage certificates for a given identifier.  This process must assure the server of two things: First, that the client controls the private key of the key pair, and second, that the client holds the identifier in question.  This process may be repeated to associate multiple identifiers to a key pair (e.g., to request certificates with multiple identifiers), or to associate multiple key pairs with an identifier (e.g., for load balancing).
+The key authorization process establishes the authorization of an account key pair to manage certificates for a given identifier.  This process must assure the server of two things: First, that the client controls the private key of the key pair, and second, that the client holds the identifier in question.  This process may be repeated to associate multiple identifiers to a key pair (e.g., to request certificates with multiple identifiers), or to associate multiple key pairs with an identifier (e.g., to allow multiple entities to manage certificates).
 
 As illustrated by the figure in the overview section above, the authorization process proceeds in two phases.  The client first requests a new authorization, and then the server issues challenges that the client responds to.
 

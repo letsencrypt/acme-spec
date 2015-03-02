@@ -1041,6 +1041,42 @@ type (required, string):
 
 To validate a DNS challenge, the server queries for TXT records under the validation domain name.  If it receives a record whose contents match the token in the challenge, then the validation succeeds.  Otherwise, the validation fails.
 
+## Subscriber Agreement / Terms of Use
+
+Some CAs require an applicant for a certificate to agree to a "subscriber agreement" or "terms of use".  In ACME, this requirement is can be expressed using the "agreement" challenge.  The challenge message includes a link to the agreement, in human-readable form.
+
+type (required, string):
+: The string "agreement"
+
+href (required, string):
+: An HTTP or HTTPS URI from which the agreement can be fetched, in human-readable form.
+
+~~~~~~~~~~
+
+{
+  "type": "dns",
+  "href": "https://example.com/acme/terms/"
+}
+
+~~~~~~~~~~
+
+If the user agrees to the referenced agreement, the client indicates its agreement in its response to the challenge.
+
+type (required, string):
+: The string "dns"
+
+agreed (required, boolean):
+: This value is set to "true" to indicate agreement, and "false" otherwise.
+
+~~~~~~~~~~
+
+{
+  "type": "agreement",
+  "agreed": true
+}
+
+~~~~~~~~~~
+
 
 ## Other possibilities
 

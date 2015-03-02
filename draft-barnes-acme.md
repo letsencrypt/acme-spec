@@ -1054,7 +1054,7 @@ href (required, string):
 ~~~~~~~~~~
 
 {
-  "type": "dns",
+  "type": "agreement",
   "href": "https://example.com/acme/terms/"
 }
 

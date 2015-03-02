@@ -1063,7 +1063,7 @@ href (required, string):
 If the user agrees to the referenced agreement, the client indicates its agreement in its response to the challenge.
 
 type (required, string):
-: The string "dns"
+: The string "agreement"
 
 agreed (required, boolean):
 : This value is set to "true" to indicate agreement, and "false" otherwise.

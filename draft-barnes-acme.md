@@ -321,6 +321,9 @@ contact (optional, array of string):
 recoveryToken (optional, string):
 : An opaque token that the client can present to demonstrate that it participated in a prior authorization transaction.
 
+agreement (optional, string):
+: A URI referring to a subscriber agreement or terms of service provided by the server (see below).  Including this field indicates the client's agreement with these terms.
+
 A client creates a new account with the server by sending a POST request to the server's new-registration URI.  The body of the request is a registration object containing only the "contact" field.
 
 ~~~~~~~~~~
@@ -344,12 +347,16 @@ provided by the client.
 The server creates a registration object with the included contact information.  The "key" element of the registration is set to the public key used to verify the JWS (i.e., the "jwk" element of the JWS header).  The server also provides a random
 recovery token.  The server returns this registration object in a 201 (Created) response, with the registration URI in a Location header field.  The server may also indicate its new-authorization URI using the "next" link relation.
 
+If the server wishes to present the client with terms under which the ACME service is to be used, it may indicate the URI where such terms can be accessed in a Link header with link relation "terms-of-service".  As noted above, the client may indicate its
+agreement with these terms by updating its registration to include the "agreement" field, with the terms URI as its value.
+
 ~~~~~~~~~~
 
 HTTP/1.1 201 Created
 Content-Type: application/json
 Location: https://example.com/reg/asdf
 Link: <https://example.com/acme/new-authz>;rel="next"
+Link: <https://example.com/acme/terms>;rel="terms-of-service"
 
 {
   "key": { /* JWK from JWS header */ },

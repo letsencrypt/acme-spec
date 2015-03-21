@@ -424,13 +424,15 @@ The only type of identifier defined by this specification is a fully-qualified d
   "key": { /* JWK */ },
 
   "challenges": [
-    "simpleHttps": {
+    {
+      "type": "simpleHttps",
       "status": "valid",
       "validated": "2014-12-01T12:05Z",
       "token": "IlirfxKKXAsHtmzK29Pj8A"
       "path": "Hf5GrX4Q7EBax9hc2jJnfw"
     },
-    "recoveryToken": {
+    {
+      "type": "recoveryToken",
       "status": "valid",
       "validated": "2014-12-01T12:07Z",
       "token": "23029d88d9e123e"
@@ -579,7 +581,7 @@ HTTP/1.1 200 OK
       "validated": "2014-12-01T12:07Z",
       "token": "23029d88d9e123e"
     }
-  ],
+  ]
 }
 
 ~~~~~~~~~~

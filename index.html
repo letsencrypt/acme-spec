@@ -372,7 +372,7 @@
 	  }
   /*]]>*/
   </style>
-<style type="text/css">
+  <style type="text/css">
 @viewport {
   zoom: 1.0;
   width: extend-to-zoom;
@@ -450,7 +450,7 @@ ul.toc, ul.toc ul {
 ul.toc a:first-child { 
   display: inline-block; 
   min-width: 1.2em;
-}</style>
+}  </style>
 
   <link href="#rfc.toc" rel="Contents"/>
 <link href="#rfc.section.1" rel="Chapter" title="1 Introduction"/>
@@ -458,12 +458,15 @@ ul.toc a:first-child {
 <link href="#rfc.section.3" rel="Chapter" title="3 Terminology"/>
 <link href="#rfc.section.4" rel="Chapter" title="4 Protocol Overview"/>
 <link href="#rfc.section.5" rel="Chapter" title="5 Certificate Management"/>
-<link href="#rfc.section.5.1" rel="Chapter" title="5.1 General Request/Response Lifecycle"/>
-<link href="#rfc.section.5.2" rel="Chapter" title="5.2 Signatures"/>
-<link href="#rfc.section.5.3" rel="Chapter" title="5.3 Key Authorization"/>
-<link href="#rfc.section.5.3.1" rel="Chapter" title="5.3.1 Recovery Tokens"/>
-<link href="#rfc.section.5.4" rel="Chapter" title="5.4 Certificate Issuance"/>
-<link href="#rfc.section.5.5" rel="Chapter" title="5.5 Certificate Revocation"/>
+<link href="#rfc.section.5.1" rel="Chapter" title="5.1 Resources and Requests"/>
+<link href="#rfc.section.5.2" rel="Chapter" title="5.2 Errors"/>
+<link href="#rfc.section.5.3" rel="Chapter" title="5.3 Registration"/>
+<link href="#rfc.section.5.4" rel="Chapter" title="5.4 Authorization Resources"/>
+<link href="#rfc.section.5.5" rel="Chapter" title="5.5 Key Authorization"/>
+<link href="#rfc.section.5.5.1" rel="Chapter" title="5.5.1 Recovery Tokens"/>
+<link href="#rfc.section.5.6" rel="Chapter" title="5.6 Certificate Issuance"/>
+<link href="#rfc.section.5.7" rel="Chapter" title="5.7 Certificate Refresh"/>
+<link href="#rfc.section.5.8" rel="Chapter" title="5.8 Certificate Revocation"/>
 <link href="#rfc.section.6" rel="Chapter" title="6 Identifier Validation Challenges"/>
 <link href="#rfc.section.6.1" rel="Chapter" title="6.1 Simple HTTPS"/>
 <link href="#rfc.section.6.2" rel="Chapter" title="6.2 Domain Validation with Server Name Indication"/>
@@ -474,17 +477,18 @@ ul.toc a:first-child {
 <link href="#rfc.section.6.7" rel="Chapter" title="6.7 Other possibilities"/>
 <link href="#rfc.section.7" rel="Chapter" title="7 IANA Considerations"/>
 <link href="#rfc.section.8" rel="Chapter" title="8 Security Considerations"/>
-<link href="#rfc.references" rel="Chapter" title="9 References"/>
-<link href="#rfc.references.1" rel="Chapter" title="9.1 Normative References"/>
-<link href="#rfc.references.2" rel="Chapter" title="9.2 Informative References"/>
+<link href="#rfc.section.9" rel="Chapter" title="9 Acknowledgements"/>
+<link href="#rfc.references" rel="Chapter" title="10 References"/>
+<link href="#rfc.references.1" rel="Chapter" title="10.1 Normative References"/>
+<link href="#rfc.references.2" rel="Chapter" title="10.2 Informative References"/>
 <link href="#rfc.authors" rel="Chapter"/>
 
 
-  <meta name="generator" content="xml2rfc version 2.4.8 - http://tools.ietf.org/tools/xml2rfc" />
+  <meta name="generator" content="xml2rfc version 2.4.10 - http://tools.ietf.org/tools/xml2rfc" />
   <link rel="schema.dct" href="http://purl.org/dc/terms/" />
 
-  <meta name="dct.creator" content="Barnes, R., Rescorla, E., Eckersley, P., Schoen, S., Halderman, A., and J. Kasten" />
-  <meta name="dct.identifier" content="urn:ietf:id:draft-barnes-acme-00" />
+  <meta name="dct.creator" content="Barnes, R., Eckersley, P., Schoen, S., Halderman, A., and J. Kasten" />
+  <meta name="dct.identifier" content="urn:ietf:id:draft-barnes-acme-02" />
   <meta name="dct.issued" scheme="ISO8601" content="2014-9-01" />
   <meta name="dct.abstract" content="Certificates in the Web&#8217;s X.509 PKI (PKIX) are used for a number of purposes, the most significant of which is the authentication of domain names.  Thus, certificate authorities in the Web PKI are trusted to verify that an applicant for a certificate legitimately represents the domain name(s) in the certificate.  Today, this verification is done through a collection of ad hoc mechanisms.  This document describes a protocol that a certificate authority (CA) and an applicant can use to automate the process of verification and certificate issuance.  The protocol also provides facilities for other certificate management functions, such as certificate revocation." />
   <meta name="description" content="Certificates in the Web&#8217;s X.509 PKI (PKIX) are used for a number of purposes, the most significant of which is the authentication of domain names.  Thus, certificate authorities in the Web PKI are trusted to verify that an applicant for a certificate legitimately represents the domain name(s) in the certificate.  Today, this verification is done through a collection of ad hoc mechanisms.  This document describes a protocol that a certificate authority (CA) and an applicant can use to automate the process of verification and certificate issuance.  The protocol also provides facilities for other certificate management functions, such as certificate revocation." />
@@ -502,18 +506,14 @@ ul.toc a:first-child {
 </tr>
 <tr>
   <td class="left">Internet-Draft</td>
-  <td class="right">E. Rescorla</td>
-</tr>
-<tr>
-  <td class="left">Intended status: Standards Track</td>
   <td class="right">Mozilla</td>
 </tr>
 <tr>
-  <td class="left">Expires: March 5, 2015</td>
+  <td class="left">Intended status: Standards Track</td>
   <td class="right">P. Eckersley</td>
 </tr>
 <tr>
-  <td class="left"></td>
+  <td class="left">Expires: March 5, 2015</td>
   <td class="right">S. Schoen</td>
 </tr>
 <tr>
@@ -542,7 +542,7 @@ ul.toc a:first-child {
   </table>
 
   <p class="title">Automatic Certificate Management Environment (ACME)<br />
-  <span class="filename">draft-barnes-acme-00</span></p>
+  <span class="filename">draft-barnes-acme-02</span></p>
   
   <h1 id="rfc.abstract">
   <a href="#rfc.abstract">Abstract</a>
@@ -571,26 +571,30 @@ ul.toc a:first-child {
 <li>3.   <a href="#rfc.section.3">Terminology</a></li>
 <li>4.   <a href="#rfc.section.4">Protocol Overview</a></li>
 <li>5.   <a href="#rfc.section.5">Certificate Management</a></li>
-<li>5.1.   <a href="#rfc.section.5.1">General Request/Response Lifecycle</a></li>
-<li>5.2.   <a href="#rfc.section.5.2">Signatures</a></li>
-<li>5.3.   <a href="#rfc.section.5.3">Key Authorization</a></li>
-<li>5.3.1.   <a href="#rfc.section.5.3.1">Recovery Tokens</a></li>
-<li>5.4.   <a href="#rfc.section.5.4">Certificate Issuance</a></li>
-<li>5.5.   <a href="#rfc.section.5.5">Certificate Revocation</a></li>
-<li>6.   <a href="#rfc.section.6">Identifier Validation Challenges</a></li>
-<li>6.1.   <a href="#rfc.section.6.1">Simple HTTPS</a></li>
+<ul><li>5.1.   <a href="#rfc.section.5.1">Resources and Requests</a></li>
+<li>5.2.   <a href="#rfc.section.5.2">Errors</a></li>
+<li>5.3.   <a href="#rfc.section.5.3">Registration</a></li>
+<li>5.4.   <a href="#rfc.section.5.4">Authorization Resources</a></li>
+<li>5.5.   <a href="#rfc.section.5.5">Key Authorization</a></li>
+<ul><li>5.5.1.   <a href="#rfc.section.5.5.1">Recovery Tokens</a></li>
+</ul><li>5.6.   <a href="#rfc.section.5.6">Certificate Issuance</a></li>
+<li>5.7.   <a href="#rfc.section.5.7">Certificate Refresh</a></li>
+<li>5.8.   <a href="#rfc.section.5.8">Certificate Revocation</a></li>
+</ul><li>6.   <a href="#rfc.section.6">Identifier Validation Challenges</a></li>
+<ul><li>6.1.   <a href="#rfc.section.6.1">Simple HTTPS</a></li>
 <li>6.2.   <a href="#rfc.section.6.2">Domain Validation with Server Name Indication</a></li>
 <li>6.3.   <a href="#rfc.section.6.3">Recovery Contact</a></li>
 <li>6.4.   <a href="#rfc.section.6.4">Recovery Token</a></li>
 <li>6.5.   <a href="#rfc.section.6.5">Proof of Possession of a Prior Key</a></li>
 <li>6.6.   <a href="#rfc.section.6.6">DNS</a></li>
 <li>6.7.   <a href="#rfc.section.6.7">Other possibilities</a></li>
-<li>7.   <a href="#rfc.section.7">IANA Considerations</a></li>
+</ul><li>7.   <a href="#rfc.section.7">IANA Considerations</a></li>
 <li>8.   <a href="#rfc.section.8">Security Considerations</a></li>
-<li>9.   <a href="#rfc.references">References</a></li>
-<li>9.1.   <a href="#rfc.references.1">Normative References</a></li>
-<li>9.2.   <a href="#rfc.references.2">Informative References</a></li>
-<li><a href="#rfc.authors">Authors' Addresses</a></li>
+<li>9.   <a href="#rfc.section.9">Acknowledgements</a></li>
+<li>10.   <a href="#rfc.references">References</a></li>
+<ul><li>10.1.   <a href="#rfc.references.1">Normative References</a></li>
+<li>10.2.   <a href="#rfc.references.2">Informative References</a></li>
+</ul><li><a href="#rfc.authors">Authors' Addresses</a></li>
 
 
   </ul>
@@ -634,105 +638,167 @@ ul.toc a:first-child {
 <dl>
   <dt>Subject Public Key:</dt>
   <dd style="margin-left: 8">A public key to be included in a certificate.</dd>
-  <dt>Authorized Key Pair:</dt>
+  <dt>Account Key Pair:</dt>
   <dd style="margin-left: 8">A key pair for which the ACME server considers the holder of the private key authorized to manage certificates for a given identifier.  The same key pair may be authorized for multiple identifiers.</dd>
   <dt>Recovery Token:</dt>
-  <dd style="margin-left: 8">A secret value that can be used to demonstrate prior authorization for an identifier, in a situation where all Subject Private Keys and Authorized Keys are lost.</dd>
+  <dd style="margin-left: 8">A secret value that can be used to demonstrate prior authorization for an identifier, in a situation where all Subject Private Keys and Account Keys are lost.</dd>
 </dl>
 <p id="rfc.section.3.p.6">ACME messaging is based on HTTPS <a href="#RFC2818">[RFC2818]</a> and JSON <a href="#RFC7159">[RFC7159]</a>.  Since JSON is a text-based format, binary fields are Base64-encoded.  For Base64 encoding, we use the variant defined in <a href="#I-D.ietf-jose-json-web-signature">[I-D.ietf-jose-json-web-signature]</a>.  The important features of this encoding are (1) that it uses the URL-safe character set, and (2) that &#8220;=&#8221; padding characters are stripped.</p>
+<p id="rfc.section.3.p.7">Some HTTPS bodies in ACME are authenticated and integrity-protected by being encapsulated in a JSON Web Signature (JWS) object <a href="#I-D.ietf-jose-json-web-signature">[I-D.ietf-jose-json-web-signature]</a>.  ACME uses a profile of JWS, with the following restrictions:</p>
+<p/>
+
+<ul>
+  <li>The JWS MUST use the JSON or Flattened JSON Serialization</li>
+  <li>If the JWS is in the JSON Serialization, it MUST NOT include more than one signature in the &#8220;signatures&#8221; array</li>
+  <li>The JWS Header MUST include &#8220;alg&#8221; and &#8220;jwk&#8221; fields</li>
+</ul>
 <h1 id="rfc.section.4"><a href="#rfc.section.4">4.</a> <a href="#protocol-overview" id="protocol-overview">Protocol Overview</a></h1>
-<p id="rfc.section.4.p.1">ACME allows a client to request certificate management actions using a set of JSON messages carried over HTTPS.  It is a prerequisite for this process that the client be configured with the HTTPS URI for the server.  ACME messages MUST NOT be carried over &#8220;plain&#8221; HTTP, without HTTPS semantics.</p>
-<p id="rfc.section.4.p.2">In some ways, ACME functions much like a traditional CA, in which a user creates an account, adds domains to that account (proving control of the domains), and requests certificate issuance for those domains while logged in to the account.  In ACME, the account is represented by a key pair.  The &#8220;add a domain&#8221; function is accomplished by authorizing the key pair for a given domain, and certificate issuance is authorized by a signature with the key pair.</p>
-<p id="rfc.section.4.p.3">The first phase of ACME is for the client to establish an authorized key pair with the server for the identifier(s) it wishes to include in the certificate.  To do this, the client must demonstrate to the server both (1) that it holds the private key of the key pair being authorized, and (2) that it has authority over the identifier being claimed.</p>
-<p id="rfc.section.4.p.4">In the key authorization process, then, the server presents the client with two tests.  First, a task to demonstrate that the client holds the private key of key pair being authorized, and second, a set of challenges that the client can perform to demonstrate its authority over the domain in question.</p>
-<p id="rfc.section.4.p.5">Because there are many different ways to validate possession of different types of identifiers, the server will choose from an extensible set of challenges that are appropriate for the identifier being claimed.  For example, if the client requests a domain name, the server might challenge the client to provision a record in the DNS under that name, or to provision a file on a web server reference by an A or AAAA record under that name.</p>
-<p id="rfc.section.4.p.6">After the client has prepared responses to the server&#8217;s challenges, it sends a second request with its responses to these challenges.  The server&#8217;s response indicates whether the request for authorization has succeeded or failed.  If the authorization request succeeded, the server also provides a recovery token, which the client can use in a later authorization transaction to show that it is the same as the entity that participated in this authorization.</p>
+<p id="rfc.section.4.p.1">ACME allows a client to request certificate management actions using a set of JSON messages carried over HTTPS.   In some ways, ACME functions much like a traditional CA, in which a user creates an account, adds identifiers to that account (proving control of the domains), and requests certificate issuance for those domains while logged in to the account.</p>
+<p id="rfc.section.4.p.2">In ACME, the account is represented by an account key pair.  The &#8220;add a domain&#8221; function is accomplished by authorizing the key pair for a given domain.  Certificate issuance and revocation are authorized by a signature with the key pair.</p>
+<p id="rfc.section.4.p.3">The first phase of ACME is for the client to register with the ACME server.  The client generates an asymmetric key pair and associates this key pair with a set of contact information by signing the contact information.  The server acknowledges the registration by replying with a recovery token that the client can provide later to associate a new account key pair in the event that the first account key pair is lost.</p>
 <pre>
       Client                                                  Server
 
-      Desired identifier            -------&gt;
+      Contact Information
+      Signature                     -------&gt;
 
-                                                           PoP nonce
-                                                          Session ID
-                                    &lt;-------   Identifier Challenges
-
-      Public key
-      Session ID
-      PoP nonce
-      PoP signature
-      [Contact information]
-      Responses to challenges       -------&gt;
-
-                                    &lt;-------          Recovery token
+                                    &lt;-------          Recovery Token
 
 </pre>
-<p id="rfc.section.4.p.7">Once the client has established an authorized key pair for an identifier, it can use the key pair to authorize the issuance of certificates for the identifier.  To do this, the client sends a PKCS#10 Certificate Signing Request (CSR) to the server (indicating the identifier(s) to be included in the issued certificate), and a signature over the CSR by the private key of the authorized key pair.</p>
-<p id="rfc.section.4.p.8">If the server agrees to issue the certificate, then it creates the certificate and provides it in its response.  The server may also provide a URI that can be used to renew the certificate, if it allows renewal without re-validation.</p>
+<p id="rfc.section.4.p.4">Before a client can issue certificates, it must establish an authorization with the server for an account key pair to act for the identifier(s) that it wishes to include in the certificate.  To do this, the client must demonstrate to the server both (1) that it holds the private key of the account key pair, and (2) that it has authority over the identifier being claimed.</p>
+<p id="rfc.section.4.p.5">Proof of possession of the account key is built into the ACME protocol.  All messages from the client to the server are signed by the client, and the server verifies them using the public key of the account key pair.</p>
+<p id="rfc.section.4.p.6">To verify that the client controls the identifier being claimed, the server issues the client a set of challenges.  Because there are many different ways to validate possession of different types of identifiers, the server will choose from an extensible set of challenges that are appropriate for the identifier being claimed.  The client responds with a set of responses that tell the server which challenges the client has completed.  The server then validates the challenges to check that the client has accomplished the challenge.</p>
+<p id="rfc.section.4.p.7">For example, if the client requests a domain name, the server might challenge the client to provision a record in the DNS under that name, or to provision a file on a web server referenced by an A or AAAA record under that name.  The server would then query the DNS for the record in question, or send an HTTP request for the file.  If the client provisioned the DNS or the web server as expected, then the server considers the client authorized for the domain name.</p>
+<pre>
+      Client                                                  Server
+
+      Identifier
+      Signature                     -------&gt;
+
+                                    &lt;-------              Challenges
+
+      Responses
+      Signature                     -------&gt;
+
+                                    &lt;-------       Updated Challenge
+
+      Poll                          -------&gt;
+
+                                    &lt;-------           Authorization
+
+</pre>
+<p id="rfc.section.4.p.8">Once the client has authorized an account key pair for an identifier, it can use the key pair to authorize the issuance of certificates for the identifier.  To do this, the client sends a PKCS#10 Certificate Signing Request (CSR) to the server (indicating the identifier(s) to be included in the issued certificate), a set of links to any required authorizations, and a signature over the CSR by the private key of the account key pair.</p>
+<p id="rfc.section.4.p.9">If the server agrees to issue the certificate, then it creates the certificate and provides it in its response.  The certificate is assigned a URI, which the client can use to fetch updated versions of the certificate.</p>
 <pre>
       Client                                                 Server
 
       CSR
-      Signature by auth'd key      --------&gt;
+      Authorization URI(s)
+      Signature                    --------&gt;
 
-                                                        Certificate
-                                   &lt;--------            Renewal URI
+                                   &lt;--------            Certificate
 
 </pre>
-<p id="rfc.section.4.p.9">To revoke a certificate, the client simply sends a revocation request, signed with an authorized key pair, and the server indicates whether the request has succeeded.</p>
+<p id="rfc.section.4.p.10">To revoke a certificate, the client simply sends a revocation request, signed with an authorized key pair, and the server indicates whether the request has succeeded.</p>
 <pre>
       Client                                                 Server
 
       Revocation request
-      Signature by auth'd key      --------&gt;
+      Signature                    --------&gt;
 
                                    &lt;--------                 Result
 
 </pre>
-<p id="rfc.section.4.p.10">Note that while ACME is defined with enough flexibility to handle different types of identifiers in principle, the primary use case addressed by this document is the case where domain names are used as identifiers.  For example, all of the identifier validation challenges described in Section <a href="#identifier-validation-challenges">Section 6</a> below address validation of domain names.  The use of ACME for other protocols will require further specification, in order to describe how these identifiers are encoded in the protocol, and what types of validation challenges the server might require.</p>
+<p id="rfc.section.4.p.11">Note that while ACME is defined with enough flexibility to handle different types of identifiers in principle, the primary use case addressed by this document is the case where domain names are used as identifiers.  For example, all of the identifier validation challenges described in Section {identifier-validation-challenges} below address validation of domain names.  The use of ACME for other protocols will require further specification, in order to describe how these identifiers are encoded in the protocol, and what types of validation challenges the server might require.</p>
 <h1 id="rfc.section.5"><a href="#rfc.section.5">5.</a> <a href="#certificate-management" id="certificate-management">Certificate Management</a></h1>
-<p id="rfc.section.5.p.1">In this section, we describe the four certificate management functions that ACME enables:</p>
+<p id="rfc.section.5.p.1">In this section, we describe the certificate management functions that ACME enables:</p>
 <p/>
 
 <ul>
+  <li>Registration</li>
   <li>Key Authorization</li>
   <li>Certificate Issuance</li>
   <li>Certificate Revocation</li>
 </ul>
 <p id="rfc.section.5.p.3">Each of these functions is accomplished by the client sending a sequence of HTTPS requests to the server, carrying JSON messages.  Each subsection below describes the message formats used by the function, and the order in which messages are sent.</p>
-<p id="rfc.section.5.p.4">All ACME messages share some common structure.  At base, each ACME message is a JSON dictionary, and MUST include a &#8220;type&#8221; field to indicate which type of message it is.</p>
+<h1 id="rfc.section.5.1"><a href="#rfc.section.5.1">5.1.</a> <a href="#resources-and-requests" id="resources-and-requests">Resources and Requests</a></h1>
+<p id="rfc.section.5.1.p.1">ACME is structured as a REST application with a few types of resources:</p>
 <p/>
 
-<dl>
-  <dt>type (required, string):</dt>
-  <dd style="margin-left: 8">The type of ACME message encoded in this JSON dictionary.</dd>
-</dl>
-<p id="rfc.section.5.p.6">All other fields in an ACME message are defined by the type, as described below.  Unrecognized fields in ACME messages MUST be ignored.  Creators of ACME messages MUST NOT create messages with duplicate fields.  Parsers of ACME messages MAY be tolerant of duplicate fields, but the behavior of the protocol in this case is undefined.</p>
-<h1 id="rfc.section.5.1"><a href="#rfc.section.5.1">5.1.</a> <a href="#general-requestresponse-lifecycle" id="general-requestresponse-lifecycle">General Request/Response Lifecycle</a></h1>
-<p id="rfc.section.5.1.p.1">Client-server interactions in ACME are logically request/response transactions, corresponding directly to HTTPS requests and responses.  The client sends a request message of a particular type, and the server sends response of a corresponding type.</p>
-<p id="rfc.section.5.1.p.2">All requests for a given ACME server are sent to the same HTTPS URI.  It is assumed that clients are configured with this URI out of band.  ACME requests MUST use the POST method, and since they carry JSON payloads, SHOULD set the Content-Type header field to &#8220;application/json&#8221;.  ACME responses MUST be carried in HTTP responses with the status code 200.  ACME clients SHOULD follow HTTP redirects (301 or 302 responses), in case an ACME server is relocated.</p>
-<p id="rfc.section.5.1.p.3">ACME provides three general message types &#8211; &#8220;error&#8221;, &#8220;defer&#8221;, and &#8220;statusRequest&#8221; &#8211; to cover cases where the server is not able to return a successful result immediately.  If there is a problem that prevents the request from succeeding, then the server sends an error message.  The fields in an error message are as follows:</p>
-<p/>
-
-<dl>
-  <dt>type (required, string):</dt>
-  <dd style="margin-left: 8">&#8220;error&#8221;</dd>
-  <dt>error (required, string):</dt>
-  <dd style="margin-left: 8">A token from the below list indicating what type of error occurred.</dd>
-  <dt>message (optional, string):</dt>
-  <dd style="margin-left: 8">A human-readable string describing the error.</dd>
-  <dt>moreInfo (optional, string):</dt>
-  <dd style="margin-left: 8">A URL of a resource containing additional human-readable documentation about the error, such as advice on how to revise the request or adjust the client configuration to allow the request to succeed, or documentation of CA issuance policies that describe why the request cannot be fulfilled.</dd>
-</dl>
+<ul>
+  <li>Registration resources, representing information about an account key</li>
+  <li>Authorization resources, representing an account key&#8217;s authorization to act for an identifier</li>
+  <li>Challenge resources, representing a challenge to prove control of an identifier</li>
+  <li>Certificate resources, representing issued certificates</li>
+  <li>A &#8220;new-registration&#8221; resource</li>
+  <li>A &#8220;new-authorization&#8221; resource</li>
+  <li>A &#8220;new-certificate&#8221; resource</li>
+</ul>
+<p id="rfc.section.5.1.p.3">In general, the intent is for authorization and certificate resources to contain only public information, so that CAs may publish these resources to document what certificates have been issued and how they were authorized.  Non-public information, such as contact information, is stored in registration resources.</p>
+<p id="rfc.section.5.1.p.4">In order to accomplish ACME transactions, a client needs to have the server&#8217;s new-registration, new-authorization, and new-certificate URIs; the remaining URIs are provided to the client as a result of requests to these URIs.  To simplify configuration, ACME uses the &#8220;next&#8221; link relation to indicate URI to contact for the next step in processing: From registration to authorization, and from authorization to certificate issuance.  In this way, a client need only be configured with the registration URI.</p>
+<p id="rfc.section.5.1.p.5">The &#8220;up&#8221; link relation is used with challenge resources to indicate the authorization resource to which a challenge belongs.  It is also used from certificate resources to indicate a resource from which the client may fetch a chain of CA certificates that could be used to validate the certificate in the original resource.</p>
+<p id="rfc.section.5.1.p.6">The following diagram illustrates the relations between resources on an ACME server.  The solid lines indicate link relations, and the dotted lines correspond to relationships expressed in other ways, e.g., the Location header in a 201 (Created) response.</p>
 <pre>
-{
-  "type": "error",
-  "error": "badCSR",
-  "message": "RSA keys must be at least 2048 bits long",
-  "moreInfo": "https://ca.example.com/documentation/csr-requirements"
-}
+             "next"              "next"
+    new-reg ---+----&gt; new-authz ---+----&gt; new-cert    cert-chain
+       .       |          .        |         .            ^
+       .       |          .        |         .            | "up"
+       V       |          V        |         V            |
+      reg* ----+        authz -----+       cert-----------+
+                         . ^
+                         . | "up"
+                         V |
+                       challenge
 
 </pre>
-<p id="rfc.section.5.1.p.5">The possible error codes are as follows:</p>
+<p id="rfc.section.5.1.p.7">The remainder of this section provides the details of how these resources are structured and how the ACME protocol makes use of them.</p>
+<p id="rfc.section.5.1.p.8">All ACME requests with a non-empty body MUST encapsulate the body in a JWS object, signed using the account key pair.  The server MUST verify the JWS before processing the request.  (For readability, however, the examples below omit this encapsulation.)  Encapsulating request bodies in JWS provides a simple authentication of requests by way of key continuity.</p>
+<p id="rfc.section.5.1.p.9">Note that this implies that GET requests are not authenticated.  Servers MUST NOT respond to GET requests for resources that might be considered sensitive.</p>
+<p id="rfc.section.5.1.p.10">The following table illustrates a typical sequence of requests required to establish a new account with the server, prove control of an identifier, issue a certificate, and fetch an updated certificate some time after issuance.  The &#8220;-&gt;&#8221; is a mnemonic for a Location header pointing to a created resource.</p>
+<table cellpadding="3" cellspacing="0" class="tt full center">
+  <thead>
+    <tr>
+      <th class="left">Action</th>
+      <th class="left">Request</th>
+      <th class="left">Response</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="left">Register</td>
+      <td class="left">POST new-reg</td>
+      <td class="left">201 -&gt; reg</td>
+    </tr>
+    <tr>
+      <td class="left">Request challenges</td>
+      <td class="left">POST new-authz</td>
+      <td class="left">201 -&gt; authz</td>
+    </tr>
+    <tr>
+      <td class="left">Answer challenges</td>
+      <td class="left">POST challenge</td>
+      <td class="left">200</td>
+    </tr>
+    <tr>
+      <td class="left">Poll for status</td>
+      <td class="left">GET  authz</td>
+      <td class="left">200</td>
+    </tr>
+    <tr>
+      <td class="left">Request issuance</td>
+      <td class="left">POST new-cert</td>
+      <td class="left">201 -&gt; cert</td>
+    </tr>
+    <tr>
+      <td class="left">Check for new cert</td>
+      <td class="left">GET  cert</td>
+      <td class="left">200</td>
+    </tr>
+  </tbody>
+</table>
+<h1 id="rfc.section.5.2"><a href="#rfc.section.5.2">5.2.</a> <a href="#errors" id="errors">Errors</a></h1>
+<p id="rfc.section.5.2.p.1">Errors can be reported in ACME both at the HTTP layer and within ACME payloads.  ACME servers can return responses with an HTTP error response code (4XX or 5XX).  For example:  If the client submits a request using a method not allowed in this document, then the server MAY return status code 405 (Method Not Allowed).</p>
+<p id="rfc.section.5.2.p.2">When the server responds with an error status, it SHOULD provide additional information using problem document <a href="#I-D.ietf-appsawg-http-problem">[I-D.ietf-appsawg-http-problem]</a>.  The &#8220;type&#8221;, &#8220;detail&#8221;, and &#8220;instance&#8221; fields MUST be populated.  To facilitate automatic response to errors, this document defines the following standard tokens for use in the &#8220;type&#8221; field (within the &#8220;urn:acme:&#8221; namespace):</p>
 <table cellpadding="3" cellspacing="0" class="tt full center">
   <thead>
     <tr>
@@ -754,362 +820,327 @@ ul.toc a:first-child {
       <td class="left">The server experienced an internal error</td>
     </tr>
     <tr>
-      <td class="left">notSupported</td>
-      <td class="left">The request type is not supported</td>
-    </tr>
-    <tr>
-      <td class="left">unknown</td>
-      <td class="left">The server does not recognize an ID/token in the request</td>
-    </tr>
-    <tr>
       <td class="left">badCSR</td>
       <td class="left">The CSR is unacceptable (e.g., due to a short key)</td>
     </tr>
   </tbody>
 </table>
-<p id="rfc.section.5.1.p.6">The server may also defer providing a response by sending a defer message.  For example, in the key authorization process, the server may need additional time to validate the client&#8217;s responses to its challenges.  Or in the issuance process, there may be some delay due to batch signing.  The fields in a defer message are as follows:</p>
+<p id="rfc.section.5.2.p.3">Authorization and challenge objects can also contain error information to indicate why the server was unable to validate authorization.</p>
+<p id="rfc.section.5.2.p.4">TODO: Flesh out errors and syntax for them</p>
+<h1 id="rfc.section.5.3"><a href="#rfc.section.5.3">5.3.</a> <a href="#registration" id="registration">Registration</a></h1>
+<p id="rfc.section.5.3.p.1">An ACME registration resource represents a set of metadata associated to an account key pair, most importantly contact information and a recovery token.  Registration resources have the following structure:</p>
 <p/>
 
 <dl>
-  <dt>type (required, string):</dt>
-  <dd style="margin-left: 8">&#8220;defer&#8221;</dd>
-  <dt>token (required, string):</dt>
-  <dd style="margin-left: 8">An opaque value that the client uses to check on the status of the request (using a statusRequest message).</dd>
-  <dt>interval (optional, number):</dt>
-  <dd style="margin-left: 8">The amount of time, in seconds, that the client should wait before checking on the status of the request.  (This is a recommendation only, and clients SHOULD enforce minimum and maximum deferral times.)</dd>
-  <dt>message (optional, string):</dt>
-  <dd style="margin-left: 8">A human-readable string describing the reason for the deferral.</dd>
+  <dt>key (required, dictionary):</dt>
+  <dd style="margin-left: 8">The public key of the account key pair, encoded as a JSON Web Key object <a href="#I-D.ietf-jose-json-web-key">[I-D.ietf-jose-json-web-key]</a>.</dd>
+  <dt>contact (optional, array of string):</dt>
+  <dd style="margin-left: 8">An array of URIs that the server can use to contact the client for issues related to this authorization. For example, the server may wish to notify the client about server-initiated revocation, or check with the client on future authorizations (see the &#8220;recoveryContact&#8221; challenge type).</dd>
+  <dt>recoveryToken (optional, string):</dt>
+  <dd style="margin-left: 8">An opaque token that the client can present to demonstrate that it participated in a prior authorization transaction.</dd>
+  <dt>agreement (optional, string):</dt>
+  <dd style="margin-left: 8">A URI referring to a subscriber agreement or terms of service provided by the server (see below).  Including this field indicates the client&#8217;s agreement with these terms.</dd>
 </dl>
-<p id="rfc.section.5.1.p.8">For example, a deferral due to batch signing might be indicated with a message of the following form:</p>
+<p id="rfc.section.5.3.p.3">A client creates a new account with the server by sending a POST request to the server&#8217;s new-registration URI.  The body of the request is a registration object containing only the &#8220;contact&#8221; field.</p>
 <pre>
+POST /acme/new-registration HTTP/1.1
+Host: example.com
+
 {
-  "type": "defer",
-  "token": "O7-s9MNq1siZHlgrMzi9_A",
-  "interval": 60,
-  "message": "Warming up the HSM"
+  "contact": [
+    "mailto:cert-admin@example.com",
+    "tel:+12025551212"
+  ],
+}
+/* Signed as JWS */
+
+</pre>
+<p id="rfc.section.5.3.p.4">The server MUST ignore any values provided in the &#8220;key&#8221; or &#8220;recoveryToken&#8221; fields, as well as any other fields that it does not recognize.  If new fields are specified in the future, the specification of those fields MUST describe whether they may be provided by the client.</p>
+<p id="rfc.section.5.3.p.5">The server creates a registration object with the included contact information.  The &#8220;key&#8221; element of the registration is set to the public key used to verify the JWS (i.e., the &#8220;jwk&#8221; element of the JWS header).  The server also provides a random recovery token.  The server returns this registration object in a 201 (Created) response, with the registration URI in a Location header field.  The server may also indicate its new-authorization URI using the &#8220;next&#8221; link relation.</p>
+<p id="rfc.section.5.3.p.6">If the server wishes to present the client with terms under which the ACME service is to be used, it may indicate the URI where such terms can be accessed in a Link header with link relation &#8220;terms-of-service&#8221;.  As noted above, the client may indicate its agreement with these terms by updating its registration to include the &#8220;agreement&#8221; field, with the terms URI as its value.</p>
+<pre>
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: https://example.com/reg/asdf
+Link: &lt;https://example.com/acme/new-authz&gt;;rel="next"
+Link: &lt;https://example.com/acme/terms&gt;;rel="terms-of-service"
+
+{
+  "key": { /* JWK from JWS header */ },
+
+  "contact": [
+    "mailto:cert-admin@example.com",
+    "tel:+12025551212"
+  ],
+
+  "recoveryToken": "uV2Aph7-sghuCcFVmvsiZw"
 }
 
 </pre>
-<p id="rfc.section.5.1.p.9">When a client receives a defer message, it periodically sends a statusRequest message to the server, with the token provided in the defer message.</p>
+<p id="rfc.section.5.3.p.7">If the client wishes to update this information in the future, it sends a POST request with updated information to the registration URI.  The server MUST ignore any updates to the &#8220;key&#8221; or &#8220;recoveryToken&#8221; fields, and MUST verify that the request is signed with the private key corresponding to the &#8220;key&#8221; field of the request before updating the registration.</p>
+<p id="rfc.section.5.3.p.8">Servers SHOULD NOT respond to GET requests for registration resources as these requests are not authenticated.</p>
+<h1 id="rfc.section.5.4"><a href="#rfc.section.5.4">5.4.</a> <a href="#authorization-resources" id="authorization-resources">Authorization Resources</a></h1>
+<p id="rfc.section.5.4.p.1">An ACME authorization resource represents server&#8217;s authorization for an account key pair to represent an identifier.  In addition to a public key and identifier, an authorization includes several metadata fields, such as the status of the authorization (e.g., &#8220;pending&#8221;, &#8220;valid&#8221;, or &#8220;revoked&#8221;) and which challenges were used to validate possession of the identifier.</p>
+<p id="rfc.section.5.4.p.2">The structure of an ACME authorization resource is as follows:</p>
 <p/>
 
 <dl>
-  <dt>type (required, string):</dt>
-  <dd style="margin-left: 8">&#8220;statusRequest&#8221;</dd>
-  <dt>token (required, string):</dt>
-  <dd style="margin-left: 8">An opaque value that was provided in a defer message.</dd>
+  <dt>identifier (required, dictionary of string):</dt>
+  <dd style="margin-left: 8">The identifier that the account key is authorized to represent <dl><dt>type (required, string):</dt><dd style="margin-left: 8">The type of identifier.</dd><dt>value (required, string):</dt><dd style="margin-left: 8">The identifier itself.</dd></dl><p> </p></dd>
+  <dt>key (required, dictionary):</dt>
+  <dd style="margin-left: 8">The public key of the account key pair, encoded as a JSON Web Key object <a href="#I-D.ietf-jose-json-web-key">[I-D.ietf-jose-json-web-key]</a>.</dd>
+  <dt>status (optional, string):</dt>
+  <dd style="margin-left: 8">The status of this authorization.  Possible values are: &#8220;pending&#8221;, &#8220;valid&#8221;, and &#8220;invalid&#8221;.  If this field is missing, then the default value is &#8220;pending&#8221;.</dd>
+  <dt>expires (optional, string):</dt>
+  <dd style="margin-left: 8">The date after which the server will consider this authorization invalid, encoded in the format specified in RFC 3339 <a href="#RFC3339">[RFC3339]</a>.</dd>
+  <dt>challenges (required, dictionary):</dt>
+  <dd style="margin-left: 8">The challenges that the client needs to fulfill in order to prove possession of the identifier (for pending authorizations).  For final authorizations, the challenges that were used.  Each key in the dictionary is a type of challenge, and the value is a dictionary with parameters required to validate the challenge, as specified in Section {identifier-validation-challenges}.</dd>
+  <dt>combinations (optional, array of arrays of integers):</dt>
+  <dd style="margin-left: 8">A collection of sets of challenges, each of which would be sufficient to prove possession of the identifier. Clients complete a set of challenges that that covers at least one set in this array. Challenges are identified by their indices in the challenges array.  If no &#8220;combinations&#8221; element is included in an authorization object, the client completes all challenges.</dd>
 </dl>
+<p id="rfc.section.5.4.p.4">The only type of identifier defined by this specification is a fully-qualified domain name (type: &#8220;dns&#8221;).  The value of the identifier MUST be the ASCII representation of the domain name.</p>
 <pre>
 {
-  "type": "statusRequest",
-  "token": "O7-s9MNq1siZHlgrMzi9_A"
-}
+  "status": "valid",
+  "expires": "2015-03-01",
 
-</pre>
-<p id="rfc.section.5.1.p.11">If the server responds with another defer message, then the server still does not have a final response.  The client MUST ignore the &#8220;token&#8221; value in defer responses provided in responses to status requests, and continue polling with the original token.  Any non-defer response (error or success) is considered final, and the client MUST cease polling.</p>
-<p id="rfc.section.5.1.p.12">In summary, the client goes through the following state machine to perform an ACME transaction:</p>
-<pre>
-            START
-              |
-              V
-        RESPONSE_WAIT &lt;-----------+
-              |                   |
-   +----------+-----------+       |
-   |          |           |       |
-   V          V           V       |
-TIMEOUT   GOT_FINAL   GOT_DEFER --+
+  "identifier": {
+    "type": "dns",
+    "value": "example.org"
+  },
 
-</pre>
-<p id="rfc.section.5.1.p.13">The client begins by sending a request and awaiting the response.  If the response contains an ACME message of any type besides &#8220;defer&#8221;, then the request is completed, and if no response arrives, the request times out.  If a defer request arrives, then the client waits some time and sends a polling request, whose response is handled in the same way as the original request.</p>
-<p id="rfc.section.5.1.p.14">The following table summarizes the request and response types defined in this document.  If the server provides the client with a non-error response of a type that does not match the request message type, then the client MUST treat it as an error message with code &#8220;serverInternal&#8221;.</p>
-<table cellpadding="3" cellspacing="0" class="tt full center">
-  <thead>
-    <tr>
-      <th class="left">Request</th>
-      <th class="left">Response</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td class="left">challengeRequest</td>
-      <td class="left">challenge</td>
-    </tr>
-    <tr>
-      <td class="left">authorizationRequest</td>
-      <td class="left">authorization</td>
-    </tr>
-    <tr>
-      <td class="left">certificateRequest</td>
-      <td class="left">certificate</td>
-    </tr>
-    <tr>
-      <td class="left">revocationRequest</td>
-      <td class="left">revocation</td>
-    </tr>
-    <tr>
-      <td class="left">statusRequest</td>
-      <td class="left">(any)</td>
-    </tr>
-  </tbody>
-</table>
-<h1 id="rfc.section.5.2"><a href="#rfc.section.5.2">5.2.</a> <a href="#signatures" id="signatures">Signatures</a></h1>
-<p id="rfc.section.5.2.p.1">ACME uses a simple JSON-based structure for encoding signatures, based on the JSON Web Signature structure.  An ACME signature is a JSON object, with the following fields:</p>
-<p/>
+  "key": { /* JWK */ },
 
-<dl>
-  <dt>alg (required, string):</dt>
-  <dd style="margin-left: 8">A token indicating the cryptographic algorithm used to compute the signature <a href="#I-D.ietf-jose-json-web-algorithms">[I-D.ietf-jose-json-web-algorithms]</a>. (MAC algorithms such as &#8220;HS*&#8221; MUST NOT be used.)</dd>
-  <dt>sig (required, string):</dt>
-  <dd style="margin-left: 8">The signature, base64-encoded.</dd>
-  <dt>nonce (required, string):</dt>
-  <dd style="margin-left: 8">A signer-provided random nonce of at least 16 bytes, base64-encoded.  (For anti-replay.)</dd>
-  <dt>jwk (required, object):</dt>
-  <dd style="margin-left: 8">A JSON Web Key object describing the key used to verify the signature <a href="#I-D.ietf-jose-json-web-key">[I-D.ietf-jose-json-web-key]</a>.</dd>
-</dl>
-<p id="rfc.section.5.2.p.3">Each usage of a signature object must specify the content being signed.  To avoid replay risk, the input to the signature algorithm is the concatenation of the nonce with the content to be signed.</p>
-<pre>
-      signature-input = nonce || content
-
-</pre>
-<p id="rfc.section.5.2.p.4">A verifier computes the same input before verifying the signature.  Note that while an signature object contains all of the information required to verify the signature, the verifier must also check that the public key encoded in the JWK object is the correct key for a given context.</p>
-<h1 id="rfc.section.5.3"><a href="#rfc.section.5.3">5.3.</a> <a href="#key-authorization" id="key-authorization">Key Authorization</a></h1>
-<p id="rfc.section.5.3.p.1">The key authorization process establishes a key pair as an authorized key pair for a given identifier.  This process must assure the server of two things: First, that the client controls the private key of the key pair, and second, that the client holds the identifier in question.  This process may be repeated to associate multiple identifiers to a key pair (e.g., to request certificates with multiple identifiers), or to associate multiple key pairs with an identifier (e.g., for load balancing).</p>
-<p id="rfc.section.5.3.p.2">As illustrated by the figure in the overview section above, the authorization process proceeds in two transactions.  The client first requests a list of challenges from the server, and then requests authorization based on its answers to those challenges.</p>
-<p id="rfc.section.5.3.p.3">The first request in the key authorization process is a &#8220;challengeRequest&#8221; message, specifying the identifier for which the client will be requesting authorization.  The fields in a &#8220;challengeRequest&#8221; message are as follows:</p>
-<p/>
-
-<dl>
-  <dt>type (required, string):</dt>
-  <dd style="margin-left: 8">&#8220;challengeRequest&#8221;</dd>
-  <dt>identifier (required, string):</dt>
-  <dd style="margin-left: 8">The identifier for which authorization is being sought.  For implementations of this specification, this identifier MUST be a domain name.  (If other types of identifier are supported, then an extension to this protocol will need to add a field to distinguish types of identifier.)</dd>
-</dl>
-<pre>
-{
-  "type": "challengeRequest",
-  "identifier": "example.com"
-}
-
-</pre>
-<p id="rfc.section.5.3.p.5">On receiving a &#8220;challengeRequest&#8221; message, the server determines what sorts of challenges it will accept as proof that the client holds the identifier.  (The server could also decide that a particular identifier is invalid or that the server cannot possibly issue certificates related to that identifier, in which case the server may return an error.)  The set of challenges may be limited by the server&#8217;s capabilities, and the server may require different challenges to be completed for different identifiers (e.g., requiring a higher standard for higher-value names).  In all cases, however, the server provides a nonce as a proof-of-possession challenge for the key pair being authorized.  The server returns this policy to the client in a &#8220;challenge&#8221; message:</p>
-<p/>
-
-<dl>
-  <dt>type (required, string):</dt>
-  <dd style="margin-left: 8">&#8220;challenge&#8221;</dd>
-  <dt>sessionID (required, string):</dt>
-  <dd style="margin-left: 8">An opaque string that allows the server to correlate transactions related to this challenge request.</dd>
-  <dt>nonce (required, string):</dt>
-  <dd style="margin-left: 8">A base64-encoded octet string that the client is expected to sign with the private key of the key pair being authorized.</dd>
-  <dt>challenges (required, array):</dt>
-  <dd style="margin-left: 8">A list of challenges to be fulfilled by the client in order to prove possession of the identifier.  The syntax for challenges is described in Section <a href="#identifier-validation-challenges">Section 6</a>.</dd>
-  <dt>combinations (optional, array of arrays):</dt>
-  <dd style="margin-left: 8">A collection of sets of challenges, each of which would be sufficient to prove possession of the identifier.  Clients SHOULD complete a set of challenges that that covers at least one set in this array.  Challenges are represented by their associated zero-based index in the challenges array.</dd>
-</dl>
-<p id="rfc.section.5.3.p.7">For example, if the server wants to have the client demonstrate both that the client controls the domain name in question, and that this client is the same client that previously requested authorization for the domain name, it might issue the following request.  The client is expected to provide &#8220;simpleHttps&#8221; and &#8220;recoveryToken&#8221; responses (&#8220;[0,2]&#8221;), or else &#8220;dns&#8221; and &#8220;recoveryToken&#8221; responses (&#8220;[1,2]&#8221;), or all three.</p>
-<pre>
-{
-  "type": "challenge",
-  "sessionID": "aefoGaavieG9Wihuk2aufai3aeZ5EeW4",
-  "nonce": "czpsrF0KMH6dgajig3TGHw",
   "challenges": [
     {
       "type": "simpleHttps",
+      "status": "valid",
+      "validated": "2014-12-01T12:05Z",
+      "token": "IlirfxKKXAsHtmzK29Pj8A"
+      "path": "Hf5GrX4Q7EBax9hc2jJnfw"
+    },
+    {
+      "type": "recoveryToken",
+      "status": "valid",
+      "validated": "2014-12-01T12:07Z",
+      "token": "23029d88d9e123e"
+    }
+  ],
+}
+
+</pre>
+<h1 id="rfc.section.5.5"><a href="#rfc.section.5.5">5.5.</a> <a href="#key-authorization" id="key-authorization">Key Authorization</a></h1>
+<p id="rfc.section.5.5.p.1">The key authorization process establishes the authorization of an account key pair to manage certificates for a given identifier.  This process must assure the server of two things: First, that the client controls the private key of the key pair, and second, that the client holds the identifier in question.  This process may be repeated to associate multiple identifiers to a key pair (e.g., to request certificates with multiple identifiers), or to associate multiple key pairs with an identifier (e.g., to allow multiple entities to manage certificates).</p>
+<p id="rfc.section.5.5.p.2">As illustrated by the figure in the overview section above, the authorization process proceeds in two phases.  The client first requests a new authorization, and then the server issues challenges that the client responds to.</p>
+<p id="rfc.section.5.5.p.3">To begin the key authorization process, the client sends a POST request to the server&#8217;s new-authorization resource.  The body of the POST request MUST contain a JWS object, whose payload is a partial authorization object.  This JWS object MUST contain only the &#8220;identifier&#8221; field, so that the server knows what identifier is being authorized.  The client MAY provide contact information in the &#8220;contact&#8221; field in this or any subsequent request.</p>
+<pre>
+POST /acme/new-authorization HTTP/1.1
+Host: example.com
+
+{
+  "identifier": {
+    "type": "dns",
+    "value": "example.org"
+  }
+}
+/* Signed as JWS */
+
+</pre>
+<p id="rfc.section.5.5.p.4">Before processing the authorization further, the server SHOULD determine whether it is willing to issue certificates for the identifier.  For example, the server should check that the identifier is of a supported type.  Servers might also check names against a blacklist of known high-value identifiers.  If the server is unwilling to issue for the identifier, it SHOULD return a 403 (Forbidden) error, with a problem document describing the reason for the rejection.</p>
+<p id="rfc.section.5.5.p.5">If the server is willing to proceed, it builds a pending authorization object from the initial authorization object submitted by the client.</p>
+<p/>
+
+<ul>
+  <li>&#8220;identifier&#8221; the identifier submitted by the client.</li>
+  <li>&#8220;key&#8221;: the key used to verify the client&#8217;s JWS request (i.e., the contents of the &#8220;jwk&#8221; field in the JWS header)</li>
+  <li>&#8220;status&#8221;: SHOULD be &#8220;pending&#8221; (MAY be omitted)</li>
+  <li>&#8220;challenges&#8221; and &#8220;combinations&#8221;: As selected by the server&#8217;s policy for this identifier</li>
+  <li>The &#8220;expires&#8221; field MUST be absent.</li>
+</ul>
+<p id="rfc.section.5.5.p.7">The server allocates a new URI for this authorization, and returns a 201 (Created) response, with the authorization URI in a Location header field, and the JSON authorization object in the body.</p>
+<pre>
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: https://example.com/authz/asdf
+Link: &lt;https://example.com/acme/new-cert&gt;;rel="next"
+
+{
+  "status": "pending",
+
+  "identifier": {
+    "type": "dns",
+    "value": "example.org"
+  },
+
+  "key": { /* JWK from JWS header */ },
+
+  "challenges": [
+    {
+      "type": "simpleHttps",
+      "uri": "https://example.com/authz/asdf/0",
       "token": "IlirfxKKXAsHtmzK29Pj8A"
     },
     {
       "type": "dns",
+      "uri": "https://example.com/authz/asdf/1"
       "token": "DGyRejmCefe7v4NfDGDKfA"
     },
     {
-      "type": "recoveryToken"
+      "type": "recoveryToken",
+      "uri": "https://example.com/authz/asdf/2"
     }
-  ],
-  "combinations": [
-    [0, 2], [1, 2]
+  },
+
+  "combinations": [ 
+    [0, 2],
+    [1, 2]
   ]
 }
-</pre>
-<p id="rfc.section.5.3.p.8">In order to avoid replay attacks, the server MUST generate a fresh nonce of at least 128 bits for each authorization transaction, and MUST NOT accept more than one authorizationRequest with the same nonce.</p>
-<p id="rfc.section.5.3.p.9">The client SHOULD satisfy all challenges in one of the sets expressed in the &#8220;combinations&#8221; array.  If a &#8220;combinations&#8221; field is not specified, the client SHOULD attempt to fulfill as many challenges as possible.</p>
-<p id="rfc.section.5.3.p.10">Once the client believes that it has fulfilled enough challenges, it creates an authorizationRequest object requesting authorization of a key pair for this identifier based on its responses.  The authorizationRequest also contains the public key to be authorized, and the signature by the corresponding private key over the nonce in the challenge.</p>
-<p/>
-
-<dl>
-  <dt>type (required, string):</dt>
-  <dd style="margin-left: 8">&#8220;authorizationRequest&#8221;</dd>
-  <dt>sessionID (required, string):</dt>
-  <dd style="margin-left: 8">The session ID provided by the server in the challenge message (to allow the server to correlate the two transactions).</dd>
-  <dt>nonce (required, string):</dt>
-  <dd style="margin-left: 8">The nonce provided by the server in the challenge message.</dd>
-  <dt>signature (required, object):</dt>
-  <dd style="margin-left: 8">A signature object reflecting a signature over the identifier being authorized and the  nonce provided by the server.  Thus, for this authorization:</dd>
-</dl>
-<pre>
-      signature-input = signature-nonce || identifier || server-nonce
 
 </pre>
-<p/>
-
-<dl>
-  <dt>responses (required, array):</dt>
-  <dd style="margin-left: 8">The client&#8217;s responses to the server&#8217;s challenges, in the same order as the challenges.  If the client chooses not to respond to a given challenge, then the corresponding entry in the response array is set to null.  Otherwise, it is set to a value defined by the challenge type.</dd>
-  <dt>contact (optional, array):</dt>
-  <dd style="margin-left: 8">An array of URIs that the server can use to contact the client for issues related to this authorization.  For example, the server may wish to notify the client about server-initiated revocation, or check with the client on future authorizations (see the &#8220;recoveryContact&#8221; challenge type).</dd>
-</dl>
+<p id="rfc.section.5.5.p.8">The client needs to respond with information to complete the challenges.  To do this, the client updates the authorization object received from the server by filling in any required information in the elements of the &#8220;challenges&#8221; dictionary.  For example, if the client wishes to complete the &#8220;simpleHttps&#8221; challenge, it needs to provide the &#8220;path&#8221; component.  (This is also the stage where the client should perform any actions required by the challenge.)</p>
+<p id="rfc.section.5.5.p.9">The client sends these updates back to the server in the form of a JSON object with the response fields required by the challenge type, carried in a POST request to the challenge URI (not authorization URI or the new-authorization URI).  This allows the client to send information only for challenges it is responding to.</p>
+<p id="rfc.section.5.5.p.10">For example, if the client were to respond to the &#8220;simpleHttps&#8221; challenge in the above authorization, it would send the following request:</p>
 <pre>
+POST /acme/authz/asdf/0 HTTP/1.1
+Host: example.com
+
 {
-  "type": "authorizationRequest",
-  "sessionID": "aefoGaavieG9Wihuk2aufai3aeZ5EeW4",
-  "nonce": "czpsrF0KMH6dgajig3TGHw",
-  "signature": {
-    "nonce": "Aenb3DvfvOPImdXdnxHMlp7Jh4qsgYeTEM-dFgFOGxU",
-    "alg": "ES256",
-    "jwk": {
-      "kty": "EC",
-      "crv": "P-256",
-      "x": "NJ15BoXput18sSwnXA3gJEEnqIAzxSEl9ga8wGM4mEU",
-      "y": "6l_U9mals_dwt77tIxSiQ6oL_CyLVey4baa8wCn0V9k"
-    },
-    "sig": "lxj0Ucdo4r5s1c1cuY2R7oKqWi4QuNJzdwe5/4m9zWQ"
+  "path": "Hf5GrX4Q7EBax9hc2jJnfw"
+}
+/* Signed as JWS */
+
+</pre>
+<p id="rfc.section.5.5.p.11">The server updates the authorization document by updating its representation of the challenge with the response fields provided by the client.  The server MUST ignore any fields in the response object that are not specified as response fields for this type of challenge.  The server provides a 200 response including the updated challenge.</p>
+<p id="rfc.section.5.5.p.12">Presumably, the client&#8217;s responses provide the server with enough information to validate one or more challenges.  The server is said to &#8220;finalize&#8221; the authorization when it has completed all the validations it is going to complete, and assigns the authorization a status of &#8220;valid&#8221; or &#8220;invalid&#8221;, corresponding to whether it considers the account key  authorized for the identifier.  If the final state is &#8220;valid&#8221;, the server MUST add an &#8220;expires&#8221; field to the authorization.  When finalizing an authorization, the server MAY remove the &#8220;combinations&#8221; field (if present), remove any unfulfilled challenges, or add a &#8220;recoveryToken&#8221; field.</p>
+<p id="rfc.section.5.5.p.13">Usually, the validation process will take some time, so the client will need to poll the authorization resource to see when it is finalized.  For challenges where the client can tell when the server has validated the challenge (e.g., by seeing an HTTP or DNS request from the server), the client SHOULD NOT begin polling until it has seen the validation request from the server.</p>
+<p id="rfc.section.5.5.p.14">To check on the status of an authorization, the client sends a GET request to the authorization URI, and the server responds with the current  authorization object.  To provide some degree of control over polling, the server MAY provide a Retry-After header field to indicate how long it expect to take in finalizing the response.</p>
+<pre>
+GET /acme/authz/asdf HTTP/1.1
+Host: example.com
+
+HTTP/1.1 200 OK
+
+{
+  "status": "valid",
+  "expires": "2015-03-01",
+
+  "identifier": {
+    "type": "dns",
+    "value": "example.org"
   },
-  "responses": [
-    {
-      "type": "simpleHttps",
-      "path": "Hf5GrX4Q7EBax9hc2jJnfw"
-    },
-    null,
-    {
-      "type": "recoveryToken",
-      "token": "23029d88d9e123e"
-    }
-  ],
+
+  "key": { /* JWK */ },
+
   "contact": [
     "mailto:cert-admin@example.com",
     "tel:+12025551212"
+  ],
+
+  "challenges": [
+    "simpleHttps": {
+      "status": "valid",
+      "validated": "2014-12-01T12:05Z",
+      "token": "IlirfxKKXAsHtmzK29Pj8A"
+      "path": "Hf5GrX4Q7EBax9hc2jJnfw"
+    },
+    "recoveryToken": {
+      "status": "valid",
+      "validated": "2014-12-01T12:07Z",
+      "token": "23029d88d9e123e"
+    }
   ]
 }
+
 </pre>
-<p id="rfc.section.5.3.p.13">Once it has received the client&#8217;s responses, the server verifies them according to procedures specific to each challenge type.  Because some of these procedures take time to verify, it is likely that the server will respond to an authorizationRequest message with a defer message.</p>
-<p id="rfc.section.5.3.p.14">If there is a problem with the authorizationRequest (e.g., the signature object does not verify), or if the available responses are not sufficient to convince the server that the client controls the identifier, then the server responds with an error message.  The server should use the &#8220;unauthorized&#8221; error code for cases where the client&#8217;s responses were insufficient.   If the server is satisfied that the client controls the private key and identifier in question, then it sends an authorization message indicating the success of the authorization request, and providing a recovery token that the client can use to help recover authorization if the private key of the authorized key pair is lost.</p>
+<h1 id="rfc.section.5.5.1"><a href="#rfc.section.5.5.1">5.5.1.</a> <a href="#recovery-tokens" id="recovery-tokens">Recovery Tokens</a></h1>
+<p id="rfc.section.5.5.1.p.1">A recovery token is a fallback authentication mechanism.  In the event that a client loses all other state, including authorized key pairs and key pairs bound to certificates, the client can use the recovery token to prove that it was previously authorized for the identifier in question.</p>
+<p id="rfc.section.5.5.1.p.2">This mechanism is necessary because once an ACME server has issued an Authorization Key for a given identifier, that identifier enters a higher-security state, at least with respect the ACME server.  That state exists to protect against attacks such as DNS hijacking and router compromise which tend to inherently defeat all forms of Domain Validation.  So once a domain has begun using ACME, new DV-only authorization will not be performed without proof of continuity via possession of an Authorized Private Key or potentially a Subject Private Key for that domain.</p>
+<p id="rfc.section.5.5.1.p.3">This higher state of security poses some risks.  From time to time, the administrators and owners of domains may lose access to keys they have previously had issued or certified, including Authorized private keys and Subject private keys.  For instance, the disks on which this key material is stored may suffer failures, or passphrases for these keys may be forgotten.  In some cases, the security measures that are taken to protect this sensitive data may contribute to its loss.</p>
+<p id="rfc.section.5.5.1.p.4">Recovery Tokens and Recovery Challenges exist to provide a fallback mechanism to restore the state of the domain to the server-side administrative security state it was in prior to the use of ACME, such that fresh Domain Validation is sufficient for reauthorization.</p>
+<p id="rfc.section.5.5.1.p.5">Recovery tokens are therefore only useful to an attacker who can also perform Domain Validation against a target domain, and as a result client administrators may choose to handle them with somewhat fewer security precautions than Authorized and Subject private keys, decreasing the risk of their loss.</p>
+<p id="rfc.section.5.5.1.p.6">Recovery tokens come in several types, including high-entropy passcodes (which need to be safely preserved by the client admin) and email addresses (which are inherently hard to lose, and which can be used for verification, though they may be a little less secure).</p>
+<p id="rfc.section.5.5.1.p.7">Recovery tokens are employed in response to Recovery Challenges.  Such challenges will be available if the server has issued Recovery Tokens for a given domain, and the combination of a Recovery Challenge and a domain validation Challenge is a plausible alternative to other challenge sets for domains that already have extant Authorized keys.</p>
+<h1 id="rfc.section.5.6"><a href="#rfc.section.5.6">5.6.</a> <a href="#certificate-issuance" id="certificate-issuance">Certificate Issuance</a></h1>
+<p id="rfc.section.5.6.p.1">The holder of an authorized key pair for an identifier may use ACME to request that a certificate be issued for that identifier.  The client makes this request by sending a POST request to the server&#8217;s new-certificate resource.  The body of the POST is a JWS object whose JSON payload contains a Certificate Signing Request (CSR) <a href="#RFC2986">[RFC2986]</a> and set of authorization URIs.  The CSR encodes the parameters of the requested certificate; authority to issue is demonstrated by the JWS signature and the linked authorizations.</p>
 <p/>
 
 <dl>
-  <dt>type (required, string):</dt>
-  <dd style="margin-left: 8">&#8220;authorization&#8221;</dd>
-  <dt>recoveryToken (optional, string):</dt>
-  <dd style="margin-left: 8">An arbitrary server-generated string.  If the server provides a recovery token, it MUST generate a unique value for every authorization transaction, and this value MUST NOT be predictable or guessable by a third party.</dd>
-  <dt>identifier (optional, string):</dt>
-  <dd style="margin-left: 8">The identifier for which authorization has been granted.</dd>
-  <dt>jwk (optional, object):</dt>
-  <dd style="margin-left: 8">A JSON Web Key object describing the authorized public key.</dd>
-</dl>
-<h1 id="rfc.section.5.3.1"><a href="#rfc.section.5.3.1">5.3.1.</a> <a href="#recovery-tokens" id="recovery-tokens">Recovery Tokens</a></h1>
-<p id="rfc.section.5.3.1.p.1">A recovery token is a fallback authentication mechanism.  In the event that a client loses all other state, including authorized key pairs and key pairs bound to certificates, the client can use the recovery token to prove that it was previously authorized for the identifier in question.</p>
-<p id="rfc.section.5.3.1.p.2">This mechanism is necessary because once an ACME server has issued an Authorization Key for a given identifier, that identifier enters a higher-security state, at least with respect the ACME server.  That state exists to protect against attacks such as DNS hijacking and router compromise which tend to inherently defeat all forms of Domain Validation.  So once a domain has begun using ACME, new DV-only authorization will not be performed without proof of continuity via possession of an Authorized Private Key or potentially a Subject Private Key for that domain.</p>
-<p id="rfc.section.5.3.1.p.3">This higher state of security poses some risks.  From time to time, the administrators and owners of domains may lose access to keys they have previously had issued or certified, including Authorized private keys and Subject private keys.  For instance, the disks on which this key material is stored may suffer failures, or passphrases for these keys may be forgotten.  In some cases, the security measures that are taken to protect this sensitive data may contribute to its loss.</p>
-<p id="rfc.section.5.3.1.p.4">Recovery Tokens and Recovery Challenges exist to provide a fallback mechanism to restore the state of the domain to the server-side administrative security state it was in prior to the use of ACME, such that fresh Domain Validation is sufficient for reauthorization.</p>
-<p id="rfc.section.5.3.1.p.5">Recovery tokens are therefore only useful to an attacker who can also perform Domain Validation against a target domain, and as a result client administrators may choose to handle them with somewhat fewer security precautions than Authorized and Subject private keys, decreasing the risk of their loss.</p>
-<p id="rfc.section.5.3.1.p.6">Recovery tokens come in several types, including high-entropy passcodes (which need to be safely preserved by the client admin) and email addresses (which are inherently hard to lose, and which can be used for verification, though they may be a little less secure).</p>
-<p id="rfc.section.5.3.1.p.7">Recovery tokens are employed in response to Recovery Challenges.  Such challenges will be available if the server has issued Recovery Tokens for a given domain, and the combination of a Recovery Challenge and a domain validation Challenge is a plausible alternative to other challenge sets for domains that already have extant Authorized keys.</p>
-<h1 id="rfc.section.5.4"><a href="#rfc.section.5.4">5.4.</a> <a href="#certificate-issuance" id="certificate-issuance">Certificate Issuance</a></h1>
-<p id="rfc.section.5.4.p.1">The holder of an authorized key pair for an identifier may use ACME to request that a certificate be issued for that identifier.  The client makes this request using a &#8220;certificateRequest&#8221; message, which contains a Certificate Signing Request (CSR) <a href="#RFC2986">[RFC2986]</a> and a signature by the authorized key pair.</p>
-<p/>
-
-<dl>
-  <dt>type (required, string):</dt>
-  <dd style="margin-left: 8">&#8220;certificateRequest&#8221;</dd>
   <dt>csr (required, string):</dt>
-  <dd style="margin-left: 8">A CSR encoding the parameters for the certificate being requested.  The CSR is sent in base64-encoded version the DER format.  (Note: This field uses the same modified base64-encoding rules used elsewhere in this document, so it is different from PEM.)</dd>
-  <dt>signature (required, object):</dt>
-  <dd style="margin-left: 8">A signature object reflecting a signature by an authorized key pair over the CSR.</dd>
+  <dd style="margin-left: 8">A CSR encoding the parameters for the certificate being requested.  The CSR is sent in Base64-encoded version of the DER format.  (Note: This field uses the same modified Base64-encoding rules used elsewhere in this document, so it is different from PEM.)</dd>
+  <dt>authorizations (required, array of string):</dt>
+  <dd style="margin-left: 8">An array of URIs for authorization resources.</dd>
 </dl>
 <pre>
+POST /acme/new-cert HTTP/1.1
+Host: example.com
+Accept: application/pkix-cert
+
 {
-  "type": "certificateRequest",
   "csr": "5jNudRx6Ye4HzKEqT5...FS6aKdZeGsysoCo4H9P",
-  "signature": {
-    "alg": "RS256",
-    "nonce": "h5aYpWVkq-xlJh6cpR-3cw",
-    "sig": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ",
-    "jwk": {
-      "kty":"RSA",
-      "e":"AQAB",
-      "n":"KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ"
-    }
-  }
+  "authorizations": [
+    "https://example.com/acme/authz/asdf"
+  ]
 }
+/* Signed as JWS */
 
 </pre>
-<p id="rfc.section.5.4.p.3">The CSR encodes the client&#8217;s requests with regard to the content of the certificate to be issued.  The CSR MUST contain at least one extensionRequest attribute <a href="#RFC2985">[RFC2985]</a> requesting a subjectAltName extension, containing the requested identifiers.</p>
-<p id="rfc.section.5.4.p.4">The values provided in the CSR are only a request, and are not guaranteed.  The server or CA may alter any fields in the certificate before issuance.  For example, the CA may remove identifiers that are not authorized for the key indicated in the &#8220;authorization&#8221; field.</p>
-<p id="rfc.section.5.4.p.5">If the CA decides to issue a certificate, then the server responds with a certificate message.  (Of course, the server may also respond with an error message if issuance is denied, or a defer message if there may be some delay in issuance.)</p>
+<p id="rfc.section.5.6.p.3">The CSR encodes the client&#8217;s requests with regard to the content of the certificate to be issued.  The CSR MUST contain at least one extensionRequest attribute <a href="#RFC2985">[RFC2985]</a> requesting a subjectAltName extension, containing the requested identifiers.</p>
+<p id="rfc.section.5.6.p.4">The values provided in the CSR are only a request, and are not guaranteed.  The server or CA may alter any fields in the certificate before issuance.  For example, the CA may remove identifiers that are not authorized for the key indicated in the &#8220;authorization&#8221; field.</p>
+<p id="rfc.section.5.6.p.5">If the CA decides to issue a certificate, then the server returns the certificate in a response with status code 201 (Created).  The server MUST indicate a URL for this certificate in a Location header field.</p>
+<p id="rfc.section.5.6.p.6">The default format of the certificate is DER (application/pkix-cert).  The client may request other formats by including an Accept header in its request.</p>
+<p id="rfc.section.5.6.p.7">The server can provide metadata about the certificate in HTTP headers.  For example, the server can include a Link relation header field <a href="#RFC5988">[RFC5988]</a> with relation &#8220;up&#8221; to provide a certificate under which this certificate was issued.  Or the server can include an Expires header as a hint to the client about when to re-query to refresh the certificate.  (Of course, the real expiration of the certificate is controlled by the notAfter time in the certificate itself.)</p>
+<pre>
+HTTP/1.1 201 Created
+Content-Type: application/pkix-cert
+Link: &lt;https://example.com/acme/ca-cert&gt;;rel="up";title="issuer"
+Location: https://example.com/acme/cert/asdf
+
+[DER-encoded certificate]
+
+</pre>
+<h1 id="rfc.section.5.7"><a href="#rfc.section.5.7">5.7.</a> <a href="#certificate-refresh" id="certificate-refresh">Certificate Refresh</a></h1>
+<p id="rfc.section.5.7.p.1">The certificate URL (provided in the Location header of the server&#8217;s response) is used to refresh or revoke the certificate.  To refresh the certificate, the client simply sends a GET request to the certificate URL.  This allows the server to provide the client with updated certificates with the same content and different validity intervals, for as long as all of the authorization objects underlying the certificate are valid.</p>
+<p id="rfc.section.5.7.p.2">If a client sends a refresh request and the server is not willing to refresh the certificate, the server MUST respond with status code 403 (Forbidden).  If the client still wishes to obtain a certificate, it can re-initiate the authorization process for any expired authorizations related to the certificate.</p>
+<h1 id="rfc.section.5.8"><a href="#rfc.section.5.8">5.8.</a> <a href="#certificate-revocation" id="certificate-revocation">Certificate Revocation</a></h1>
+<p id="rfc.section.5.8.p.1">To request that a certificate be revoked, the client sends a POST request to the certificate URL.  The body of the POST is a JWS object whose JSON payload contains an indication when the client would like the certificate to be revoked:</p>
 <p/>
 
 <dl>
-  <dt>type (required, string):</dt>
-  <dd style="margin-left: 8">&#8220;certificate&#8221;</dd>
-  <dt>certificate (required, string):</dt>
-  <dd style="margin-left: 8">The issued certificate, as a base64-encoded DER certificate.</dd>
-  <dt>chain (optional, array of string):</dt>
-  <dd style="margin-left: 8">A chain of CA certificates which are parents of the issued certificate.  Each certificate is in base64-encoded DER form (not PEM, as for CSRs above).  This array MUST be presented in the same order as would be required in a TLS handshake <a href="#RFC5246">[RFC5246]</a>.</dd>
-  <dt>refresh (optional, string):</dt>
-  <dd style="margin-left: 8">An HTTP or HTTPS URI from which updated versions of this certificate can be fetched.</dd>
+  <dt>revoke (required, string):</dt>
+  <dd style="margin-left: 8">The time at which the certificate should be revoked.  The value of this field MUST be either the literal string &#8220;now&#8221;, or a date in RFC 3339 format <a href="#RFC3339">[RFC3339]</a>.</dd>
+  <dt>authorizations (required, array of string):</dt>
+  <dd style="margin-left: 8">An array of URIs for authorization resources.</dd>
 </dl>
 <pre>
+POST /acme/cert/asdf HTTP/1.1
+Host: example.com
+
 {
-  "type": "certificate",
-  "certificate": "Zmzdx7UKvwDJ6bk...YBX22NPGQZyYcg",
-  "chain": [
-    "WUn8L2vLT553pIWJ2...gJ574o2anls1k2p",
-    "y3O4puZa9r5KBk1LX...Ya7jlaAZUfuYZGZ"
-  ],
-  "refresh": "https://example.com/refresh/Dr8eAwTVQfSS/"
+  "revoke": "now",
+  "authorizations": [
+    "https://example.com/acme/authz/asdf"
+  ]
 }
+/* Signed as JWS */
 
 </pre>
-<p id="rfc.section.5.4.p.7">The certificate message allows the server to provide the certificate itself, as well as some associated management information.  The chain of CA certificates can simplify TLS server configuration, by allowing the server to suggest the certificate chain that a TLS server using the issued certificate should present.</p>
-<p id="rfc.section.5.4.p.8">The refresh URI allows the client to download updated versions of the issued certificate, in the sense of certificates with different validity intervals, but otherwise the same contents (in particular, the same names and public key).  This can be useful in cases where a CA wishes to issue short-lived certificates, but is still willing to vouch for an identifier-key binding over a longer period of time.  To download an updated certificate, the client simply sends a GET request to the refresh URI.</p>
-<h1 id="rfc.section.5.5"><a href="#rfc.section.5.5">5.5.</a> <a href="#certificate-revocation" id="certificate-revocation">Certificate Revocation</a></h1>
-<p id="rfc.section.5.5.p.1">To request that a certificate be revoked, the client sends a revocationRequest message that indicates the certificate to be revoked, with a signature by an authorized key:</p>
-<p/>
-
-<dl>
-  <dt>type (required, string):</dt>
-  <dd style="margin-left: 8">&#8220;revocationRequest&#8221;</dd>
-  <dt>certificate (required, string):</dt>
-  <dd style="margin-left: 8">The certificate to be revoked.</dd>
-  <dt>signature (required, object):</dt>
-  <dd style="margin-left: 8">A signature object reflecting a signature by an authorized key pair over the certificate.</dd>
-</dl>
+<p id="rfc.section.5.8.p.3">Before revoking a certificate, the server MUST verify that the account key pair used to sign the request is authorized to act for all of the identifier(s) in the certificate.  The server MAY also accept a signature by the private key corresponding to the public key in the certificate.</p>
+<p id="rfc.section.5.8.p.4">If the revocation succeeds, the server responds with status code 200 (OK).  If the revocation fails, the server returns an error.</p>
 <pre>
-{
-  "type": "revocationRequest",
-  "certificate": "Zmzdx7UKvwDJ6bk...YBX22NPGQZyYcg",
-  "signature": {
-    "alg": "RS256",
-    "nonce": "OQqU4VlhXhvZW9FIqNW-jg",
-    "sig": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ",
-    "jwk": {
-      "kty":"RSA",
-      "e":"AQAB",
-      "n":"KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ"
-    }
-  }
-}
+HTTP/1.1 200 OK
+Content-Length: 0
 
-</pre>
-<p id="rfc.section.5.5.p.3">Before revoking a certificate, the server MUST verify that the public key indicated in the signature object is authorized to act for all of the identifier(s) in the certificate.  The server MAY also accept a signature by the private key corresponding to the public key in the certificate.</p>
-<p id="rfc.section.5.5.p.4">If the revocation fails, the server returns an error message, e.g., an &#8220;unauthorized&#8221; error if the signing key was not authorized to revoke this certificate.  If the revocation succeeds, then the server confirms with a &#8220;revocation&#8221; message, which has no payload.</p>
-<p/>
+--- or ---
 
-<dl>
-  <dt>type (required, string):</dt>
-  <dd style="margin-left: 8">&#8220;revocation&#8221;</dd>
-</dl>
-<pre>
+HTTP/1.1 403 Forbidden
+Content-Type: application/problem+json
+Content-Language: en
+
 {
-  "type": "revocation"
+  "type": "urn:acme:error:unauthorized"
+  "detail": "No authorization provided for name example.net"
+  "instance": "http://example.com/doc/unauthorized"
 }
 
 </pre>
@@ -1212,7 +1243,7 @@ TIMEOUT   GOT_FINAL   GOT_DEFER --+
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;dvsni&#8221;</dd>
   <dt>r (required, string):</dt>
-  <dd style="margin-left: 8">A random 32-byte octet, base64-encoded</dd>
+  <dd style="margin-left: 8">A random 32-byte octet, Base64-encoded</dd>
   <dt>nonce (required, string):</dt>
   <dd style="margin-left: 8">A random 16-byte octet string, hex-encoded (so that it can be used as a DNS label)</dd>
 </dl>
@@ -1245,7 +1276,7 @@ TIMEOUT   GOT_FINAL   GOT_DEFER --+
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;dvsni&#8221;</dd>
   <dt>s (required, string):</dt>
-  <dd style="margin-left: 8">A random 32-byte secret octet string, base64-encoded</dd>
+  <dd style="margin-left: 8">A random 32-byte secret octet string, Base64-encoded</dd>
 </dl>
 <pre>
 {
@@ -1348,7 +1379,7 @@ TIMEOUT   GOT_FINAL   GOT_DEFER --+
   <dt>alg (required, string):</dt>
   <dd style="margin-left: 8">A token indicating the cryptographic algorithm that should be used by the client to compute the signature <a href="#I-D.ietf-jose-json-web-algorithms">[I-D.ietf-jose-json-web-algorithms]</a>.  (MAC algorithms such as &#8220;HS*&#8221; MUST NOT be used.)  The client MUST verify that this algorithm is supported for the indicated key before responding to this challenge.</dd>
   <dt>nonce (required, string):</dt>
-  <dd style="margin-left: 8">A random 16-byte octet string, base64-encoded</dd>
+  <dd style="margin-left: 8">A random 16-byte octet string, Base64-encoded</dd>
   <dt>hints (required, object):</dt>
   <dd style="margin-left: 8">A JSON object that contains various clues for the client about what the requested key is, such that the client can find it.  Entries in the hints object may include:</dd>
   <dt>jwk (required, object):</dt>
@@ -1356,7 +1387,7 @@ TIMEOUT   GOT_FINAL   GOT_DEFER --+
   <dt>certFingerprints (optional, array):</dt>
   <dd style="margin-left: 8">An array of certificate fingerprints, hex-encoded SHA1 hashes of DER-encoded certificates that are known to contain this key</dd>
   <dt>certs (optional, array):</dt>
-  <dd style="margin-left: 8">An array of certificates, in PEM encoding, that contain acceptable public keys.</dd>
+  <dd style="margin-left: 8">An array of certificates, in Base64-encoded DER format, that contain acceptable public keys.</dd>
   <dt>subjectKeyIdentifiers (optional, array):</dt>
   <dd style="margin-left: 8">An array of hex-encoded Subject Key Identifiers (SKIDs) from certificate(s) that contain the key.  Because of divergences in the way that SKIDs are calculated <a href="#RFC5280">[RFC5280]</a>, there may conceivably be more than one of these.</dd>
   <dt>serialNumbers (optional, array of numbers):</dt>
@@ -1382,7 +1413,9 @@ TIMEOUT   GOT_FINAL   GOT_DEFER --+
       "16d95b7b63f1972b980b14c20291f3c0d1855d95",
       "48b46570d9fc6358108af43ad1649484def0debf"
     ],
-    "subjectKeyIdentifiers":  ["d0083162dcc4c8a23ecb8aecbd86120e56fd24e5"],
+    "subjectKeyIdentifiers":  [
+      "d0083162dcc4c8a23ecb8aecbd86120e56fd24e5"
+    ],
     "serialNumbers": [34234239832, 23993939911, 17],
     "issuers": [
       "C=US, O=SuperT LLC, CN=SuperTrustworthy Public CA",
@@ -1494,27 +1527,35 @@ _acme-challenge.example.com. IN TXT "17817c66b60ce2e4012dfad92657527a"
   <li>CA needs to perform a very wide range of issuance policy enforcement and sanity-check steps</li>
   <li>Parser safety (for JSON, JWK, ASN.1, and any other formats that can be parsed by the ACME server)</li>
 </ul>
-<h1 id="rfc.references"><a href="#rfc.references">9.</a> References</h1>
-<h1 id="rfc.references.1"><a href="#rfc.references.1">9.1.</a> Normative References</h1>
+<h1 id="rfc.section.9"><a href="#rfc.section.9">9.</a> <a href="#acknowledgements" id="acknowledgements">Acknowledgements</a></h1>
+<p id="rfc.section.9.p.1">This document draws on many concepts established by Eric Rescorla&#8217;s &#8220;Automated Certificate Issuance Protocol&#8221; draft.  Martin Thomson provided helpful guidance in the use of HTTP.</p>
+<h1 id="rfc.references"><a href="#rfc.references">10.</a> References</h1>
+<h1 id="rfc.references.1"><a href="#rfc.references.1">10.1.</a> Normative References</h1>
 <table>
   <tbody>
     <tr>
       <td class="reference">
+        <b id="I-D.ietf-appsawg-http-problem">[I-D.ietf-appsawg-http-problem]</b>
+      </td>
+      <td class="top"><a>Nottingham, M.</a> and <a>E. Wilde</a>, "<a href="http://tools.ietf.org/html/draft-ietf-appsawg-http-problem-00">Problem Details for HTTP APIs</a>", Internet-Draft draft-ietf-appsawg-http-problem-00, September 2014.</td>
+    </tr>
+    <tr>
+      <td class="reference">
         <b id="I-D.ietf-jose-json-web-algorithms">[I-D.ietf-jose-json-web-algorithms]</b>
       </td>
-      <td class="top"><a>Jones, M.</a>, "<a href="http://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-38">JSON Web Algorithms (JWA)</a>", Internet-Draft draft-ietf-jose-json-web-algorithms-38, December 2014.</td>
+      <td class="top"><a>Jones, M.</a>, "<a href="http://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-40">JSON Web Algorithms (JWA)</a>", Internet-Draft draft-ietf-jose-json-web-algorithms-40, January 2015.</td>
     </tr>
     <tr>
       <td class="reference">
         <b id="I-D.ietf-jose-json-web-key">[I-D.ietf-jose-json-web-key]</b>
       </td>
-      <td class="top"><a>Jones, M.</a>, "<a href="http://tools.ietf.org/html/draft-ietf-jose-json-web-key-38">JSON Web Key (JWK)</a>", Internet-Draft draft-ietf-jose-json-web-key-38, December 2014.</td>
+      <td class="top"><a>Jones, M.</a>, "<a href="http://tools.ietf.org/html/draft-ietf-jose-json-web-key-41">JSON Web Key (JWK)</a>", Internet-Draft draft-ietf-jose-json-web-key-41, January 2015.</td>
     </tr>
     <tr>
       <td class="reference">
         <b id="I-D.ietf-jose-json-web-signature">[I-D.ietf-jose-json-web-signature]</b>
       </td>
-      <td class="top"><a>Jones, M.</a>, <a>Bradley, J.</a> and <a>N. Sakimura</a>, "<a href="http://tools.ietf.org/html/draft-ietf-jose-json-web-signature-38">JSON Web Signature (JWS)</a>", Internet-Draft draft-ietf-jose-json-web-signature-38, December 2014.</td>
+      <td class="top"><a>Jones, M.</a>, <a>Bradley, J.</a> and <a>N. Sakimura</a>, "<a href="http://tools.ietf.org/html/draft-ietf-jose-json-web-signature-41">JSON Web Signature (JWS)</a>", Internet-Draft draft-ietf-jose-json-web-signature-41, January 2015.</td>
     </tr>
     <tr>
       <td class="reference">
@@ -1539,6 +1580,12 @@ _acme-challenge.example.com. IN TXT "17817c66b60ce2e4012dfad92657527a"
         <b id="RFC2986">[RFC2986]</b>
       </td>
       <td class="top"><a>Nystrom, M.</a> and <a>B. Kaliski</a>, "<a href="http://tools.ietf.org/html/rfc2986">PKCS #10: Certification Request Syntax Specification Version 1.7</a>", RFC 2986, November 2000.</td>
+    </tr>
+    <tr>
+      <td class="reference">
+        <b id="RFC3339">[RFC3339]</b>
+      </td>
+      <td class="top"><a href="mailto:GK@ACM.ORG" title="Clearswift Corporation">Klyne, G.</a> and <a href="mailto:chris.newman@sun.com" title="Sun Microsystems">C. Newman</a>, "<a href="http://tools.ietf.org/html/rfc3339">Date and Time on the Internet: Timestamps</a>", RFC 3339, July 2002.</td>
     </tr>
     <tr>
       <td class="reference">
@@ -1572,6 +1619,12 @@ _acme-challenge.example.com. IN TXT "17817c66b60ce2e4012dfad92657527a"
     </tr>
     <tr>
       <td class="reference">
+        <b id="RFC5988">[RFC5988]</b>
+      </td>
+      <td class="top"><a>Nottingham, M.</a>, "<a href="http://tools.ietf.org/html/rfc5988">Web Linking</a>", RFC 5988, October 2010.</td>
+    </tr>
+    <tr>
+      <td class="reference">
         <b id="RFC6570">[RFC6570]</b>
       </td>
       <td class="top"><a>Gregorio, J.</a>, <a>Fielding, R.</a>, <a>Hadley, M.</a>, <a>Nottingham, M.</a> and <a>D. Orchard</a>, "<a href="http://tools.ietf.org/html/rfc6570">URI Template</a>", RFC 6570, March 2012.</td>
@@ -1582,9 +1635,15 @@ _acme-challenge.example.com. IN TXT "17817c66b60ce2e4012dfad92657527a"
       </td>
       <td class="top"><a>Bray, T.</a>, "<a href="http://tools.ietf.org/html/rfc7159">The JavaScript Object Notation (JSON) Data Interchange Format</a>", RFC 7159, March 2014.</td>
     </tr>
+    <tr>
+      <td class="reference">
+        <b id="RFC7386">[RFC7386]</b>
+      </td>
+      <td class="top"><a>Hoffman, P.</a> and <a>J. Snell</a>, "<a href="http://tools.ietf.org/html/rfc7386">JSON Merge Patch</a>", RFC 7386, October 2014.</td>
+    </tr>
   </tbody>
 </table>
-<h1 id="rfc.references.2"><a href="#rfc.references.2">9.2.</a> Informative References</h1>
+<h1 id="rfc.references.2"><a href="#rfc.references.2">10.2.</a> Informative References</h1>
 <table>
   <tbody>
     <tr>
@@ -1617,27 +1676,6 @@ _acme-challenge.example.com. IN TXT "17817c66b60ce2e4012dfad92657527a"
 	  <span class="country-name vcardline"></span>
 	</span>
 	<span class="vcardline">EMail: <a href="mailto:rlb@ipv.sx">rlb@ipv.sx</a></span>
-
-  </address>
-</div><div class="avoidbreak">
-  <address class="vcard">
-	<span class="vcardline">
-	  <span class="fn">Eric Rescorla</span> 
-	  <span class="n hidden">
-		<span class="family-name">Rescorla</span>
-	  </span>
-	</span>
-	<span class="org vcardline">Mozilla</span>
-	<span class="adr">
-	  
-	  <span class="vcardline">
-		<span class="locality"></span> 
-		<span class="region"></span>
-		<span class="code"></span>
-	  </span>
-	  <span class="country-name vcardline"></span>
-	</span>
-	<span class="vcardline">EMail: <a href="mailto:ekr@rtfm.com">ekr@rtfm.com</a></span>
 
   </address>
 </div><div class="avoidbreak">

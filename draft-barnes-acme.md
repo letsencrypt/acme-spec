@@ -147,7 +147,7 @@ Some HTTPS bodies in ACME are authenticated and integrity-protected by being enc
 
 ACME allows a client to request certificate management actions using a set of JSON messages carried over HTTPS.   In some ways, ACME functions much like a traditional CA, in which a user creates an account, adds identifiers to that account (proving control of the domains), and requests certificate issuance for those domains while logged in to the account.  
 
-In ACME, the account is represented by a account key pair.  The "add a domain" function is accomplished by authorizing the key pair for a given domain.  Certificate issuance and revocation are authorized by a signature with the key pair.
+In ACME, the account is represented by an account key pair.  The "add a domain" function is accomplished by authorizing the key pair for a given domain.  Certificate issuance and revocation are authorized by a signature with the key pair.
 
 The first phase of ACME is for the client to register with the ACME server.  The client generates an asymmetric key pair and associates this key pair with a set of contact information by signing the contact information.  The server acknowledges the
 registration by replying with a recovery token that the client can provide later to associate a new account key pair in the event that the first account key pair is lost.
@@ -167,7 +167,7 @@ Before a client can issue certificates, it must establish an authorization with 
 
 Proof of possession of the account key is built into the ACME protocol.  All messages from the client to the server are signed by the client, and the server verifies them using the public key of the account key pair.
 
-To verify that the client controls the identifier being claimed, the server issues the client a set of challenges.  Because there are many different ways to validate possession of different types of identifiers, the server will choose from an extensible set of challenges that are appropriate for the identifier being claimed.  The client responds with a set of responses that tell the server which challenges the client has completed.  The server then validate the challenges to check that the client has accomplished the challenge.
+To verify that the client controls the identifier being claimed, the server issues the client a set of challenges.  Because there are many different ways to validate possession of different types of identifiers, the server will choose from an extensible set of challenges that are appropriate for the identifier being claimed.  The client responds with a set of responses that tell the server which challenges the client has completed.  The server then validates the challenges to check that the client has accomplished the challenge.
 
 For example, if the client requests a domain name, the server might challenge the client to provision a record in the DNS under that name, or to provision a file on a web server referenced by an A or AAAA record under that name.  The server would then query the DNS for the record in question, or send an HTTP request for the file.  If the client provisioned the DNS or the web server as expected, then the server considers the client authorized for the domain name.
 
@@ -247,10 +247,10 @@ ACME is structured as a REST application with a few types of resources:
 * A "new-authorization" resource
 * A "new-certificate" resource
 
-In general, the intent is for authorization and certificate resources to contain only public information, so that CAs may publish these resoruces to document what certificates have been issued and how they were authorized.  Non-public information, such as
+In general, the intent is for authorization and certificate resources to contain only public information, so that CAs may publish these resources to document what certificates have been issued and how they were authorized.  Non-public information, such as
 contact information, is stored in registration resources.
 
-In order to accomplish ACME transactions, a client needs to have the server's new-registration, new-authorization, and new-ceritificate URIs; the remaining URIs are provided to the client as a result of requests to these URIs.  To simplify
+In order to accomplish ACME transactions, a client needs to have the server's new-registration, new-authorization, and new-certificate URIs; the remaining URIs are provided to the client as a result of requests to these URIs.  To simplify
 configuration, ACME uses the "next" link relation to indicate URI to contact for the next step in processing: From registration to authorization, and from authorization to certificate issuance.  In this way, a client need only be configured with the registration URI.
 
 The "up" link relation is used with challenge resources to indicate the authorization resource to which a challenge belongs.  It is also used from certificate resources to indicate a resource from which the client may fetch a chain of CA certificates that could be used to validate the certificate in the original resource.
@@ -287,13 +287,13 @@ The following table illustrates a typical sequence of requests required to estab
 | Request challenges | POST new-authz | 201 -> authz |
 | Answer challenges  | POST challenge | 200          |
 | Poll for status    | GET  authz     | 200          |
-| Request issuane    | POST new-cert  | 201 -> cert  |
+| Request issuance   | POST new-cert  | 201 -> cert  |
 | Check for new cert | GET  cert      | 200          |
 
 
 ## Errors
 
-Errors can be reported in ACME both at the HTTP layer and within ACME payloads.  ACME servers can return responses with an HTTP error response codes (4XX or 5XX).  For example:  If the client submits a request using a method not allowed in this document, then the server MAY return status code 405 (Method Not Allowed).
+Errors can be reported in ACME both at the HTTP layer and within ACME payloads.  ACME servers can return responses with an HTTP error response code (4XX or 5XX).  For example:  If the client submits a request using a method not allowed in this document, then the server MAY return status code 405 (Method Not Allowed).
 
 When the server responds with an error status, it SHOULD provide additional information using problem document {{I-D.ietf-appsawg-http-problem}}.  The "type", "detail", and "instance" fields MUST be populated.  To facilitate automatic response to errors, this document defines the following standard tokens for use in the "type" field (within the "urn:acme:" namespace):
 
@@ -374,7 +374,7 @@ Link: <https://example.com/acme/terms>;rel="terms-of-service"
 If the client wishes to update this information in the future, it sends a POST request with updated information to the registration URI.  The server MUST ignore any updates to the "key" or "recoveryToken" fields, and MUST verify that the request is signed
 with the private key corresponding to the "key" field of the request before updating the registration.
 
-Servers SHOULD NOT respond to GET requests for registration resources, since these requests not authenticated.
+Servers SHOULD NOT respond to GET requests for registration resources as these requests are not authenticated.
 
 
 ## Authorization Resources

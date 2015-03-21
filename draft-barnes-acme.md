@@ -959,7 +959,7 @@ certFingerprints (optional, array):
 : An array of certificate fingerprints, hex-encoded SHA1 hashes of DER-encoded certificates that are known to contain this key
 
 certs (optional, array):
-: An array of certificates, in PEM encoding, that contain acceptable public keys.
+: An array of certificates, in Base64-encoded DER format, that contain acceptable public keys.
 
 subjectKeyIdentifiers (optional, array):
 : An array of hex-encoded Subject Key Identifiers (SKIDs) from certificate(s) that contain the key.  Because of divergences in the way that SKIDs are calculated {{RFC5280}}, there may conceivably be more than one of these.

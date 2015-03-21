@@ -606,7 +606,7 @@ Recovery tokens are employed in response to Recovery Challenges.  Such challenge
 The holder of an authorized key pair for an identifier may use ACME to request that a certificate be issued for that identifier.  The client makes this request by sending a POST request to the server's new-certificate resource.  The body of the POST is a JWS object whose JSON payload contains a Certificate Signing Request (CSR) {{RFC2986}} and set of authorization URIs.  The CSR encodes the parameters of the requested certificate; authority to issue is demonstrated by the JWS signature and the linked authorizations.
 
 csr (required, string):
-: A CSR encoding the parameters for the certificate being requested.  The CSR is sent in Base64-encoded version the DER format.  (Note: This field uses the same modified Base64-encoding rules used elsewhere in this document, so it is different from PEM.)
+: A CSR encoding the parameters for the certificate being requested.  The CSR is sent in Base64-encoded version of the DER format.  (Note: This field uses the same modified Base64-encoding rules used elsewhere in this document, so it is different from PEM.)
 
 authorizations (required, array of string):
 : An array of URIs for authorization resources.

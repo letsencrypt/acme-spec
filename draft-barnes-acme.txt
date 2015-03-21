@@ -75,26 +75,44 @@ Copyright Notice
 
 Table of Contents
 
-   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   2
-   2.  Deployment Model and Operator Experience  . . . . . . . . . .   3
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   3
+   2.  Deployment Model and Operator Experience  . . . . . . . . . .   4
    3.  Terminology . . . . . . . . . . . . . . . . . . . . . . . . .   5
    4.  Protocol Overview . . . . . . . . . . . . . . . . . . . . . .   6
-   5.  Certificate Management  . . . . . . . . . . . . . . . . . . .   8
+   5.  Certificate Management  . . . . . . . . . . . . . . . . . . .   9
      5.1.  Resources and Requests  . . . . . . . . . . . . . . . . .   9
      5.2.  Errors  . . . . . . . . . . . . . . . . . . . . . . . . .  11
-     5.3.  Registration  . . . . . . . . . . . . . . . . . . . . . .  11
-     5.4.  Authorization Resources . . . . . . . . . . . . . . . . .  13
+     5.3.  Registration  . . . . . . . . . . . . . . . . . . . . . .  12
+     5.4.  Authorization Resources . . . . . . . . . . . . . . . . .  14
      5.5.  Key Authorization . . . . . . . . . . . . . . . . . . . .  15
        5.5.1.  Recovery Tokens . . . . . . . . . . . . . . . . . . .  19
      5.6.  Certificate Issuance  . . . . . . . . . . . . . . . . . .  20
-     5.7.  Other possibilities . . . . . . . . . . . . . . . . . . .  30
-   6.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  31
-   7.  Security Considerations . . . . . . . . . . . . . . . . . . .  31
-   8.  Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .  31
-   9.  References  . . . . . . . . . . . . . . . . . . . . . . . . .  31
-     9.1.  Normative References  . . . . . . . . . . . . . . . . . .  31
-     9.2.  Informative References  . . . . . . . . . . . . . . . . .  33
-   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  33
+     5.7.  Certificate Refresh . . . . . . . . . . . . . . . . . . .  22
+     5.8.  Certificate Revocation  . . . . . . . . . . . . . . . . .  22
+   6.  Identifier Validation Challenges  . . . . . . . . . . . . . .  23
+     6.1.  Simple HTTPS  . . . . . . . . . . . . . . . . . . . . . .  25
+     6.2.  Domain Validation with Server Name Indication . . . . . .  26
+     6.3.  Recovery Contact  . . . . . . . . . . . . . . . . . . . .  28
+     6.4.  Recovery Token  . . . . . . . . . . . . . . . . . . . . .  30
+     6.5.  Proof of Possession of a Prior Key  . . . . . . . . . . .  30
+     6.6.  DNS . . . . . . . . . . . . . . . . . . . . . . . . . . .  33
+     6.7.  Other possibilities . . . . . . . . . . . . . . . . . . .  34
+   7.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  35
+   8.  Security Considerations . . . . . . . . . . . . . . . . . . .  35
+   9.  Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .  35
+   10. References  . . . . . . . . . . . . . . . . . . . . . . . . .  35
+     10.1.  Normative References . . . . . . . . . . . . . . . . . .  35
+     10.2.  Informative References . . . . . . . . . . . . . . . . .  37
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  37
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                 [Page 2]
+
+Internet-Draft                    ACME                    September 2014
+
 
 1.  Introduction
 
@@ -106,13 +124,6 @@ Table of Contents
    Existing Web PKI certificate authorities tend to run on a set of ad
    hoc protocols for certificate issuance and identity verification.  A
    typical user experience is something like:
-
-
-
-Barnes, et al.            Expires March 5, 2015                 [Page 2]
-
-Internet-Draft                    ACME                    September 2014
-
 
    o  Generate a PKCS#10 [RFC2314] Certificate Signing Request (CSR).
 
@@ -150,6 +161,15 @@ Internet-Draft                    ACME                    September 2014
    issuance and domain validation procedure, thereby allowing servers
    and infrastructural software to obtain certificates without user
    interaction.  Use of this protocol should radically simplify the
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                 [Page 3]
+
+Internet-Draft                    ACME                    September 2014
+
+
    deployment of HTTPS and the practicality of PKIX authentication for
    other TLS based protocols.
 
@@ -160,15 +180,6 @@ Internet-Draft                    ACME                    September 2014
    speak for one or more domains, and the process of certificate
    issuance is intended to verify that the server actually speaks for
    the domain.
-
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                 [Page 3]
-
-Internet-Draft                    ACME                    September 2014
-
 
    Different types of certificates reflect different kinds of CA
    verification of information about the certificate subject.  "Domain
@@ -207,6 +218,14 @@ Internet-Draft                    ACME                    September 2014
    o  In the background, the ACME client contacts the CA and requests
       that a certificate be issued for the intended domain name(s).
 
+
+
+
+Barnes, et al.            Expires March 5, 2015                 [Page 4]
+
+Internet-Draft                    ACME                    September 2014
+
+
    o  Once the CA is satisfied, the certificate is issued and the ACME
       client automatically downloads and installs it, potentially
       notifying the operator via e-mail, SMS, etc.
@@ -218,14 +237,6 @@ Internet-Draft                    ACME                    September 2014
 
    The overall idea is that it's nearly as easy to deploy with a CA-
    issued certificate as a self-signed certificate, and that once the
-
-
-
-Barnes, et al.            Expires March 5, 2015                 [Page 4]
-
-Internet-Draft                    ACME                    September 2014
-
-
    operator has done so, the process is self-sustaining with minimal
    manual intervention.  Close integration of ACME with HTTPS servers,
    for example, can allow the immediate and automated deployment of
@@ -263,6 +274,14 @@ Internet-Draft                    ACME                    September 2014
       authorization for an identifier, in a situation where all Subject
       Private Keys and Account Keys are lost.
 
+
+
+
+Barnes, et al.            Expires March 5, 2015                 [Page 5]
+
+Internet-Draft                    ACME                    September 2014
+
+
    ACME messaging is based on HTTPS [RFC2818] and JSON [RFC7159].  Since
    JSON is a text-based format, binary fields are Base64-encoded.  For
    Base64 encoding, we use the variant defined in
@@ -274,13 +293,6 @@ Internet-Draft                    ACME                    September 2014
    by being encapsulated in a JSON Web Signature (JWS) object
    [I-D.ietf-jose-json-web-signature].  ACME uses a profile of JWS, with
    the following restrictions:
-
-
-
-Barnes, et al.            Expires March 5, 2015                 [Page 5]
-
-Internet-Draft                    ACME                    September 2014
-
 
    o  The JWS MUST use the JSON or Flattened JSON Serialization
 
@@ -298,7 +310,7 @@ Internet-Draft                    ACME                    September 2014
    domains), and requests certificate issuance for those domains while
    logged in to the account.
 
-   In ACME, the account is represented by a account key pair.  The "add
+   In ACME, the account is represented by an account key pair.  The "add
    a domain" function is accomplished by authorizing the key pair for a
    given domain.  Certificate issuance and revocation are authorized by
    a signature with the key pair.
@@ -319,6 +331,13 @@ Internet-Draft                    ACME                    September 2014
                                        <-------          Recovery Token
 
 
+
+
+Barnes, et al.            Expires March 5, 2015                 [Page 6]
+
+Internet-Draft                    ACME                    September 2014
+
+
    Before a client can issue certificates, it must establish an
    authorization with the server for an account key pair to act for the
    identifier(s) that it wishes to include in the certificate.  To do
@@ -331,20 +350,13 @@ Internet-Draft                    ACME                    September 2014
    the client, and the server verifies them using the public key of the
    account key pair.
 
-
-
-Barnes, et al.            Expires March 5, 2015                 [Page 6]
-
-Internet-Draft                    ACME                    September 2014
-
-
    To verify that the client controls the identifier being claimed, the
    server issues the client a set of challenges.  Because there are many
    different ways to validate possession of different types of
    identifiers, the server will choose from an extensible set of
    challenges that are appropriate for the identifier being claimed.
    The client responds with a set of responses that tell the server
-   which challenges the client has completed.  The server then validate
+   which challenges the client has completed.  The server then validates
    the challenges to check that the client has accomplished the
    challenge.
 
@@ -373,6 +385,15 @@ Internet-Draft                    ACME                    September 2014
                                        <-------           Authorization
 
 
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                 [Page 7]
+
+Internet-Draft                    ACME                    September 2014
+
+
    Once the client has authorized an account key pair for an identifier,
    it can use the key pair to authorize the issuance of certificates for
    the identifier.  To do this, the client sends a PKCS#10 Certificate
@@ -385,14 +406,6 @@ Internet-Draft                    ACME                    September 2014
    certificate and provides it in its response.  The certificate is
    assigned a URI, which the client can use to fetch updated versions of
    the certificate.
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                 [Page 7]
-
-Internet-Draft                    ACME                    September 2014
-
 
          Client                                                 Server
 
@@ -425,6 +438,18 @@ Internet-Draft                    ACME                    September 2014
    how these identifiers are encoded in the protocol, and what types of
    validation challenges the server might require.
 
+
+
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                 [Page 8]
+
+Internet-Draft                    ACME                    September 2014
+
+
 5.  Certificate Management
 
    In this section, we describe the certificate management functions
@@ -442,13 +467,6 @@ Internet-Draft                    ACME                    September 2014
    sequence of HTTPS requests to the server, carrying JSON messages.
    Each subsection below describes the message formats used by the
    function, and the order in which messages are sent.
-
-
-
-Barnes, et al.            Expires March 5, 2015                 [Page 8]
-
-Internet-Draft                    ACME                    September 2014
-
 
 5.1.  Resources and Requests
 
@@ -474,12 +492,20 @@ Internet-Draft                    ACME                    September 2014
 
    In general, the intent is for authorization and certificate resources
    to contain only public information, so that CAs may publish these
-   resoruces to document what certificates have been issued and how they
+   resources to document what certificates have been issued and how they
    were authorized.  Non-public information, such as contact
    information, is stored in registration resources.
 
    In order to accomplish ACME transactions, a client needs to have the
-   server's new-registration, new-authorization, and new-ceritificate
+   server's new-registration, new-authorization, and new-certificate
+
+
+
+Barnes, et al.            Expires March 5, 2015                 [Page 9]
+
+Internet-Draft                    ACME                    September 2014
+
+
    URIs; the remaining URIs are provided to the client as a result of
    requests to these URIs.  To simplify configuration, ACME uses the
    "next" link relation to indicate URI to contact for the next step in
@@ -497,14 +523,6 @@ Internet-Draft                    ACME                    September 2014
    an ACME server.  The solid lines indicate link relations, and the
    dotted lines correspond to relationships expressed in other ways,
    e.g., the Location header in a 201 (Created) response.
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                 [Page 9]
-
-Internet-Draft                    ACME                    September 2014
-
 
                 "next"              "next"
        new-reg ---+----> new-authz ---+----> new-cert    cert-chain
@@ -535,6 +553,15 @@ Internet-Draft                    ACME                    September 2014
    The following table illustrates a typical sequence of requests
    required to establish a new account with the server, prove control of
    an identifier, issue a certificate, and fetch an updated certificate
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 10]
+
+Internet-Draft                    ACME                    September 2014
+
+
    some time after issuance.  The "->" is a mnemonic for a Location
    header pointing to a created resource.
 
@@ -549,24 +576,16 @@ Internet-Draft                    ACME                    September 2014
           |                    |                |              |
           | Poll for status    | GET  authz     | 200          |
           |                    |                |              |
-          | Request issuane    | POST new-cert  | 201 -> cert  |
+          | Request issuance   | POST new-cert  | 201 -> cert  |
           |                    |                |              |
           | Check for new cert | GET  cert      | 200          |
           +--------------------+----------------+--------------+
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 10]
-
-Internet-Draft                    ACME                    September 2014
-
 
 5.2.  Errors
 
    Errors can be reported in ACME both at the HTTP layer and within ACME
    payloads.  ACME servers can return responses with an HTTP error
-   response codes (4XX or 5XX).  For example: If the client submits a
+   response code (4XX or 5XX).  For example: If the client submits a
    request using a method not allowed in this document, then the server
    MAY return status code 405 (Method Not Allowed).
 
@@ -591,6 +610,14 @@ Internet-Draft                    ACME                    September 2014
    |                | key)                                             |
    +----------------+--------------------------------------------------+
 
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 11]
+
+Internet-Draft                    ACME                    September 2014
+
+
    Authorization and challenge objects can also contain error
    information to indicate why the server was unable to validate
    authorization.
@@ -610,14 +637,6 @@ Internet-Draft                    ACME                    September 2014
       server can use to contact the client for issues related to this
       authorization.  For example, the server may wish to notify the
       client about server-initiated revocation, or check with the client
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 11]
-
-Internet-Draft                    ACME                    September 2014
-
-
       on future authorizations (see the "recoveryContact" challenge
       type).
 
@@ -646,6 +665,15 @@ Internet-Draft                    ACME                    September 2014
    /* Signed as JWS */
 
 
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 12]
+
+Internet-Draft                    ACME                    September 2014
+
+
    The server MUST ignore any values provided in the "key" or
    "recoveryToken" fields, as well as any other fields that it does not
    recognize.  If new fields are specified in the future, the
@@ -665,15 +693,6 @@ Internet-Draft                    ACME                    September 2014
    ACME service is to be used, it may indicate the URI where such terms
    can be accessed in a Link header with link relation "terms-of-
    service".  As noted above, the client may indicate its agreement with
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 12]
-
-Internet-Draft                    ACME                    September 2014
-
-
    these terms by updating its registration to include the "agreement"
    field, with the terms URI as its value.
 
@@ -702,8 +721,17 @@ Internet-Draft                    ACME                    September 2014
    with the private key corresponding to the "key" field of the request
    before updating the registration.
 
-   Servers SHOULD NOT respond to GET requests for registration
-   resources, since these requests not authenticated.
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 13]
+
+Internet-Draft                    ACME                    September 2014
+
+
+   Servers SHOULD NOT respond to GET requests for registration resources
+   as these requests are not authenticated.
 
 5.4.  Authorization Resources
 
@@ -722,13 +750,6 @@ Internet-Draft                    ACME                    September 2014
       type (required, string):  The type of identifier.
 
       value (required, string):  The identifier itself.
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 13]
-
-Internet-Draft                    ACME                    September 2014
-
 
    key (required, dictionary):  The public key of the account key pair,
       encoded as a JSON Web Key object [I-D.ietf-jose-json-web-key].
@@ -757,27 +778,6 @@ Internet-Draft                    ACME                    September 2014
       array.  If no "combinations" element is included in an
       authorization object, the client completes all challenges.
 
-   The only type of identifier defined by this specification is a fully-
-   qualified domain name (type: "dns").  The value of the identifier
-   MUST be the ASCII representation of the domain name.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -786,25 +786,31 @@ Barnes, et al.            Expires March 5, 2015                [Page 14]
 Internet-Draft                    ACME                    September 2014
 
 
+   The only type of identifier defined by this specification is a fully-
+   qualified domain name (type: "dns").  The value of the identifier
+   MUST be the ASCII representation of the domain name.
+
    {
      "status": "valid",
      "expires": "2015-03-01",
 
      "identifier": {
-       "type": "domain",
+       "type": "dns",
        "value": "example.org"
      },
 
      "key": { /* JWK */ },
 
      "challenges": [
-       "simpleHttps": {
+       {
+         "type": "simpleHttps",
          "status": "valid",
          "validated": "2014-12-01T12:05Z",
          "token": "IlirfxKKXAsHtmzK29Pj8A"
          "path": "Hf5GrX4Q7EBax9hc2jJnfw"
        },
-       "recoveryToken": {
+       {
+         "type": "recoveryToken",
          "status": "valid",
          "validated": "2014-12-01T12:07Z",
          "token": "23029d88d9e123e"
@@ -827,13 +833,7 @@ Internet-Draft                    ACME                    September 2014
 
    As illustrated by the figure in the overview section above, the
    authorization process proceeds in two phases.  The client first
-   requests a new authorization, and then the server issues challenges
-   that the client responds to.
 
-   To begin the key authorization process, the client sends a POST
-   request to the server's new-authorization resource.  The body of the
-   POST request MUST contain a JWS object, whose payload is a partial
-   authorization object.  This JWS object MUST contain only the
 
 
 
@@ -842,6 +842,13 @@ Barnes, et al.            Expires March 5, 2015                [Page 15]
 Internet-Draft                    ACME                    September 2014
 
 
+   requests a new authorization, and then the server issues challenges
+   that the client responds to.
+
+   To begin the key authorization process, the client sends a POST
+   request to the server's new-authorization resource.  The body of the
+   POST request MUST contain a JWS object, whose payload is a partial
+   authorization object.  This JWS object MUST contain only the
    "identifier" field, so that the server knows what identifier is being
    authorized.  The client MAY provide contact information in the
    "contact" field in this or any subsequent request.
@@ -851,7 +858,7 @@ Internet-Draft                    ACME                    September 2014
 
    {
      "identifier": {
-       "type": "domain",
+       "type": "dns",
        "value": "example.org"
      }
    }
@@ -883,13 +890,6 @@ Internet-Draft                    ACME                    September 2014
 
    o  The "expires" field MUST be absent.
 
-   The server allocates a new URI for this authorization, and returns a
-   201 (Created) response, with the authorization URI in a Location
-   header field, and the JSON authorization object in the body.
-
-
-
-
 
 
 
@@ -897,6 +897,10 @@ Barnes, et al.            Expires March 5, 2015                [Page 16]
 
 Internet-Draft                    ACME                    September 2014
 
+
+   The server allocates a new URI for this authorization, and returns a
+   201 (Created) response, with the authorization URI in a Location
+   header field, and the JSON authorization object in the body.
 
    HTTP/1.1 201 Created
    Content-Type: application/json
@@ -907,7 +911,7 @@ Internet-Draft                    ACME                    September 2014
      "status": "pending",
 
      "identifier": {
-       "type": "domain",
+       "type": "dns",
        "value": "example.org"
      },
 
@@ -942,10 +946,6 @@ Internet-Draft                    ACME                    September 2014
    received from the server by filling in any required information in
    the elements of the "challenges" dictionary.  For example, if the
    client wishes to complete the "simpleHttps" challenge, it needs to
-   provide the "path" component.  (This is also the stage where the
-   client should perform any actions required by the challenge.)
-
-
 
 
 
@@ -953,6 +953,9 @@ Barnes, et al.            Expires March 5, 2015                [Page 17]
 
 Internet-Draft                    ACME                    September 2014
 
+
+   provide the "path" component.  (This is also the stage where the
+   client should perform any actions required by the challenge.)
 
    The client sends these updates back to the server in the form of a
    JSON object with the response fields required by the challenge type,
@@ -999,9 +1002,6 @@ Internet-Draft                    ACME                    September 2014
 
    To check on the status of an authorization, the client sends a GET
    request to the authorization URI, and the server responds with the
-   current authorization object.  To provide some degree of control over
-   polling, the server MAY provide a Retry-After header field to
-   indicate how long it expect to take in finalizing the response.
 
 
 
@@ -1009,6 +1009,10 @@ Barnes, et al.            Expires March 5, 2015                [Page 18]
 
 Internet-Draft                    ACME                    September 2014
 
+
+   current authorization object.  To provide some degree of control over
+   polling, the server MAY provide a Retry-After header field to
+   indicate how long it expect to take in finalizing the response.
 
    GET /acme/authz/asdf HTTP/1.1
    Host: example.com
@@ -1020,7 +1024,7 @@ Internet-Draft                    ACME                    September 2014
      "expires": "2015-03-01",
 
      "identifier": {
-       "type": "domain",
+       "type": "dns",
        "value": "example.org"
      },
 
@@ -1043,7 +1047,7 @@ Internet-Draft                    ACME                    September 2014
          "validated": "2014-12-01T12:07Z",
          "token": "23029d88d9e123e"
        }
-     ],
+     ]
    }
 
 
@@ -1055,10 +1059,6 @@ Internet-Draft                    ACME                    September 2014
    recovery token to prove that it was previously authorized for the
    identifier in question.
 
-   This mechanism is necessary because once an ACME server has issued an
-   Authorization Key for a given identifier, that identifier enters a
-   higher-security state, at least with respect the ACME server.  That
-
 
 
 Barnes, et al.            Expires March 5, 2015                [Page 19]
@@ -1066,6 +1066,9 @@ Barnes, et al.            Expires March 5, 2015                [Page 19]
 Internet-Draft                    ACME                    September 2014
 
 
+   This mechanism is necessary because once an ACME server has issued an
+   Authorization Key for a given identifier, that identifier enters a
+   higher-security state, at least with respect the ACME server.  That
    state exists to protect against attacks such as DNS hijacking and
    router compromise which tend to inherently defeat all forms of Domain
    Validation.  So once a domain has begun using ACME, new DV-only
@@ -1111,9 +1114,6 @@ Internet-Draft                    ACME                    September 2014
    client makes this request by sending a POST request to the server's
    new-certificate resource.  The body of the POST is a JWS object whose
    JSON payload contains a Certificate Signing Request (CSR) [RFC2986]
-   and set of authorization URIs.  The CSR encodes the parameters of the
-   requested certificate; authority to issue is demonstrated by the JWS
-   signature and the linked authorizations.
 
 
 
@@ -1122,54 +1122,54 @@ Barnes, et al.            Expires March 5, 2015                [Page 20]
 Internet-Draft                    ACME                    September 2014
 
 
+   and set of authorization URIs.  The CSR encodes the parameters of the
+   requested certificate; authority to issue is demonstrated by the JWS
+   signature and the linked authorizations.
+
    csr (required, string):  A CSR encoding the parameters for the
-      certificate being requested.  The CSR is sent in base64-encoded
-      version the DER format.  (Note: This field uses the same modified
-      base64-encoding rules used elsewhere in this document, so it is
-      different from PEM.)
+      certificate being requested.  The CSR is sent in Base64-encoded
+      version of the DER format.  (Note: This field uses the same
+      modified Base64-encoding rules used elsewhere in this document, so
+      it is different from PEM.)
 
    authorizations (required, array of string):  An array of URIs for
       authorization resources.
 
-POST /acme/new-cert HTTP/1.1
-Host: example.com
-Accept: application/pkix-cert
+   POST /acme/new-cert HTTP/1.1
+   Host: example.com
+   Accept: application/pkix-cert
 
-{
-  "csr": "5jNudRx6Ye4HzKEqT5...FS6aKdZeGsysoCo4H9P",
-  "authorizations": [
-    "https://example.com/acme/authz/asdf"
-  ]
-}
-/* Signed as JWS */
-
-~~~~~~~~~
-
-The CSR encodes the client's requests with regard to the content of the certificate to be issued.  The CSR MUST contain at least one extensionRequest attribute {{RFC2985}} requesting a subjectAltName extension, containing the requested identifiers.
-
-The values provided in the CSR are only a request, and are not guaranteed.  The server or CA may alter any fields in the certificate before issuance.  For example, the CA may remove identifiers that are not authorized for the key indicated in the "authorization" field.
-
-If the CA decides to issue a certificate, then the server returns the certificate in a response with status code 201 (Created).  The server MUST indicate a URL for this certificate in a Location header field.
-
-The default format of the certificate is DER (application/pkix-cert).  The client may request other formats by including an Accept header in its request.
-
-The server can provide metadata about the certificate in HTTP headers.  For example, the server can include a Link relation header field {{RFC5988}} with relation "up" to provide a certificate under which this certificate was issued.  Or the server can include an Expires header as a hint to the client about when to re-query to refresh the certificate.  (Of course, the real expiration of the certificate is controlled by the notAfter time in the certificate itself.)
+   {
+     "csr": "5jNudRx6Ye4HzKEqT5...FS6aKdZeGsysoCo4H9P",
+     "authorizations": [
+       "https://example.com/acme/authz/asdf"
+     ]
+   }
+   /* Signed as JWS */
 
 
-   HTTP/1.1 201 Created Content-Type: application/pkix-cert Link:
-   https://example.com/acme/ca-cert ;rel="up";title="issuer" Location:
-   https://example.com/acme/cert/asdf
+   The CSR encodes the client's requests with regard to the content of
+   the certificate to be issued.  The CSR MUST contain at least one
+   extensionRequest attribute [RFC2985] requesting a subjectAltName
+   extension, containing the requested identifiers.
 
-   [DER-encoded certificate]
+   The values provided in the CSR are only a request, and are not
+   guaranteed.  The server or CA may alter any fields in the certificate
+   before issuance.  For example, the CA may remove identifiers that are
+   not authorized for the key indicated in the "authorization" field.
 
+   If the CA decides to issue a certificate, then the server returns the
+   certificate in a response with status code 201 (Created).  The server
+   MUST indicate a URL for this certificate in a Location header field.
 
+   The default format of the certificate is DER (application/pkix-cert).
+   The client may request other formats by including an Accept header in
+   its request.
 
-
-
-
-
-
-
+   The server can provide metadata about the certificate in HTTP
+   headers.  For example, the server can include a Link relation header
+   field [RFC5988] with relation "up" to provide a certificate under
+   which this certificate was issued.  Or the server can include an
 
 
 
@@ -1178,48 +1178,48 @@ Barnes, et al.            Expires March 5, 2015                [Page 21]
 Internet-Draft                    ACME                    September 2014
 
 
-## Certificate Refresh
+   Expires header as a hint to the client about when to re-query to
+   refresh the certificate.  (Of course, the real expiration of the
+   certificate is controlled by the notAfter time in the certificate
+   itself.)
 
-The certificate URL (provided in the Location header of the server's response) is used to refresh or revoke the certificate.  To refresh the certificate, the client simply sends a GET request to the certificate URL.  This allows the server to provide the client with updated certificates with the same content and different validity intervals, for as long as all of the authorization objects underlying the certificate are valid.
+   HTTP/1.1 201 Created
+   Content-Type: application/pkix-cert
+   Link: <https://example.com/acme/ca-cert>;rel="up";title="issuer"
+   Location: https://example.com/acme/cert/asdf
 
-If a client sends a refresh request and the server is not willing to refresh the certificate, the server MUST respond with status code 403 (Forbidden).  If the client still wishes to obtain a certificate, it can re-initiate the authorization process for any expired authorizations related to the certificate.
-
-## Certificate Revocation
-
-To request that a certificate be revoked, the client sends a POST request to the certificate URL.  The body of the POST is a JWS object whose JSON payload contains an indication when the client would like the certificate to be revoked:
-
-revoke (required, string):
-: The time at which the certificate should be revoked.  The value of this field MUST be either the literal string "now", or a date in RFC 3339 format {{RFC3339}}.
-
-authorizations (required, array of string):
-: An array of URIs for authorization resources.
+   [DER-encoded certificate]
 
 
-   POST /acme/cert/asdf HTTP/1.1 Host: example.com
+5.7.  Certificate Refresh
 
-   { "revoke": "now", "authorizations": [
-   "https://example.com/acme/authz/asdf" ] } /* Signed as JWS */
+   The certificate URL (provided in the Location header of the server's
+   response) is used to refresh or revoke the certificate.  To refresh
+   the certificate, the client simply sends a GET request to the
+   certificate URL.  This allows the server to provide the client with
+   updated certificates with the same content and different validity
+   intervals, for as long as all of the authorization objects underlying
+   the certificate are valid.
 
-Before revoking a certificate, the server MUST verify that the account key pair used to sign the request is authorized to act for all of the identifier(s) in the certificate.  The server MAY also accept a signature by the private key corresponding to the public key in the certificate.
+   If a client sends a refresh request and the server is not willing to
+   refresh the certificate, the server MUST respond with status code 403
+   (Forbidden).  If the client still wishes to obtain a certificate, it
+   can re-initiate the authorization process for any expired
+   authorizations related to the certificate.
 
-If the revocation succeeds, the server responds with status code 200 (OK).  If the revocation fails, the server returns an error.
+5.8.  Certificate Revocation
 
+   To request that a certificate be revoked, the client sends a POST
+   request to the certificate URL.  The body of the POST is a JWS object
+   whose JSON payload contains an indication when the client would like
+   the certificate to be revoked:
 
-   HTTP/1.1 200 OK Content-Length: 0
+   revoke (required, string):  The time at which the certificate should
+      be revoked.  The value of this field MUST be either the literal
+      string "now", or a date in RFC 3339 format [RFC3339].
 
-   -- or --
-
-   HTTP/1.1 403 Forbidden Content-Type: application/problem+json
-   Content-Language: en
-
-   { "type": "urn:acme:error:unauthorized" "detail": "No authorization
-   provided for name example.net" "instance": "http://example.com/doc/
-   unauthorized" }
-
-
-
-
-
+   authorizations (required, array of string):  An array of URIs for
+      authorization resources.
 
 
 
@@ -1234,54 +1234,54 @@ Barnes, et al.            Expires March 5, 2015                [Page 22]
 Internet-Draft                    ACME                    September 2014
 
 
-# Identifier Validation Challenges
+   POST /acme/cert/asdf HTTP/1.1
+   Host: example.com
 
-There are few types of identifier in the world for which there is a standardized mechanism to prove possession of a given identifier.  In all practical cases, CAs rely on a variety of means to test whether an entity applying for a certificate with a given identifier actually controls that identifier.
-
-To accommodate this reality, ACME includes an extensible challenge/response framework for identifier validation.  This section describes an initial set of Challenge types.  Each challenge must describe:
-
-* Content of Challenge payloads (in Challenge messages)
-* Content of Response payloads (in authorizationRequest messages)
-* How the server uses the Challenge and Response to verify control of an identifier
-
-The only general requirement for Challenge and Response payloads is that they MUST be structured as a JSON object, and they MUST contain a parameter "type" that specifies the type of Challenge or Response encoded in the object.
-
-Different challenges allow the server to obtain proof of different aspects of control over an identifier.  In some challenges, like Simple HTTPS and DVSNI, the client directly proves control of an identifier.  In other challenges, such as Recovery or Proof of Possession, the client proves historical control of the identifier, by reference to a prior authorization transaction or certificate.
-
-The choice of which Challenges to offer to a client under which circumstances is a matter of server policy.  A server may choose different sets of challenges depending on whether it has interacted with a domain before, and how.  For example:
-
-| Domain status                                 | Challenges typically sufficient for (re)Authorization |
-|:==============================================|:======================================================|
-| No known prior certificates or ACME usage     | Domain Validation (DVSNI or Simple HTTPS)             |
-| Existing valid certs, first use of ACME       | DV + Proof of Possession of previous CA-signed key    |
-| Ongoing ACME usage                            | PoP of previous Authorized key                        |
-| Ongoing ACME usage, lost Authorized key       | DV + (Recovery or PoP of ACME-certified Subject key)  |
-| ACME usage, all keys and recovery tokens lost | Recertification by another CA + PoP of that key       |
-
-The identifier validation challenges described in this section all relate to validation of domain names.  If ACME is extended in the future to support other types of identifier, there will need to be new Challenge types, and they will need to specify which types of identifier they apply to.
-
-## Simple HTTPS
-
-With Simple HTTPS validation, the client in an ACME transaction proves its control over a domain name by proving that it can provision resources on an HTTPS server that responds for that domain name.  The ACME server challenges the client to provision a file with a specific string as its contents.
-
-type (required, string):
-: The string "simpleHttps"
-
-token (required, string):
-: The value to be provisioned in the file.  This value MUST have at least 128 bits of entropy, in order to prevent an attacker from guessing it.  It MUST NOT contain any non-ASCII characters.
+   {
+     "revoke": "now",
+     "authorizations": [
+       "https://example.com/acme/authz/asdf"
+     ]
+   }
+   /* Signed as JWS */
 
 
-   { "type": "simpleHttps", "token":
-   "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA" }
+   Before revoking a certificate, the server MUST verify that the
+   account key pair used to sign the request is authorized to act for
+   all of the identifier(s) in the certificate.  The server MAY also
+   accept a signature by the private key corresponding to the public key
+   in the certificate.
 
-A client responds to this Challenge by provisioning the nonce as a resource on the HTTPS server for the domain in question.  The path at which the resource is provisioned is determined by the client, but MUST begin with ".well-known/acme-challenge/".  The content type of the resource MUST be "text/plain".  The client returns the part of the path coming after that prefix in its Response message.
+   If the revocation succeeds, the server responds with status code 200
+   (OK).  If the revocation fails, the server returns an error.
 
-type (required, string):
-: The string "simpleHttps"
+   HTTP/1.1 200 OK
+   Content-Length: 0
 
-path (required, string):
-: The string to be appended to the standard prefix ".well-known/acme-challenge" in order to form the path at which the nonce resource is provisioned.  The result of concatenating the prefix with this value MUST match the "path" production in the standard URI format {{RFC3986}}
+   --- or ---
 
+   HTTP/1.1 403 Forbidden
+   Content-Type: application/problem+json
+   Content-Language: en
+
+   {
+     "type": "urn:acme:error:unauthorized"
+     "detail": "No authorization provided for name example.net"
+     "instance": "http://example.com/doc/unauthorized"
+   }
+
+
+6.  Identifier Validation Challenges
+
+   There are few types of identifier in the world for which there is a
+   standardized mechanism to prove possession of a given identifier.  In
+   all practical cases, CAs rely on a variety of means to test whether
+   an entity applying for a certificate with a given identifier actually
+   controls that identifier.
+
+   To accommodate this reality, ACME includes an extensible challenge/
+   response framework for identifier validation.  This section describes
+   an initial set of Challenge types.  Each challenge must describe:
 
 
 
@@ -1290,54 +1290,54 @@ Barnes, et al.            Expires March 5, 2015                [Page 23]
 Internet-Draft                    ACME                    September 2014
 
 
-   { "type": "simpleHttps", "path": "6tbIMBC5Anhl5bOlWT5ZFA" }
+   o  Content of Challenge payloads (in Challenge messages)
 
-Given a Challenge/Response pair, the server verifies the client's control of the domain by verifying that the resource was provisioned as expected.
+   o  Content of Response payloads (in authorizationRequest messages)
 
-1. Form a URI by populating the URI template "https://{domain}/.well-known/acme-challenge/{path}", where the domain field is set to the domain name being verified and the path field is the path provided in the challenge {{RFC6570}}.
-2. Verify that the resulting URI is well-formed.
-3. Dereference the URI using an HTTPS GET request.
-4. Verify that the certificate presented by the HTTPS server is a valid self-signed certificate, and contains the domain name being validated as well as the public key of the key pair being authorized.
-5. Verify that the Content-Type header of the response is either absent, or has the value "text/plain"
-6. Compare the entity body of the response with the nonce.  This comparison MUST be performed in terms of Unicode code points, taking into account the encodings of the stored nonce and the body of the request.
+   o  How the server uses the Challenge and Response to verify control
+      of an identifier
 
-If the GET request succeeds and the entity body is equal to the nonce, then the validation is successful.  If the request fails, or the body does not match the nonce, then it has failed.
+   The only general requirement for Challenge and Response payloads is
+   that they MUST be structured as a JSON object, and they MUST contain
+   a parameter "type" that specifies the type of Challenge or Response
+   encoded in the object.
 
+   Different challenges allow the server to obtain proof of different
+   aspects of control over an identifier.  In some challenges, like
+   Simple HTTPS and DVSNI, the client directly proves control of an
+   identifier.  In other challenges, such as Recovery or Proof of
+   Possession, the client proves historical control of the identifier,
+   by reference to a prior authorization transaction or certificate.
 
-## Domain Validation with Server Name Indication
+   The choice of which Challenges to offer to a client under which
+   circumstances is a matter of server policy.  A server may choose
+   different sets of challenges depending on whether it has interacted
+   with a domain before, and how.  For example:
 
-The Domain Validation with Server Name Indication (DVSNI) validation method aims to ensure that the ACME client has administrative access to the web server at the domain name being validated, and possession of the private key being authorized.  The ACME server verifies that the operator can reconfigure the web server by having the client create a new self-signed challenge certificate and respond to TLS connections from the ACME server with it.
+   +-------------------------------+-----------------------------------+
+   | Domain status                 | Challenges typically sufficient   |
+   |                               | for (re)Authorization             |
+   +-------------------------------+-----------------------------------+
+   | No known prior certificates   | Domain Validation (DVSNI or       |
+   | or ACME usage                 | Simple HTTPS)                     |
+   |                               |                                   |
+   | Existing valid certs, first   | DV + Proof of Possession of       |
+   | use of ACME                   | previous CA-signed key            |
+   |                               |                                   |
+   | Ongoing ACME usage            | PoP of previous Authorized key    |
+   |                               |                                   |
+   | Ongoing ACME usage, lost      | DV + (Recovery or PoP of ACME-    |
+   | Authorized key                | certified Subject key)            |
+   |                               |                                   |
+   | ACME usage, all keys and      | Recertification by another CA +   |
+   | recovery tokens lost          | PoP of that key                   |
+   +-------------------------------+-----------------------------------+
 
-The challenge proceeds as follows: The ACME server sends the client a random value R and a nonce used to identify the transaction.  The client responds with another random value S.  The server initiates a TLS connection on port 443 to a host with the domain name being validated.  In the handshake, the ACME server sets the Server Name Indication extension set to "\<nonce\>.acme.invalid".  The TLS server (i.e., the ACME client) should respond with a valid self-signed certificate containing both the domain name being validated and the domain name "\<Z\>.acme.invalid", where Z = SHA-256(R &#124;&#124; S).
-
-The ACME server's Challenge provides its random value R, and a random nonce used to identify the transaction:
-
-type (required, string):
-: The string "dvsni"
-
-r (required, string):
-: A random 32-byte octet, base64-encoded
-
-nonce (required, string):
-: A random 16-byte octet string, hex-encoded (so that it can be used as a DNS label)
-
-
-   { "type": "dvsni", "r":
-   "Tyq0La3slT7tqQ0wlOiXnCY2vyez7Zo5blgPJ1xt5xI", "nonce":
-   "a82d5ff8ef740d12881f6d3c2277ab2e" }
-
-
-
-
-
-
-
-
-
-
-
-
-
+   The identifier validation challenges described in this section all
+   relate to validation of domain names.  If ACME is extended in the
+   future to support other types of identifier, there will need to be
+   new Challenge types, and they will need to specify which types of
+   identifier they apply to.
 
 
 
@@ -1346,54 +1346,54 @@ Barnes, et al.            Expires March 5, 2015                [Page 24]
 Internet-Draft                    ACME                    September 2014
 
 
-The ACME server MAY re-use nonce values, but SHOULD periodically refresh them.  ACME clients MUST NOT rely on nonce values being stable over time.
+6.1.  Simple HTTPS
 
-The client responds to this Challenge by configuring a TLS server on port 443 of a server with the domain name being validated:
+   With Simple HTTPS validation, the client in an ACME transaction
+   proves its control over a domain name by proving that it can
+   provision resources on an HTTPS server that responds for that domain
+   name.  The ACME server challenges the client to provision a file with
+   a specific string as its contents.
 
-1. Decode the server's random value R
-2. Generate a random 32-byte octet string S
-3. Compute Z = SHA-256(R &#124;&#124; S) (where &#124;&#124; denotes concatenation of octet strings)
-4. Generate a self-signed certificate with a subjectAltName extension containing two dNSName values:
-  1. The domain name being validated
-  2. A name formed by hex-encoding Z and appending the suffix ".acme.invalid"
-5. Compute a nonce domain name by appending the suffix ".acme.invalid" to the nonce provided by the server.
-6. Configure the TLS server such that when a client presents the nonce domain name in the SNI field, the server presents the generated certificate.
+   type (required, string):  The string "simpleHttps"
 
-The client's response provides its random value S:
+   token (required, string):  The value to be provisioned in the file.
+      This value MUST have at least 128 bits of entropy, in order to
+      prevent an attacker from guessing it.  It MUST NOT contain any
+      non-ASCII characters.
 
-type (required, string):
-: The string "dvsni"
-
-s (required, string):
-: A random 32-byte secret octet string, base64-encoded
-
-
-   { "type": "dvsni", "s": "9dbjsl3gTAtOnEtKFEmhS6Mj-ajNjDcOmRkp3Lfzm3c"
+   {
+     "type": "simpleHttps",
+     "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA"
    }
 
 
+   A client responds to this Challenge by provisioning the nonce as a
+   resource on the HTTPS server for the domain in question.  The path at
+   which the resource is provisioned is determined by the client, but
+   MUST begin with ".well-known/acme-challenge/".  The content type of
+   the resource MUST be "text/plain".  The client returns the part of
+   the path coming after that prefix in its Response message.
+
+   type (required, string):  The string "simpleHttps"
+
+   path (required, string):  The string to be appended to the standard
+      prefix ".well-known/acme-challenge" in order to form the path at
+      which the nonce resource is provisioned.  The result of
+      concatenating the prefix with this value MUST match the "path"
+      production in the standard URI format [RFC3986]
+
+   {
+     "type": "simpleHttps",
+     "path": "6tbIMBC5Anhl5bOlWT5ZFA"
+   }
 
 
+   Given a Challenge/Response pair, the server verifies the client's
+   control of the domain by verifying that the resource was provisioned
+   as expected.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   1.  Form a URI by populating the URI template
+       "https://{domain}/.well-known/acme-challenge/{path}", where the
 
 
 
@@ -1402,54 +1402,54 @@ Barnes, et al.            Expires March 5, 2015                [Page 25]
 Internet-Draft                    ACME                    September 2014
 
 
-Given a Challenge/Response pair, the ACME server verifies the client's control of the domain by verifying that the TLS server was configured as expected:
+       domain field is set to the domain name being verified and the
+       path field is the path provided in the challenge [RFC6570].
 
-1. Compute the value Z = SHA-256(R &#124;&#124; S)
-2. Open a TLS connection to the domain name being validated on port 443, presenting the value "\<nonce\>.acme.invalid" in the SNI field.
-3. Verify the following properties of the certificate provided by the TLS server:
-  * It is a valid self-signed certificate
-  * The public key is the public key for the key pair being authorized
-  * It contains the domain name being validated as a subjectAltName
-  * It contains a subjectAltName matching the hex-encoding of Z, with the suffix ".acme.invalid"
+   2.  Verify that the resulting URI is well-formed.
 
-It is RECOMMENDED that the ACME server verify the challenge certificate using multi-path probing techniques to reduce the risk of DNS hijacking attacks.
+   3.  Dereference the URI using an HTTPS GET request.
 
-If the server presents a certificate matching all of the above criteria, then the validation is successful.  Otherwise, the validation fails.
+   4.  Verify that the certificate presented by the HTTPS server is a
+       valid self-signed certificate, and contains the domain name being
+       validated as well as the public key of the key pair being
+       authorized.
 
-## Recovery Contact
+   5.  Verify that the Content-Type header of the response is either
+       absent, or has the value "text/plain"
 
-A server may issue a recovery contact challenge to verify that the client is the same as the entity that previously requested authorization, using contact information provided by the client in a prior authorizationRequest message.
+   6.  Compare the entity body of the response with the nonce.  This
+       comparison MUST be performed in terms of Unicode code points,
+       taking into account the encodings of the stored nonce and the
+       body of the request.
 
-The server's message to the client may request action in-band or out-of-band to ACME.  The server can provide a token in the message that the client provides in its response.  Or the server could provide some out-of-band response channel in its message, such as a URL to click in an email.
+   If the GET request succeeds and the entity body is equal to the
+   nonce, then the validation is successful.  If the request fails, or
+   the body does not match the nonce, then it has failed.
 
-type (required, string):
-: The string "recoveryContact"
+6.2.  Domain Validation with Server Name Indication
 
-activationURL (optional, string):
-: A URL the client can visit to cause a recovery message to be sent to client's contact address.
+   The Domain Validation with Server Name Indication (DVSNI) validation
+   method aims to ensure that the ACME client has administrative access
+   to the web server at the domain name being validated, and possession
+   of the private key being authorized.  The ACME server verifies that
+   the operator can reconfigure the web server by having the client
+   create a new self-signed challenge certificate and respond to TLS
+   connections from the ACME server with it.
 
-successURL (optional, string):
-: A URL the client may poll to determine if the user has successfully clicked a link or completed other tasks specified by the recovery message.  This URL will return a 200 success code if the required tasks have been completed.  The client SHOULD NOT poll the URL more than once every three seconds.
+   The challenge proceeds as follows: The ACME server sends the client a
+   random value R and a nonce used to identify the transaction.  The
+   client responds with another random value S.  The server initiates a
+   TLS connection on port 443 to a host with the domain name being
+   validated.  In the handshake, the ACME server sets the Server Name
+   Indication extension set to "<nonce>.acme.invalid".  The TLS server
+   (i.e., the ACME client) should respond with a valid self-signed
+   certificate containing both the domain name being validated and the
+   domain name "<Z>.acme.invalid", where Z = SHA-256(R || S).
 
-contact (optional, string)
-: A full or partly obfuscated version of the contact URI that the server will use to contact the client.  Client software may present this to a user in order to suggest what contact point the user should check (e.g., an email address).
+   The ACME server's Challenge provides its random value R, and a random
+   nonce used to identify the transaction:
 
-
-   { "type": "recoveryContact", "activationURL" :
-   "https://example.ca/sendrecovery/a5bd99383fb0", "successURL" :
-   "https://example.ca/confirmrecovery/bb1b9928932", "contact" :
-   "c******n@example.com" }
-
-type (required, string):
-: The string "recoveryContact"
-
-token (optional, string):
-: If the user transferred a token from a contact email or call into the client software, the client sends it here.  If it the client has received a 200 success response while polling the RecoveryContact Challenge's successURL, this field SHOULD be omitted.
-
-
-   { "type": "recoveryContact", "token": "23029d88d9e123e" }
-
-
+   type (required, string):  The string "dvsni"
 
 
 
@@ -1458,53 +1458,53 @@ Barnes, et al.            Expires March 5, 2015                [Page 26]
 Internet-Draft                    ACME                    September 2014
 
 
-If the value of the "token" field matches the value provided in the out-of-band message to the client, or if the client has completed the required out-of-band action, then the validation succeeds.  Otherwise, the validation fails.
+   r (required, string):  A random 32-byte octet, Base64-encoded
+
+   nonce (required, string):  A random 16-byte octet string, hex-encoded
+      (so that it can be used as a DNS label)
+
+   {
+     "type": "dvsni",
+     "r": "Tyq0La3slT7tqQ0wlOiXnCY2vyez7Zo5blgPJ1xt5xI",
+     "nonce": "a82d5ff8ef740d12881f6d3c2277ab2e"
+   }
 
 
-## Recovery Token
+   The ACME server MAY re-use nonce values, but SHOULD periodically
+   refresh them.  ACME clients MUST NOT rely on nonce values being
+   stable over time.
 
-A recovery token is a simple way for the server to verify that the client was previously authorized for a domain.  The client simply provides the recovery token that was provided in the authorize message.
+   The client responds to this Challenge by configuring a TLS server on
+   port 443 of a server with the domain name being validated:
 
-type (required, string):
-: The string "recoveryToken"
+   1.  Decode the server's random value R
 
+   2.  Generate a random 32-byte octet string S
 
-   { "type": "recoveryToken" }
+   3.  Compute Z = SHA-256(R || S) (where || denotes concatenation of
+       octet strings)
 
-The response to a recovery token challenge is simple; the client sends the requested token that it was provided by the server earlier.
+   4.  Generate a self-signed certificate with a subjectAltName
+       extension containing two dNSName values:
 
-type (required, string):
-: The string "recoveryToken"
+   5.  The domain name being validated
 
-token (optional, string):
-: The recovery token provided by the server.
+   6.  A name formed by hex-encoding Z and appending the suffix
+       ".acme.invalid"
 
+   7.  Compute a nonce domain name by appending the suffix
+       ".acme.invalid" to the nonce provided by the server.
 
-   { "type": "recoveryToken", "token": "23029d88d9e123e" }
+   8.  Configure the TLS server such that when a client presents the
+       nonce domain name in the SNI field, the server presents the
+       generated certificate.
 
+   The client's response provides its random value S:
 
+   type (required, string):  The string "dvsni"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   s (required, string):  A random 32-byte secret octet string,
+      Base64-encoded
 
 
 
@@ -1514,54 +1514,54 @@ Barnes, et al.            Expires March 5, 2015                [Page 27]
 Internet-Draft                    ACME                    September 2014
 
 
-If the value of the "token" field matches a recovery token that the server previously provided for this domain, then the validation succeeds.  Otherwise, the validation fails.
+   {
+     "type": "dvsni",
+     "s": "9dbjsl3gTAtOnEtKFEmhS6Mj-ajNjDcOmRkp3Lfzm3c"
+   }
 
 
-## Proof of Possession of a Prior Key
+   Given a Challenge/Response pair, the ACME server verifies the
+   client's control of the domain by verifying that the TLS server was
+   configured as expected:
 
-The Proof of Possession challenge verifies that a client possesses a private key corresponding to a server-specified public key, as demonstrated by its ability to correctly sign server-provided data with that key.
+   1.  Compute the value Z = SHA-256(R || S)
 
-This method is useful if a server policy calls for issuing a certificate only to an entity that already possesses the subject private key of a particular prior related certificate (perhaps issued by a different CA).  It may also help enable other kinds of server policy that are related to authenticating a client's identity using digital signatures.
+   2.  Open a TLS connection to the domain name being validated on port
+       443, presenting the value "<nonce>.acme.invalid" in the SNI
+       field.
 
-This challenge proceeds in much the same way as the proof of possession of the authorized key pair in the main ACME flow (challenge + authorizationRequest).  The server provides a nonce and the client signs over the nonce.  The main difference is that rather than signing with the private key of the key pair being authorized, the client signs with a private key specified by the server.  The server can specify which key pair(s) are acceptable directly (by indicating a public key), or by asking for the key corresponding to a certificate.
+   3.  Verify the following properties of the certificate provided by
+       the TLS server:
 
-The server provides the following fields as part of the challenge:
+       *  It is a valid self-signed certificate
 
-type (required, string):
-: The string "proofOfPossession"
+       *  The public key is the public key for the key pair being
+          authorized
 
-alg (required, string):
-: A token indicating the cryptographic algorithm that should be used by the client to compute the signature {{I-D.ietf-jose-json-web-algorithms}}.  (MAC algorithms such as "HS*" MUST NOT be used.)  The client MUST verify that this algorithm is supported for the indicated key before responding to this challenge.
+       *  It contains the domain name being validated as a
+          subjectAltName
 
-nonce (required, string):
-: A random 16-byte octet string, base64-encoded
+       *  It contains a subjectAltName matching the hex-encoding of Z,
+          with the suffix ".acme.invalid"
 
-hints (required, object):
-: A JSON object that contains various clues for the client about what the requested key is, such that the client can find it.  Entries in the hints object may include:
+   It is RECOMMENDED that the ACME server verify the challenge
+   certificate using multi-path probing techniques to reduce the risk of
+   DNS hijacking attacks.
 
-jwk (required, object):
-: A JSON Web Key object describing the public key whose corresponding private key should be used to generate the signature {{I-D.ietf-jose-json-web-key}}
+   If the server presents a certificate matching all of the above
+   criteria, then the validation is successful.  Otherwise, the
+   validation fails.
 
-certFingerprints (optional, array):
-: An array of certificate fingerprints, hex-encoded SHA1 hashes of DER-encoded certificates that are known to contain this key
+6.3.  Recovery Contact
 
-certs (optional, array):
-: An array of certificates, in PEM encoding, that contain acceptable public keys.
+   A server may issue a recovery contact challenge to verify that the
+   client is the same as the entity that previously requested
+   authorization, using contact information provided by the client in a
+   prior authorizationRequest message.
 
-subjectKeyIdentifiers (optional, array):
-: An array of hex-encoded Subject Key Identifiers (SKIDs) from certificate(s) that contain the key.  Because of divergences in the way that SKIDs are calculated {{RFC5280}}, there may conceivably be more than one of these.
-
-serialNumbers (optional, array of numbers):
-: An array of serial numbers of certificates that are known to contain the requested key
-
-issuers (optional, array):
-: An array of X.509 Distinguished Names {{RFC5280}} of CAs that have been observed to issue certificates for this key, in text form {{RFC4514}}
-
-authorizedFor (optional, array):
-: An array of domain names, if any, for which this server regards the key as an ACME Authorized key.
-
-
-
+   The server's message to the client may request action in-band or out-
+   of-band to ACME.  The server can provide a token in the message that
+   the client provides in its response.  Or the server could provide
 
 
 
@@ -1570,52 +1570,52 @@ Barnes, et al.            Expires March 5, 2015                [Page 28]
 Internet-Draft                    ACME                    September 2014
 
 
-   { "type": "proofOfPossession", "alg": "RS256", "nonce":
-   "eET5udtV7aoX8Xl8gYiZIA", "hints" : { "jwk": { "kty": "RSA", "e":
-   "AQAB", "n": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ" },
-   "certFingerprints": [ "93416768eb85e33adc4277f4c9acd63e7418fcfe",
-   "16d95b7b63f1972b980b14c20291f3c0d1855d95",
-   "48b46570d9fc6358108af43ad1649484def0debf" ],
-   "subjectKeyIdentifiers": [ "d0083162dcc4c8a23ecb8aecbd86120e56fd24e5"
-   ], "serialNumbers": [34234239832, 23993939911, 17], "issuers": [
-   "C=US, O=SuperT LLC, CN=SuperTrustworthy Public CA",
-   "O=LessTrustworthy CA Inc, CN=LessTrustworthy But StillSecure" ],
-   "authorizedFor": ["www.example.com", "example.net"] } }
+   some out-of-band response channel in its message, such as a URL to
+   click in an email.
 
-In this case the server is challenging the client to prove its control over the private key that corresponds to the public key specified in the jwk object.  The signing algorithm is specified by the alg field.  The nonce value is used by the server to identify this challenge and is also used, also with a client-provided signature nonce, as part of the signature input.
+   type (required, string):  The string "recoveryContact"
 
+   activationURL (optional, string):  A URL the client can visit to
+      cause a recovery message to be sent to client's contact address.
 
-     signature-input = signature-nonce || server-nonce
+   successURL (optional, string):  A URL the client may poll to
+      determine if the user has successfully clicked a link or completed
+      other tasks specified by the recovery message.  This URL will
+      return a 200 success code if the required tasks have been
+      completed.  The client SHOULD NOT poll the URL more than once
+      every three seconds.
 
-The client's response includes the server-provided nonce, together with a signature over that nonce by one of the private keys requested by the server.
+   contact (optional, string)  A full or partly obfuscated version of
+      the contact URI that the server will use to contact the client.
+      Client software may present this to a user in order to suggest
+      what contact point the user should check (e.g., an email address).
 
-type (required, string):
-: The string "proofOfPossession"
-
-nonce (required, string):
-: The server nonce that the server previously associated with this challenge
-
-signature (required, object):
-: The ACME signature computed over the signature-input using the server-specified algorithm
-
+   {
+     "type": "recoveryContact",
+     "activationURL" : "https://example.ca/sendrecovery/a5bd99383fb0",
+     "successURL" : "https://example.ca/confirmrecovery/bb1b9928932",
+     "contact" : "c********n@example.com"
+   }
 
 
-   { "type": "proofOfPossession", "nonce": "eET5udtV7aoX8Xl8gYiZIA",
-   "signature": { "alg": "RS256", "nonce": "eET5udtV7aoX8Xl8gYiZIA",
-   "sig": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ", "jwk": { "kty":
-   "RSA", "e": "AQAB", "n":
-   "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ" } } }
+   type (required, string):  The string "recoveryContact"
+
+   token (optional, string):  If the user transferred a token from a
+      contact email or call into the client software, the client sends
+      it here.  If it the client has received a 200 success response
+      while polling the RecoveryContact Challenge's successURL, this
+      field SHOULD be omitted.
+
+   {
+     "type": "recoveryContact",
+     "token": "23029d88d9e123e"
+   }
 
 
-
-
-
-
-
-
-
-
-
+   If the value of the "token" field matches the value provided in the
+   out-of-band message to the client, or if the client has completed the
+   required out-of-band action, then the validation succeeds.
+   Otherwise, the validation fails.
 
 
 
@@ -1626,46 +1626,267 @@ Barnes, et al.            Expires March 5, 2015                [Page 29]
 Internet-Draft                    ACME                    September 2014
 
 
-Note that just as in the authorizationRequest message, there are two nonces here, once provided by the client (inside the signature object) and one provided by the server in its challenge (outside the signature object).  The signature covers the concatenation of these two nonces (as specified in the signature-input above).
+6.4.  Recovery Token
 
-If the server is able to validate the signature and confirm that the jwk and alg objects are unchanged from the original challenge, the server can conclude that the client is in control of the private key that corresponds to the specified public key.  The server can use this evidence in support of its authorization and certificate issuance policies.
+   A recovery token is a simple way for the server to verify that the
+   client was previously authorized for a domain.  The client simply
+   provides the recovery token that was provided in the authorize
+   message.
 
+   type (required, string):  The string "recoveryToken"
 
-## DNS
-
-When the identifier being validated is a domain name, the client can prove control of that domain by provisioning records under it.   The DNS challenge requires the client to provision a TXT record containing a validation token under a specific validation domain name.
-
-type (required, string):
-: The string "dns"
-
-token (required, string):
-: An ASCII string that is to be provisioned in the TXT record.  This string SHOULD be randomly generated, with at least 128 bits of entropy (e.g., a hex-encoded random octet string).
+   {
+     "type": "recoveryToken"
+   }
 
 
-   { "type": "dns", "token": "17817c66b60ce2e4012dfad92657527a" }
+   The response to a recovery token challenge is simple; the client
+   sends the requested token that it was provided by the server earlier.
 
-In response to this challenge, the client first MUST verify that the token contains only ASCII characters.  If so, the client constructs the validation domain name by appending the label "_acme-challenge" to the domain name being validated.  For example, if the domain name being validated is "example.com", then the client would provision the following DNS record:
+   type (required, string):  The string "recoveryToken"
+
+   token (optional, string):  The recovery token provided by the server.
+
+   {
+     "type": "recoveryToken",
+     "token": "23029d88d9e123e"
+   }
 
 
-   _acme-challenge.example.com.  IN TXT
-   "17817c66b60ce2e4012dfad92657527a"
+   If the value of the "token" field matches a recovery token that the
+   server previously provided for this domain, then the validation
+   succeeds.  Otherwise, the validation fails.
 
-The response to a DNS challenge is simply an acknowledgement that the relevant record has been provisioned.
+6.5.  Proof of Possession of a Prior Key
 
-type (required, string):
-: The string "dns"
+   The Proof of Possession challenge verifies that a client possesses a
+   private key corresponding to a server-specified public key, as
+   demonstrated by its ability to correctly sign server-provided data
+   with that key.
+
+   This method is useful if a server policy calls for issuing a
+   certificate only to an entity that already possesses the subject
+   private key of a particular prior related certificate (perhaps issued
+   by a different CA).  It may also help enable other kinds of server
+   policy that are related to authenticating a client's identity using
+   digital signatures.
+
+   This challenge proceeds in much the same way as the proof of
+   possession of the authorized key pair in the main ACME flow
+   (challenge + authorizationRequest).  The server provides a nonce and
 
 
-   { "type": "dns" }
 
-   ~~~~~~~~~~
+Barnes, et al.            Expires March 5, 2015                [Page 30]
+
+Internet-Draft                    ACME                    September 2014
+
+
+   the client signs over the nonce.  The main difference is that rather
+   than signing with the private key of the key pair being authorized,
+   the client signs with a private key specified by the server.  The
+   server can specify which key pair(s) are acceptable directly (by
+   indicating a public key), or by asking for the key corresponding to a
+   certificate.
+
+   The server provides the following fields as part of the challenge:
+
+   type (required, string):  The string "proofOfPossession"
+
+   alg (required, string):  A token indicating the cryptographic
+      algorithm that should be used by the client to compute the
+      signature [I-D.ietf-jose-json-web-algorithms].  (MAC algorithms
+      such as "HS*" MUST NOT be used.)  The client MUST verify that this
+      algorithm is supported for the indicated key before responding to
+      this challenge.
+
+   nonce (required, string):  A random 16-byte octet string,
+      Base64-encoded
+
+   hints (required, object):  A JSON object that contains various clues
+      for the client about what the requested key is, such that the
+      client can find it.  Entries in the hints object may include:
+
+   jwk (required, object):  A JSON Web Key object describing the public
+      key whose corresponding private key should be used to generate the
+      signature [I-D.ietf-jose-json-web-key]
+
+   certFingerprints (optional, array):  An array of certificate
+      fingerprints, hex-encoded SHA1 hashes of DER-encoded certificates
+      that are known to contain this key
+
+   certs (optional, array):  An array of certificates, in Base64-encoded
+      DER format, that contain acceptable public keys.
+
+   subjectKeyIdentifiers (optional, array):  An array of hex-encoded
+      Subject Key Identifiers (SKIDs) from certificate(s) that contain
+      the key.  Because of divergences in the way that SKIDs are
+      calculated [RFC5280], there may conceivably be more than one of
+      these.
+
+   serialNumbers (optional, array of numbers):  An array of serial
+      numbers of certificates that are known to contain the requested
+      key
+
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 31]
+
+Internet-Draft                    ACME                    September 2014
+
+
+   issuers (optional, array):  An array of X.509 Distinguished Names
+      [RFC5280] of CAs that have been observed to issue certificates for
+      this key, in text form [RFC4514]
+
+   authorizedFor (optional, array):  An array of domain names, if any,
+      for which this server regards the key as an ACME Authorized key.
+
+   {
+     "type": "proofOfPossession",
+     "alg": "RS256",
+     "nonce": "eET5udtV7aoX8Xl8gYiZIA",
+     "hints" : {
+       "jwk": {
+           "kty": "RSA",
+           "e": "AQAB",
+           "n": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ"
+       },
+       "certFingerprints": [
+         "93416768eb85e33adc4277f4c9acd63e7418fcfe",
+         "16d95b7b63f1972b980b14c20291f3c0d1855d95",
+         "48b46570d9fc6358108af43ad1649484def0debf"
+       ],
+       "subjectKeyIdentifiers":  [
+         "d0083162dcc4c8a23ecb8aecbd86120e56fd24e5"
+       ],
+       "serialNumbers": [34234239832, 23993939911, 17],
+       "issuers": [
+         "C=US, O=SuperT LLC, CN=SuperTrustworthy Public CA",
+         "O=LessTrustworthy CA Inc, CN=LessTrustworthy But StillSecure"
+       ],
+       "authorizedFor": ["www.example.com", "example.net"]
+     }
+   }
+
+
+   In this case the server is challenging the client to prove its
+   control over the private key that corresponds to the public key
+   specified in the jwk object.  The signing algorithm is specified by
+   the alg field.  The nonce value is used by the server to identify
+   this challenge and is also used, also with a client-provided
+   signature nonce, as part of the signature input.
+
+         signature-input = signature-nonce || server-nonce
+
+
+   The client's response includes the server-provided nonce, together
+   with a signature over that nonce by one of the private keys requested
+   by the server.
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 32]
+
+Internet-Draft                    ACME                    September 2014
+
+
+   type (required, string):  The string "proofOfPossession"
+
+   nonce (required, string):  The server nonce that the server
+      previously associated with this challenge
+
+   signature (required, object):  The ACME signature computed over the
+      signature-input using the server-specified algorithm
+
+   {
+     "type": "proofOfPossession",
+     "nonce": "eET5udtV7aoX8Xl8gYiZIA",
+     "signature": {
+       "alg": "RS256",
+       "nonce": "eET5udtV7aoX8Xl8gYiZIA",
+       "sig": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ",
+       "jwk": {
+         "kty": "RSA",
+         "e": "AQAB",
+         "n": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ"
+       }
+     }
+   }
+
+
+   Note that just as in the authorizationRequest message, there are two
+   nonces here, once provided by the client (inside the signature
+   object) and one provided by the server in its challenge (outside the
+   signature object).  The signature covers the concatenation of these
+   two nonces (as specified in the signature-input above).
+
+   If the server is able to validate the signature and confirm that the
+   jwk and alg objects are unchanged from the original challenge, the
+   server can conclude that the client is in control of the private key
+   that corresponds to the specified public key.  The server can use
+   this evidence in support of its authorization and certificate
+   issuance policies.
+
+6.6.  DNS
+
+   When the identifier being validated is a domain name, the client can
+   prove control of that domain by provisioning records under it.  The
+   DNS challenge requires the client to provision a TXT record
+   containing a validation token under a specific validation domain
+   name.
+
+   type (required, string):  The string "dns"
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 33]
+
+Internet-Draft                    ACME                    September 2014
+
+
+   token (required, string):  An ASCII string that is to be provisioned
+      in the TXT record.  This string SHOULD be randomly generated, with
+      at least 128 bits of entropy (e.g., a hex-encoded random octet
+      string).
+
+   {
+     "type": "dns",
+     "token": "17817c66b60ce2e4012dfad92657527a"
+   }
+
+
+   In response to this challenge, the client first MUST verify that the
+   token contains only ASCII characters.  If so, the client constructs
+   the validation domain name by appending the label "_acme-challenge"
+   to the domain name being validated.  For example, if the domain name
+   being validated is "example.com", then the client would provision the
+   following DNS record:
+
+  _acme-challenge.example.com. IN TXT "17817c66b60ce2e4012dfad92657527a"
+
+
+   The response to a DNS challenge is simply an acknowledgement that the
+   relevant record has been provisioned.
+
+   type (required, string):  The string "dns"
+
+   {
+     "type": "dns"
+   }
+
 
    To validate a DNS challenge, the server queries for TXT records under
    the validation domain name.  If it receives a record whose contents
    match the token in the challenge, then the validation succeeds.
    Otherwise, the validation fails.
 
-5.7.  Other possibilities
+6.7.  Other possibilities
 
    For future work:
 
@@ -1677,12 +1898,15 @@ type (required, string):
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 30]
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 34]
 
 Internet-Draft                    ACME                    September 2014
 
 
-6.  IANA Considerations
+7.  IANA Considerations
 
    TODO
 
@@ -1692,7 +1916,7 @@ Internet-Draft                    ACME                    September 2014
 
    o  Registries of syntax tokens, e.g., message types / error types?
 
-7.  Security Considerations
+8.  Security Considerations
 
    TODO
 
@@ -1710,15 +1934,15 @@ Internet-Draft                    ACME                    September 2014
    o  Parser safety (for JSON, JWK, ASN.1, and any other formats that
       can be parsed by the ACME server)
 
-8.  Acknowledgements
+9.  Acknowledgements
 
    This document draws on many concepts established by Eric Rescorla's
    "Automated Certificate Issuance Protocol" draft.  Martin Thomson
    provided helpful guidance in the use of HTTP.
 
-9.  References
+10.  References
 
-9.1.  Normative References
+10.1.  Normative References
 
    [I-D.ietf-appsawg-http-problem]
               Nottingham, M. and E. Wilde, "Problem Details for HTTP
@@ -1733,7 +1957,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 31]
+Barnes, et al.            Expires March 5, 2015                [Page 35]
 
 Internet-Draft                    ACME                    September 2014
 
@@ -1789,7 +2013,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 32]
+Barnes, et al.            Expires March 5, 2015                [Page 36]
 
 Internet-Draft                    ACME                    September 2014
 
@@ -1803,7 +2027,7 @@ Internet-Draft                    ACME                    September 2014
    [RFC7386]  Hoffman, P. and J. Snell, "JSON Merge Patch", RFC 7386,
               October 2014.
 
-9.2.  Informative References
+10.2.  Informative References
 
    [RFC2818]  Rescorla, E., "HTTP Over TLS", RFC 2818, May 2000.
 
@@ -1845,4 +2069,4 @@ Authors' Addresses
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 33]
+Barnes, et al.            Expires March 5, 2015                [Page 37]

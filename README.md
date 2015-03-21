@@ -1,5 +1,8 @@
 # Automated Certificate Management Environment (ACME)
 
+[![Build Status](https://travis-ci.org/letsencrypt/acme-spec.svg)]
+(https://travis-ci.org/letsencrypt/acme-spec)
+
 [Latest Version](https://letsencrypt.github.io/acme-spec/)
 
 ACME is a protocol for automating the management of domain-validation certificates, based on a simple JSON-over-HTTPS interface.  This repository contains the specification for ACME.

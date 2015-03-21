@@ -606,7 +606,7 @@ Recovery tokens are employed in response to Recovery Challenges.  Such challenge
 The holder of an authorized key pair for an identifier may use ACME to request that a certificate be issued for that identifier.  The client makes this request by sending a POST request to the server's new-certificate resource.  The body of the POST is a JWS object whose JSON payload contains a Certificate Signing Request (CSR) {{RFC2986}} and set of authorization URIs.  The CSR encodes the parameters of the requested certificate; authority to issue is demonstrated by the JWS signature and the linked authorizations.
 
 csr (required, string):
-: A CSR encoding the parameters for the certificate being requested.  The CSR is sent in base64-encoded version the DER format.  (Note: This field uses the same modified base64-encoding rules used elsewhere in this document, so it is different from PEM.)
+: A CSR encoding the parameters for the certificate being requested.  The CSR is sent in Base64-encoded version the DER format.  (Note: This field uses the same modified Base64-encoding rules used elsewhere in this document, so it is different from PEM.)
 
 authorizations (required, array of string):
 : An array of URIs for authorization resources.
@@ -789,7 +789,7 @@ type (required, string):
 : The string "dvsni"
 
 r (required, string):
-: A random 32-byte octet, base64-encoded
+: A random 32-byte octet, Base64-encoded
 
 nonce (required, string):
 : A random 16-byte octet string, hex-encoded (so that it can be used as a DNS label)
@@ -823,7 +823,7 @@ type (required, string):
 : The string "dvsni"
 
 s (required, string):
-: A random 32-byte secret octet string, base64-encoded
+: A random 32-byte secret octet string, Base64-encoded
 
 ~~~~~~~~~~
 
@@ -947,7 +947,7 @@ alg (required, string):
 : A token indicating the cryptographic algorithm that should be used by the client to compute the signature {{I-D.ietf-jose-json-web-algorithms}}.  (MAC algorithms such as "HS*" MUST NOT be used.)  The client MUST verify that this algorithm is supported for the indicated key before responding to this challenge.
 
 nonce (required, string):
-: A random 16-byte octet string, base64-encoded
+: A random 16-byte octet string, Base64-encoded
 
 hints (required, object):
 : A JSON object that contains various clues for the client about what the requested key is, such that the client can find it.  Entries in the hints object may include:

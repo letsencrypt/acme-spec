@@ -417,7 +417,7 @@ The only type of identifier defined by this specification is a fully-qualified d
   "expires": "2015-03-01",
 
   "identifier": {
-    "type": "domain",
+    "type": "dns",
     "value": "example.org"
   },
 
@@ -458,7 +458,7 @@ Host: example.com
 
 {
   "identifier": {
-    "type": "domain",
+    "type": "dns",
     "value": "example.org"
   }
 }
@@ -489,7 +489,7 @@ Link: <https://example.com/acme/new-cert>;rel="next"
   "status": "pending",
 
   "identifier": {
-    "type": "domain",
+    "type": "dns",
     "value": "example.org"
   },
 
@@ -558,7 +558,7 @@ HTTP/1.1 200 OK
   "expires": "2015-03-01",
 
   "identifier": {
-    "type": "domain",
+    "type": "dns",
     "value": "example.org"
   },
 

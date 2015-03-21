@@ -298,7 +298,7 @@ Errors can be reported in ACME both at the HTTP layer and within ACME payloads. 
 When the server responds with an error status, it SHOULD provide additional information using problem document {{I-D.ietf-appsawg-http-problem}}.  The "type", "detail", and "instance" fields MUST be populated.  To facilitate automatic response to errors, this document defines the following standard tokens for use in the "type" field (within the "urn:acme:" namespace):
 
 | Code            | Semantic                                                 |
-|:================|:=========================================================|
+|:----------------|:---------------------------------------------------------|
 | malformed       | The request message was malformed                        |
 | unauthorized    | The client lacks sufficient authorization                |
 | serverInternal  | The server experienced an internal error                 |
@@ -720,7 +720,7 @@ Different challenges allow the server to obtain proof of different aspects of co
 The choice of which Challenges to offer to a client under which circumstances is a matter of server policy.  A server may choose different sets of challenges depending on whether it has interacted with a domain before, and how.  For example:
 
 | Domain status                                 | Challenges typically sufficient for (re)Authorization |
-|:==============================================|:======================================================|
+|:----------------------------------------------|:------------------------------------------------------|
 | No known prior certificates or ACME usage     | Domain Validation (DVSNI or Simple HTTPS)             |
 | Existing valid certs, first use of ACME       | DV + Proof of Possession of previous CA-signed key    |
 | Ongoing ACME usage                            | PoP of previous Authorized key                        |

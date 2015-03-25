@@ -18,9 +18,16 @@ Just open `draft-barnes-acme.md` in a text editor.
 If you want to reproduce the other files, type `make`.
 
 You need to install some tools (see the Makefile for more information).
-```
-> sudo pip install xml2rfc
-> gem install kramdown-rfc2629
+```sh
+# install dependencies for lxml built for xml2rfc
+sudo apt-get install libxml2-dev libxslt1-dev
+# instead of "sudo pip" that pollutes system-wide packages, use
+# virtual Python environment
+virtualenv --no-site-packages venv
+# remember also to activate the virtualenv before any 'make' run
+source venv/bin/activate
+pip install xml2rfc
+gem install kramdown-rfc2629
 ```
 
 You can also use a prototype [web version](http://ipv.sx/draftr/) of these tools.

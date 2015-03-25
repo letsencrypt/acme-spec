@@ -806,8 +806,6 @@ nonce (required, string):
 
 ~~~~~~~~~~
 
-The ACME server MAY re-use nonce values, but SHOULD periodically refresh them.  ACME clients MUST NOT rely on nonce values being stable over time.
-
 The client responds to this Challenge by configuring a TLS server on port 443 of a server with the domain name being validated:
 
 1. Decode the server's random value R

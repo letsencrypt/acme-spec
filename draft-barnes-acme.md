@@ -1093,6 +1093,26 @@ type (required, string):
 To validate a DNS challenge, the server queries for TXT records under the validation domain name.  If it receives a record whose contents match the token in the challenge, then the validation succeeds.  Otherwise, the validation fails.
 
 
+## Wildcard Domain Validation
+
+When the identifier being validated is a domain name, it may contain a wildcard character "\*" as its left-most label (e.g., "\*.foo.example.com"). A wildcard certificate contains a wildcard domain in a CN or subjectAltName of type DNS-ID and automatically vouches for any and all host names within the bare domain name (the FQDN to the immediate right of the wildcard label).
+
+Domain validation for issuance of a wildcard certificate proceeds as follows:
+1. The server MUST validate that the identifier contains a single wildcard character and that the wildcard character is the left-most label. For instance, "foo.\*.example.com" is invalid.
+2. The server MUST validate that the wildcard label does not fall immediately to the left of a registry-controlled or public suffix. For instance, "\*.co.uk" is invalid.
+3. The server SHOULD validate that there exists a valid DNS A, AAAA, or CNAME record for the identifier. For instance, if the identifier being validated is "\*.example.com", the following record would suffice:
+
+~~~~~~~~~~
+
+*.example.com. IN A 203.0.113.0
+
+~~~~~~~~~~
+
+4. The server MUST perform DVSNI validation for the bare domain name.
+5. The server MAY perform additional validation checks on the domain, given the greater security risks associated with issuing a wildcard certificate. For instance, a server might refuse to issue wildcard certificates to domain names on a blacklist of sites known to be used in phishing attacks.
+
+The Recovery and Proof of Posession requirements for wildcard domains are the same as for other domains.
+
 ## Other possibilities
 
 For future work:

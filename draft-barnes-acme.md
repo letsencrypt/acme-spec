@@ -237,7 +237,7 @@ Each of these functions is accomplished by the client sending a sequence of HTTP
 
 ## Resources and Requests
 
-ACME is structured as a REST application with a few types of resources:
+ACME servers are identified by URLs.  The leftmost label of the server's domain name contains the version of the protocol which that server speaks; for instance, https://v1.api.example.ca/ would indicate an ACME server speaking version 1 of the protocol.  ACME is structured as a REST application with a few types of resources:
 
 * Registration resources, representing information about an account key
 * Authorization resources, representing an account key's authorization to act for an identifier
@@ -329,7 +329,7 @@ A client creates a new account with the server by sending a POST request to the 
 ~~~~~~~~~~
 
 POST /acme/new-registration HTTP/1.1
-Host: example.com
+Host: v1.api.example.ca
 
 {
   "contact": [
@@ -354,9 +354,9 @@ agreement with these terms by updating its registration to include the "agreemen
 
 HTTP/1.1 201 Created
 Content-Type: application/json
-Location: https://example.com/reg/asdf
-Link: <https://example.com/acme/new-authz>;rel="next"
-Link: <https://example.com/acme/terms>;rel="terms-of-service"
+Location: https://v1.api.example.ca/reg/asdf
+Link: <https://v1.api.example.ca/acme/new-authz>;rel="next"
+Link: <https://v1.api.example.ca/acme/terms>;rel="terms-of-service"
 
 {
   "key": { /* JWK from JWS header */ },
@@ -454,7 +454,7 @@ To begin the key authorization process, the client sends a POST request to the s
 ~~~~~~~~~~
 
 POST /acme/new-authorization HTTP/1.1
-Host: example.com
+Host: v1.api.example.ca
 
 {
   "identifier": {
@@ -482,8 +482,8 @@ The server allocates a new URI for this authorization, and returns a 201 (Create
 
 HTTP/1.1 201 Created
 Content-Type: application/json
-Location: https://example.com/authz/asdf
-Link: <https://example.com/acme/new-cert>;rel="next"
+Location: https://v1.api.example.ca/authz/asdf
+Link: <https://v1.api.example.ca/acme/new-cert>;rel="next"
 
 {
   "status": "pending",
@@ -498,17 +498,17 @@ Link: <https://example.com/acme/new-cert>;rel="next"
   "challenges": [
     {
       "type": "simpleHttps",
-      "uri": "https://example.com/authz/asdf/0",
+      "uri": "https://v1.api.example.ca/authz/asdf/0",
       "token": "IlirfxKKXAsHtmzK29Pj8A"
     },
     {
       "type": "dns",
-      "uri": "https://example.com/authz/asdf/1"
+      "uri": "https://v1.api.example.ca/authz/asdf/1"
       "token": "DGyRejmCefe7v4NfDGDKfA"
     },
     {
       "type": "recoveryToken",
-      "uri": "https://example.com/authz/asdf/2"
+      "uri": "https://v1.api.example.ca/authz/asdf/2"
     }
   },
 
@@ -529,7 +529,7 @@ For example, if the client were to respond to the "simpleHttps" challenge in the
 ~~~~~~~~~~
 
 POST /acme/authz/asdf/0 HTTP/1.1
-Host: example.com
+Host: v1.api.example.ca
 
 {
   "path": "Hf5GrX4Q7EBax9hc2jJnfw"
@@ -549,7 +549,7 @@ To check on the status of an authorization, the client sends a GET request to th
 ~~~~~~~~~~
 
 GET /acme/authz/asdf HTTP/1.1
-Host: example.com
+Host: v1.api.example.ca
 
 HTTP/1.1 200 OK
 
@@ -616,13 +616,13 @@ authorizations (required, array of string):
 ~~~~~~~~~~
 
 POST /acme/new-cert HTTP/1.1
-Host: example.com
+Host: v1.api.example.ca
 Accept: application/pkix-cert
 
 {
   "csr": "5jNudRx6Ye4HzKEqT5...FS6aKdZeGsysoCo4H9P",
   "authorizations": [
-    "https://example.com/acme/authz/asdf"
+    "https://v1.api.example.ca/acme/authz/asdf"
   ]
 }
 /* Signed as JWS */
@@ -643,8 +643,8 @@ The server can provide metadata about the certificate in HTTP headers.  For exam
 
 HTTP/1.1 201 Created
 Content-Type: application/pkix-cert
-Link: <https://example.com/acme/ca-cert>;rel="up";title="issuer"
-Location: https://example.com/acme/cert/asdf
+Link: <https://v1.api.example.ca/acme/ca-cert>;rel="up";title="issuer"
+Location: https://v1.api.example.ca/acme/cert/asdf
 
 [DER-encoded certificate]
 
@@ -669,12 +669,12 @@ authorizations (required, array of string):
 ~~~~~~~~~~
 
 POST /acme/cert/asdf HTTP/1.1
-Host: example.com
+Host: v1.api.example.ca
 
 {
   "revoke": "now",
   "authorizations": [
-    "https://example.com/acme/authz/asdf"
+    "https://v1.api.example.ca/acme/authz/asdf"
   ]
 }
 /* Signed as JWS */
@@ -699,7 +699,7 @@ Content-Language: en
 {
   "type": "urn:acme:error:unauthorized"
   "detail": "No authorization provided for name example.net"
-  "instance": "http://example.com/doc/unauthorized"
+  "instance": "http://v1.api.example.ca/doc/unauthorized"
 }
 
 ~~~~~~~~~~

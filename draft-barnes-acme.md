@@ -396,7 +396,7 @@ key (required, dictionary):
 : The public key of the account key pair, encoded as a JSON Web Key object {{I-D.ietf-jose-json-web-key}}.
 
 status (optional, string):
-: The status of this authorization.  Possible values are: "pending", "valid", and "invalid".  If this field is missing, then the default value is "pending".
+: The status of this authorization.  Possible values are: "unknown", "pending", "processing", "valid", "invalid" and "revoked".  If this field is missing, then the default value is "pending".
 
 expires (optional, string):
 : The date after which the server will consider this authorization invalid, encoded in the format specified in RFC 3339 {{RFC3339}}.
@@ -591,7 +591,7 @@ HTTP/1.1 200 OK
 
 A recovery token is a fallback authentication mechanism.  In the event that a client loses all other state, including authorized key pairs and key pairs bound to certificates, the client can use the recovery token to prove that it was previously authorized for the identifier in question.
 
-This mechanism is necessary because once an ACME server has issued an Authorization Key for a given identifier, that identifier enters a higher-security state, at least with respect the ACME server.  That state exists to protect against attacks such as DNS hijacking and router compromise which tend to inherently defeat all forms of Domain Validation.  So once a domain has begun using ACME, new DV-only authorization will not be performed without proof of continuity via possession of an Authorized Private Key or potentially a Subject Private Key for that domain.
+This mechanism is necessary because once an ACME server has issued an Authorization Key for a given identifier, that identifier enters a higher-security state, at least with respect to the ACME server.  That state exists to protect against attacks such as DNS hijacking and router compromise which tend to inherently defeat all forms of Domain Validation.  So once a domain has begun using ACME, new DV-only authorization will not be performed without proof of continuity via possession of an Authorized Private Key or potentially a Subject Private Key for that domain.
 
 This higher state of security poses some risks.  From time to time, the administrators and owners of domains may lose access to keys they have previously had issued or certified, including Authorized private keys and Subject private keys.  For instance, the disks on which this key material is stored may suffer failures, or passphrases for these keys may be forgotten.  In some cases, the security measures that are taken to protect this sensitive data may contribute to its loss.
 
@@ -735,6 +735,8 @@ The identifier validation challenges described in this section all relate to val
 
 With Simple HTTPS validation, the client in an ACME transaction proves its control over a domain name by proving that it can provision resources on an HTTPS server that responds for that domain name.  The ACME server challenges the client to provision a file with a specific string as its contents.
 
+As a domain may resolve to multiple IPv4 and IPv6 addresses, the server will connect to at least one of the hosts found in A and AAAA records, at its discretion.  Simple HTTPS validation of IPv6-only domains may not be supported by all servers.
+
 type (required, string):
 : The string "simpleHttps"
 
@@ -756,7 +758,7 @@ type (required, string):
 : The string "simpleHttps"
 
 path (required, string):
-: The string to be appended to the standard prefix ".well-known/acme-challenge" in order to form the path at which the nonce resource is provisioned.  The result of concatenating the prefix with this value MUST match the "path" production in the standard URI format {{RFC3986}}
+: The string to be appended to the standard prefix ".well-known/acme-challenge/" in order to form the path at which the nonce resource is provisioned.  The result of concatenating the prefix with this value MUST match the "path" production in the standard URI format {{RFC3986}}
 
 ~~~~~~~~~~
 
@@ -783,7 +785,7 @@ If the GET request succeeds and the entity body is equal to the nonce, then the 
 
 The Domain Validation with Server Name Indication (DVSNI) validation method aims to ensure that the ACME client has administrative access to the web server at the domain name being validated, and possession of the private key being authorized.  The ACME server verifies that the operator can reconfigure the web server by having the client create a new self-signed challenge certificate and respond to TLS connections from the ACME server with it.
 
-The challenge proceeds as follows: The ACME server sends the client a random value R and a nonce used to identify the transaction.  The client responds with another random value S.  The server initiates a TLS connection on port 443 to a host with the domain name being validated.  In the handshake, the ACME server sets the Server Name Indication extension set to "\<nonce\>.acme.invalid".  The TLS server (i.e., the ACME client) should respond with a valid self-signed certificate containing both the domain name being validated and the domain name "\<Z\>.acme.invalid", where Z = SHA-256(R &#124;&#124; S).
+The challenge proceeds as follows: The ACME server sends the client a random value R and a nonce used to identify the transaction.  The client responds with another random value S.  The server initiates a TLS connection on port 443 to one or more of the IPv4 or IPv6 hosts with the domain name being validated.  In the handshake, the ACME server sets the Server Name Indication extension set to "\<nonce\>.acme.invalid".  The TLS server (i.e., the ACME client) should respond with a valid self-signed certificate containing both the domain name being validated and the domain name "\<Z\>.acme.invalid", where Z = SHA-256(R &#124;&#124; S).
 
 The ACME server's Challenge provides its random value R, and a random nonce used to identify the transaction:
 
@@ -805,8 +807,6 @@ nonce (required, string):
 }
 
 ~~~~~~~~~~
-
-The ACME server MAY re-use nonce values, but SHOULD periodically refresh them.  ACME clients MUST NOT rely on nonce values being stable over time.
 
 The client responds to this Challenge by configuring a TLS server on port 443 of a server with the domain name being validated:
 

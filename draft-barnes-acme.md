@@ -401,8 +401,8 @@ status (optional, string):
 expires (optional, string):
 : The date after which the server will consider this authorization invalid, encoded in the format specified in RFC 3339 {{RFC3339}}.
 
-challenges (required, dictionary):
-: The challenges that the client needs to fulfill in order to prove possession of the identifier (for pending authorizations).  For final authorizations, the challenges that were used.  Each key in the dictionary is a type of challenge, and the value is a dictionary with parameters required to validate the challenge, as specified in Section {identifier-validation-challenges}.
+challenges (required, array):
+: The challenges that the client needs to fulfill in order to prove possession of the identifier (for pending authorizations).  For final authorizations, the challenges that were used.  Each array entry is a dictionary with parameters required to validate the challenge, as specified in Section {identifier-validation-challenges}.
 
 combinations (optional, array of arrays of integers):
 : A collection of sets of challenges, each of which would be sufficient to prove possession of the identifier. Clients complete a set of challenges that that covers at least one set in this array. Challenges are identified by their indices in the challenges array.  If no "combinations" element is included in an authorization object, the client completes all challenges.
@@ -570,13 +570,15 @@ HTTP/1.1 200 OK
   ],
 
   "challenges": [
-    "simpleHttps": {
+    {
+      "type": "simpleHttps"
       "status": "valid",
       "validated": "2014-12-01T12:05Z",
       "token": "IlirfxKKXAsHtmzK29Pj8A"
       "path": "Hf5GrX4Q7EBax9hc2jJnfw"
     },
-    "recoveryToken": {
+    {
+      "type": "recoveryToken",
       "status": "valid",
       "validated": "2014-12-01T12:07Z",
       "token": "23029d88d9e123e"

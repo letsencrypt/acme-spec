@@ -237,7 +237,7 @@ Each of these functions is accomplished by the client sending a sequence of HTTP
 
 ## Resources and Requests
 
-ACME servers are identified by URLs.  The leftmost label of the server's domain name contains the version of the protocol which that server speaks; for instance, https://v1.api.example.ca/ would indicate an ACME server speaking version 1 of the protocol.  ACME is structured as a REST application with a few types of resources:
+ACME servers are identified by URLs.  The leftmost label of the server's domain name MAY contain the version of the protocol which that server speaks; for instance, https://v1.api.example.ca/ could be used to indicate an ACME server speaking version 1 of the protocol.  ACME is structured as a REST application with a few types of resources:
 
 * Registration resources, representing information about an account key
 * Authorization resources, representing an account key's authorization to act for an identifier

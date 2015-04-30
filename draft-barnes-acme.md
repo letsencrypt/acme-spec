@@ -540,7 +540,7 @@ Host: example.com
 
 The server updates the authorization document by updating its representation of the challenge with the response fields provided by the client.  The server MUST ignore any fields in the response object that are not specified as response fields for this type of challenge.  The server provides a 200 response including the updated challenge.
 
-Presumably, the client's responses provide the server with enough information to validate one or more challenges.  The server is said to "finalize" the authorization when it has completed all the validations it is going to complete, and assigns the authorization a status of "valid" or "invalid", corresponding to whether it considers the account key  authorized for the identifier.  If the final state is "valid", the server MUST add an "expires" field to the authorization.  When finalizing an authorization, the server MAY remove the "combinations" field (if present), remove any unfulfilled challenges, or add a "recoveryToken" field.
+Presumably, the client's responses provide the server with enough information to validate one or more challenges.  The server is said to "finalize" the authorization when it has completed all the validations it is going to complete, and assigns the authorization a status of "valid" or "invalid", corresponding to whether it considers the account key  authorized for the identifier.  If the final state is "valid", the server MUST add an "expires" field to the authorization.  When finalizing an authorization, the server MAY remove the "combinations" field (if present) or remove any unfulfilled challenges.
 
 Usually, the validation process will take some time, so the client will need to poll the authorization resource to see when it is finalized.  For challenges where the client can tell when the server has validated the challenge (e.g., by seeing an HTTP or DNS request from the server), the client SHOULD NOT begin polling until it has seen the validation request from the server.
 
@@ -603,7 +603,7 @@ Recovery tokens are therefore only useful to an attacker who can also perform Do
 
 Recovery tokens come in several types, including high-entropy passcodes (which need to be safely preserved by the client admin) and email addresses (which are inherently hard to lose, and which can be used for verification, though they may be a little less secure).
 
-Recovery tokens are employed in response to Recovery Challenges.  Such challenges will be available if the server has issued Recovery Tokens for a given domain, and the combination of a Recovery Challenge and a domain validation Challenge is a plausible alternative to other challenge sets for domains that already have extant Authorized keys.
+Recovery tokens are employed in response to Recovery Challenges.  Such challenges will be available if the server has issued Recovery Tokens for a given account, and the combination of a Recovery Challenge and a domain validation Challenge is a plausible alternative to other challenge sets for domains that already have extant Authorized keys.
 
 ## Certificate Issuance
 
@@ -901,7 +901,7 @@ If the value of the "token" field matches the value provided in the out-of-band 
 
 ## Recovery Token
 
-A recovery token is a simple way for the server to verify that the client was previously authorized for a domain.  The client simply provides the recovery token that was provided in the authorize message.
+A recovery token is a simple way for the server to verify that the client was previously authorized for a domain.  The client simply provides the recovery token that was provided in the Registration Resource.
 
 type (required, string):
 : The string "recoveryToken"
@@ -931,7 +931,7 @@ token (optional, string):
 
 ~~~~~~~~~~
 
-If the value of the "token" field matches a recovery token that the server previously provided for this domain, then the validation succeeds.  Otherwise, the validation fails.
+If the value of the "token" field matches a recovery token that the server previously provided for this user, then the validation succeeds.  Otherwise, the validation fails.
 
 
 ## Proof of Possession of a Prior Key

@@ -686,9 +686,10 @@ Host: example.com
 Before revoking a certificate, the server MUST verify that the account key pair
 used to sign the request is authorized to revoke the certificate. Authorization
 may be proved by either: (a) signing the revocation request with the
-account key that was used to issue the certificate, or (b) providing a set of
-authorization resources that establish authorizations for all identifiers in the
-certificate.
+account key that was used to issue the certificate, or
+(b) providing a set of authorization resources that establish authorizations for
+all identifiers in the certificate and signing the revocation request with the
+account key that was used to issue the authorizations.
 
 If the revocation succeeds, the server responds with status code 200 (OK).  If the revocation fails, the server returns an error.
 

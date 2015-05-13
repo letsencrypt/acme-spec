@@ -51,7 +51,6 @@ normative:
   RFC5988:
   RFC6570:
   RFC7159:
-  RFC7386:
   I-D.ietf-appsawg-http-problem:
   I-D.ietf-jose-json-web-algorithms:
   I-D.ietf-jose-json-web-key:
@@ -84,7 +83,7 @@ Existing Web PKI certificate authorities tend to run on a set of ad hoc protocol
 
 With the exception of the CSR itself and the certificates that are issued, these are all completely ad hoc procedures and are accomplished by getting the human user to follow interactive natural-language instructions from the CA rather than by machine-implemented published protocols.  In many cases, the instructions are difficult to follow and cause significant confusion.  Informal usability tests by the authors indicate that webmasters often need 1-3 hours to obtain and install a certificate for a domain.  Even in the best case, the lack of published, standardized mechanisms presents an obstacle to the wide deployment of HTTPS and other PKIX-dependent systems because it inhibits mechanization of tasks related to certificate issuance, deployment, and revocation.
 
-This document describes an extensible framework for automating the issuance and domain validation procedure, thereby allowing servers and infrastructural software to obtain certificates without user interaction.  Use of this protocol should radically simplify the deployment of HTTPS and the practicality of PKIX authentication for other TLS based protocols.
+This document describes an extensible framework for automating the issuance and domain validation procedure, thereby allowing servers and infrastructural software to obtain certificates without user interaction.  Use of this protocol should radically simplify the deployment of HTTPS and the practicality of PKIX authentication for other protocols based on TLS {{RFC5246}}.
 
 # Deployment Model and Operator Experience
 

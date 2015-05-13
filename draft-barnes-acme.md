@@ -625,7 +625,7 @@ Accept: application/pkix-cert
 }
 /* Signed as JWS */
 
-~~~~~~~~~
+~~~~~~~~~~
 
 The CSR encodes the client's requests with regard to the content of the certificate to be issued.  The CSR MUST contain at least one extensionRequest attribute {{RFC2985}} requesting a subjectAltName extension, containing the requested identifiers.
 

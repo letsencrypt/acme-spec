@@ -654,14 +654,14 @@ Location: https://example.com/acme/cert/asdf
 
 ## Certificate Refresh
 
-The certificate URL (provided in the Location header of the server's response) is used to refresh or revoke the certificate.  To refresh the certificate, the client simply sends a GET request to the certificate URL.  This allows the server to provide the client with updated certificates with the same content and different validity intervals, for as long as all of the authorization objects underlying the certificate are valid.
+To refresh the certificate, the client simply sends a GET request to the certificate URL.  This allows the server to provide the client with updated certificates with the same content and different validity intervals, for as long as all of the authorization objects underlying the certificate are valid.
 
 If a client sends a refresh request and the server is not willing to refresh the certificate, the server MUST respond with status code 403 (Forbidden).  If the client still wishes to obtain a certificate, it can re-initiate the authorization process for any expired authorizations related to the certificate.
 
 ## Certificate Revocation
 
 To request that a certificate be revoked, the client sends a POST request to
-/acme/revoke-cert/.  The body of the POST is a JWS object whose JSON payload
+/acme/revoke-cert.  The body of the POST is a JWS object whose JSON payload
 contains the certificate to be revoked:
 
 certificate (required, string):

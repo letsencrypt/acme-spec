@@ -424,7 +424,7 @@ The only type of identifier defined by this specification is a fully-qualified d
 
   "challenges": [
     {
-      "type": "simpleHttps",
+      "type": "simpleHttp",
       "status": "valid",
       "validated": "2014-12-01T12:05Z",
       "token": "IlirfxKKXAsHtmzK29Pj8A"
@@ -496,7 +496,7 @@ Link: <https://example.com/acme/new-cert>;rel="next"
 
   "challenges": [
     {
-      "type": "simpleHttps",
+      "type": "simpleHttp",
       "uri": "https://example.com/authz/asdf/0",
       "token": "IlirfxKKXAsHtmzK29Pj8A"
     },
@@ -519,11 +519,11 @@ Link: <https://example.com/acme/new-cert>;rel="next"
 
 ~~~~~~~~~~
 
-The client needs to respond with information to complete the challenges.  To do this, the client updates the authorization object received from the server by filling in any required information in the elements of the "challenges" dictionary.  For example, if the client wishes to complete the "simpleHttps" challenge, it needs to provide the "path" component.  (This is also the stage where the client should perform any actions required by the challenge.)
+The client needs to respond with information to complete the challenges.  To do this, the client updates the authorization object received from the server by filling in any required information in the elements of the "challenges" dictionary.  For example, if the client wishes to complete the "simpleHttp" challenge, it needs to provide the "path" component.  (This is also the stage where the client should perform any actions required by the challenge.)
 
 The client sends these updates back to the server in the form of a JSON object with the response fields required by the challenge type, carried in a POST request to the challenge URI (not authorization URI or the new-authorization URI).  This allows the client to send information only for challenges it is responding to.
 
-For example, if the client were to respond to the "simpleHttps" challenge in the above authorization, it would send the following request:
+For example, if the client were to respond to the "simpleHttp" challenge in the above authorization, it would send the following request:
 
 ~~~~~~~~~~
 
@@ -570,7 +570,7 @@ HTTP/1.1 200 OK
 
   "challenges": [
     {
-      "type": "simpleHttps"
+      "type": "simpleHttp"
       "status": "valid",
       "validated": "2014-12-01T12:05Z",
       "token": "IlirfxKKXAsHtmzK29Pj8A"
@@ -733,14 +733,14 @@ The choice of which Challenges to offer to a client under which circumstances is
 
 The identifier validation challenges described in this section all relate to validation of domain names.  If ACME is extended in the future to support other types of identifier, there will need to be new Challenge types, and they will need to specify which types of identifier they apply to.
 
-## Simple HTTPS
+## Simple HTTP
 
-With Simple HTTPS validation, the client in an ACME transaction proves its control over a domain name by proving that it can provision resources on an HTTPS server that responds for that domain name.  The ACME server challenges the client to provision a file with a specific string as its contents.
+With Simple HTTP validation, the client in an ACME transaction proves its control over a domain name by proving that it can provision resources on an HTTP server that responds for that domain name.  The ACME server challenges the client to provision a file with a specific string as its contents.
 
-As a domain may resolve to multiple IPv4 and IPv6 addresses, the server will connect to at least one of the hosts found in A and AAAA records, at its discretion.  Simple HTTPS validation of IPv6-only domains may not be supported by all servers.
+As a domain may resolve to multiple IPv4 and IPv6 addresses, the server will connect to at least one of the hosts found in A and AAAA records, at its discretion.  Simple HTTP validation of IPv6-only domains may not be supported by all servers.
 
 type (required, string):
-: The string "simpleHttps"
+: The string "simpleHttp"
 
 token (required, string):
 : The value to be provisioned in the file.  This value MUST have at least 128 bits of entropy, in order to prevent an attacker from guessing it.  It MUST NOT contain any non-ASCII characters.
@@ -748,16 +748,16 @@ token (required, string):
 ~~~~~~~~~~
 
 {
-  "type": "simpleHttps",
+  "type": "simpleHttp",
   "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA"
 }
 
 ~~~~~~~~~~
 
-A client responds to this Challenge by provisioning the nonce as a resource on the HTTPS server for the domain in question.  The path at which the resource is provisioned is determined by the client, but MUST begin with ".well-known/acme-challenge/".  The content type of the resource MUST be "text/plain".  The client returns the part of the path coming after that prefix in its Response message.
+A client responds to this Challenge by provisioning the token as a resource on the HTTP server for the domain in question.  The path at which the resource is provisioned is determined by the client, but MUST begin with ".well-known/acme-challenge/".  The content type of the resource MUST be "text/plain".  The client returns the part of the path coming after that prefix in its Response message.
 
 type (required, string):
-: The string "simpleHttps"
+: The string "simpleHttp"
 
 path (required, string):
 : The string to be appended to the standard prefix ".well-known/acme-challenge/" in order to form the path at which the nonce resource is provisioned.  The result of concatenating the prefix with this value MUST match the "path" production in the standard URI format {{RFC3986}}
@@ -765,7 +765,7 @@ path (required, string):
 ~~~~~~~~~~
 
 {
-  "type": "simpleHttps",
+  "type": "simpleHttp",
   "path": "6tbIMBC5Anhl5bOlWT5ZFA"
 }
 
@@ -773,15 +773,13 @@ path (required, string):
 
 Given a Challenge/Response pair, the server verifies the client's control of the domain by verifying that the resource was provisioned as expected.
 
-1. Form a URI by populating the URI template "https://{domain}/.well-known/acme-challenge/{path}", where the domain field is set to the domain name being verified and the path field is the path provided in the challenge {{RFC6570}}.
+1. Form a URI by populating the URI template "http://{domain}/.well-known/acme-challenge/{path}", where the domain field is set to the domain name being verified and the path field is the path provided in the challenge {{RFC6570}}.
 2. Verify that the resulting URI is well-formed.
-3. Dereference the URI using an HTTPS GET request.
-4. Verify that the certificate presented by the HTTPS server is a valid self-signed certificate, and contains the domain name being validated as well as the public key of the key pair being authorized.
-5. Verify that the Content-Type header of the response is either absent, or has the value "text/plain"
-6. Compare the entity body of the response with the nonce.  This comparison MUST be performed in terms of Unicode code points, taking into account the encodings of the stored nonce and the body of the request.
+3. Dereference the URI using an HTTP GET request.
+4. Verify that the Content-Type header of the response is either absent, or has the value "text/plain"
+5. Compare the entity body of the response with the token.  This comparison MUST be performed in terms of Unicode code points, taking into account the encodings of the stored token and the body of the request.
 
-If the GET request succeeds and the entity body is equal to the nonce, then the validation is successful.  If the request fails, or the body does not match the nonce, then it has failed.
-
+If the GET request succeeds and the entity body is equal to the token, then the validation is successful.  If the request fails, or the body does not exactly match the token, then it has failed.
 
 ## Domain Validation with Server Name Indication
 

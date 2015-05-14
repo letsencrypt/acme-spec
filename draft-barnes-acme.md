@@ -653,36 +653,37 @@ Location: https://example.com/acme/cert/asdf
 
 ## Certificate Refresh
 
-The certificate URL (provided in the Location header of the server's response) is used to refresh or revoke the certificate.  To refresh the certificate, the client simply sends a GET request to the certificate URL.  This allows the server to provide the client with updated certificates with the same content and different validity intervals, for as long as all of the authorization objects underlying the certificate are valid.
+To refresh the certificate, the client simply sends a GET request to the certificate URL.  This allows the server to provide the client with updated certificates with the same content and different validity intervals, for as long as all of the authorization objects underlying the certificate are valid.
 
 If a client sends a refresh request and the server is not willing to refresh the certificate, the server MUST respond with status code 403 (Forbidden).  If the client still wishes to obtain a certificate, it can re-initiate the authorization process for any expired authorizations related to the certificate.
 
 ## Certificate Revocation
 
-To request that a certificate be revoked, the client sends a POST request to the certificate URL.  The body of the POST is a JWS object whose JSON payload contains an indication when the client would like the certificate to be revoked:
+To request that a certificate be revoked, the client sends a POST request to
+/acme/revoke-cert.  The body of the POST is a JWS object whose JSON payload
+contains the certificate to be revoked:
 
-revoke (required, string):
-: The time at which the certificate should be revoked.  The value of this field MUST be either the literal string "now", or a date in RFC 3339 format {{RFC3339}}.
-
-authorizations (required, array of string):
-: An array of URIs for authorization resources.
+certificate (required, string):
+: The DER form of the certificate, Base64-encoded using the JOSE Base64 variant.
 
 ~~~~~~~~~~
 
-POST /acme/cert/asdf HTTP/1.1
+POST /acme/revoke-cert HTTP/1.1
 Host: example.com
 
 {
-  "revoke": "now",
-  "authorizations": [
-    "https://example.com/acme/authz/asdf"
-  ]
+  "certificate": "MIIEDTCCAvegAwIBAgIRAP8..."
 }
 /* Signed as JWS */
 
 ~~~~~~~~~~
 
-Before revoking a certificate, the server MUST verify that the account key pair used to sign the request is authorized to act for all of the identifier(s) in the certificate.  The server MAY also accept a signature by the private key corresponding to the public key in the certificate.
+Before revoking a certificate, the server MUST verify at least one of these conditions
+applies:
+- the public key of the key pair signing the request matches the public key in
+  the certificate.
+- the key pair signing the request is an account key, and the corresponding
+  account is authorized to act for all of the identifier(s) in the certificate.
 
 If the revocation succeeds, the server responds with status code 200 (OK).  If the revocation fails, the server returns an error.
 

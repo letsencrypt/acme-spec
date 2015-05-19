@@ -238,8 +238,8 @@ Each of these functions is accomplished by the client sending a sequence of HTTP
 
 ACME is structured as a REST application with a few types of resources:
 
-* Registration resources, representing information about an account key
-* Authorization resources, representing an account key's authorization to act for an identifier
+* Registration resources, representing information about an account
+* Authorization resources, representing an account's authorization to act for an identifier
 * Challenge resources, representing a challenge to prove control of an identifier
 * Certificate resources, representing issued certificates
 * A "new-registration" resource
@@ -378,21 +378,22 @@ Servers SHOULD NOT respond to GET requests for registration resources as these r
 
 ## Authorization Resources
 
-An ACME authorization resource represents server's authorization for an account key pair to represent an identifier.  In addition to a public key and identifier, an authorization includes several metadata fields, such as the status of the authorization (e.g., "pending", "valid", or "revoked") and which challenges were used to validate possession of the identifier.
+An ACME authorization resource represents server's authorization for an account
+to represent an identifier.  In addition to the identifier, an
+authorization includes several metadata fields, such as the status of the
+authorization (e.g., "pending", "valid", or "revoked") and which challenges were
+used to validate possession of the identifier.
 
 The structure of an ACME authorization resource is as follows:
 
 identifier (required, dictionary of string):
-: The identifier that the account key is authorized to represent
+: The identifier that the account is authorized to represent
 
   type (required, string):
   : The type of identifier.
 
   value (required, string):
   : The identifier itself.
-
-key (required, dictionary):
-: The public key of the account key pair, encoded as a JSON Web Key object {{I-D.ietf-jose-json-web-key}}.
 
 status (optional, string):
 : The status of this authorization.  Possible values are: "unknown", "pending", "processing", "valid", "invalid" and "revoked".  If this field is missing, then the default value is "pending".
@@ -420,8 +421,6 @@ The only type of identifier defined by this specification is a fully-qualified d
     "value": "example.org"
   },
 
-  "key": { /* JWK */ },
-
   "challenges": [
     {
       "type": "simpleHttps",
@@ -442,13 +441,24 @@ The only type of identifier defined by this specification is a fully-qualified d
 ~~~~~~~~~~
 
 
-## Key Authorization
+## Identifier Authorization
 
-The key authorization process establishes the authorization of an account key pair to manage certificates for a given identifier.  This process must assure the server of two things: First, that the client controls the private key of the key pair, and second, that the client holds the identifier in question.  This process may be repeated to associate multiple identifiers to a key pair (e.g., to request certificates with multiple identifiers), or to associate multiple key pairs with an identifier (e.g., to allow multiple entities to manage certificates).
+The identifier authorization process establishes the authorization of an account
+to manage certificates for a given identifier.  This process must assure the
+server of two things: First, that the client controls the private key of the
+account key pair, and second, that the client holds the identifier in question.
+This process may be repeated to associate multiple identifiers to a key pair
+(e.g., to request certificates with multiple identifiers), or to associate
+multiple accounts with an identifier (e.g., to allow multiple entities to
+manage certificates).
 
 As illustrated by the figure in the overview section above, the authorization process proceeds in two phases.  The client first requests a new authorization, and then the server issues challenges that the client responds to.
 
-To begin the key authorization process, the client sends a POST request to the server's new-authorization resource.  The body of the POST request MUST contain a JWS object, whose payload is a partial authorization object.  This JWS object MUST contain only the "identifier" field, so that the server knows what identifier is being authorized.  The client MAY provide contact information in the "contact" field in this or any subsequent request.
+To begin the key authorization process, the client sends a POST request to the server's new-authorization resource.  The body of the POST request MUST contain a JWS object, whose payload is a partial authorization object.  This JWS object MUST contain only the "identifier" field, so that the server knows what identifier is being authorized.
+
+The authorization object is implicitly tied to the account key used to sign the
+request. Once created, the authorization may only be updated and referenced by
+that account.
 
 ~~~~~~~~~~
 
@@ -470,7 +480,6 @@ Before processing the authorization further, the server SHOULD determine whether
 If the server is willing to proceed, it builds a pending authorization object from the initial authorization object submitted by the client.
 
 * "identifier" the identifier submitted by the client.
-* "key": the key used to verify the client's JWS request (i.e., the contents of the "jwk" field in the JWS header)
 * "status": SHOULD be "pending" (MAY be omitted)
 * "challenges" and "combinations": As selected by the server's policy for this identifier
 * The "expires" field MUST be absent.
@@ -491,8 +500,6 @@ Link: <https://example.com/acme/new-cert>;rel="next"
     "type": "dns",
     "value": "example.org"
   },
-
-  "key": { /* JWK from JWS header */ },
 
   "challenges": [
     {
@@ -539,7 +546,7 @@ Host: example.com
 
 The server updates the authorization document by updating its representation of the challenge with the response fields provided by the client.  The server MUST ignore any fields in the response object that are not specified as response fields for this type of challenge.  The server provides a 200 response including the updated challenge.
 
-Presumably, the client's responses provide the server with enough information to validate one or more challenges.  The server is said to "finalize" the authorization when it has completed all the validations it is going to complete, and assigns the authorization a status of "valid" or "invalid", corresponding to whether it considers the account key  authorized for the identifier.  If the final state is "valid", the server MUST add an "expires" field to the authorization.  When finalizing an authorization, the server MAY remove the "combinations" field (if present) or remove any unfulfilled challenges.
+Presumably, the client's responses provide the server with enough information to validate one or more challenges.  The server is said to "finalize" the authorization when it has completed all the validations it is going to complete, and assigns the authorization a status of "valid" or "invalid", corresponding to whether it considers the account authorized for the identifier.  If the final state is "valid", the server MUST add an "expires" field to the authorization.  When finalizing an authorization, the server MAY remove the "combinations" field (if present) or remove any unfulfilled challenges.
 
 Usually, the validation process will take some time, so the client will need to poll the authorization resource to see when it is finalized.  For challenges where the client can tell when the server has validated the challenge (e.g., by seeing an HTTP or DNS request from the server), the client SHOULD NOT begin polling until it has seen the validation request from the server.
 
@@ -560,13 +567,6 @@ HTTP/1.1 200 OK
     "type": "dns",
     "value": "example.org"
   },
-
-  "key": { /* JWK */ },
-
-  "contact": [
-    "mailto:cert-admin@example.com",
-    "tel:+12025551212"
-  ],
 
   "challenges": [
     {

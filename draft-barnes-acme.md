@@ -314,7 +314,7 @@ key (required, dictionary):
 : The public key of the account key pair, encoded as a JSON Web Key object {{I-D.ietf-jose-json-web-key}}.
 
 contact (optional, array of string):
-: An array of URIs that the server can use to contact the client for issues related to this authorization. For example, the server may wish to notify the client about server-initiated revocation, or check with the client on future authorizations (see the "recoveryContact" challenge type).
+: An array of URIs that the server can use to contact the client for issues related to this authorization. For example, the server may wish to notify the client about server-initiated revocation.
 
 recoveryToken (optional, string):
 : An opaque token that the client can present to demonstrate that it participated in a prior authorization transaction.
@@ -821,52 +821,6 @@ Given a Challenge/Response pair, the ACME server verifies the client's control o
 It is RECOMMENDED that the ACME server verify the challenge certificate using multi-path probing techniques to reduce the risk of DNS hijacking attacks.
 
 If the server presents a certificate matching all of the above criteria, then the validation is successful.  Otherwise, the validation fails.
-
-## Recovery Contact
-
-A server may issue a recovery contact challenge to verify that the client is the same as the entity that previously requested authorization, using contact information provided by the client in a prior authorizationRequest message.
-
-The server's message to the client may request action in-band or out-of-band to ACME.  The server can provide a token in the message that the client provides in its response.  Or the server could provide some out-of-band response channel in its message, such as a URL to click in an email.
-
-type (required, string):
-: The string "recoveryContact"
-
-activationURL (optional, string):
-: A URL the client can visit to cause a recovery message to be sent to client's contact address.
-
-successURL (optional, string):
-: A URL the client may poll to determine if the user has successfully clicked a link or completed other tasks specified by the recovery message.  This URL will return a 200 success code if the required tasks have been completed.  The client SHOULD NOT poll the URL more than once every three seconds.
-
-contact (optional, string)
-: A full or partly obfuscated version of the contact URI that the server will use to contact the client.  Client software may present this to a user in order to suggest what contact point the user should check (e.g., an email address).
-
-~~~~~~~~~~
-
-{
-  "type": "recoveryContact",
-  "activationURL" : "https://example.ca/sendrecovery/a5bd99383fb0",
-  "successURL" : "https://example.ca/confirmrecovery/bb1b9928932",
-  "contact" : "c********n@example.com"
-}
-
-~~~~~~~~~~
-
-type (required, string):
-: The string "recoveryContact"
-
-token (optional, string):
-: If the user transferred a token from a contact email or call into the client software, the client sends it here.  If it the client has received a 200 success response while polling the RecoveryContact Challenge's successURL, this field SHOULD be omitted.
-
-~~~~~~~~~~
-
-{
-  "type": "recoveryContact",
-  "token": "23029d88d9e123e"
-}
-
-~~~~~~~~~~
-
-If the value of the "token" field matches the value provided in the out-of-band message to the client, or if the client has completed the required out-of-band action, then the validation succeeds.  Otherwise, the validation fails.
 
 
 ## Proof of Possession of a Prior Key

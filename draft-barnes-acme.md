@@ -323,6 +323,12 @@ recoveryToken (optional, string):
 agreement (optional, string):
 : A URI referring to a subscriber agreement or terms of service provided by the server (see below).  Including this field indicates the client's agreement with these terms.
 
+authorizations (optional, string):
+: A URI from which a list of authorizations granted to this account can be fetched via a GET request.  The result of the GET request MUST be a JSON array of strings, where each string is the URI of an authorization belonging to this registration.
+
+certificates (optional, string):
+: A URI from which a list of certificates issued for this account can be fetched via a GET request.  The result of the GET request MUST be a JSON array of strings, where each string is the URI of a certificate.
+
 A client creates a new account with the server by sending a POST request to the server's new-registration URI.  The body of the request is a registration object containing only the "contact" field.
 
 ~~~~~~~~~~
@@ -373,7 +379,7 @@ Link: <https://example.com/acme/terms>;rel="terms-of-service"
 If the client wishes to update this information in the future, it sends a POST request with updated information to the registration URI.  The server MUST ignore any updates to the "key" or "recoveryToken" fields, and MUST verify that the request is signed
 with the private key corresponding to the "key" field of the request before updating the registration.
 
-Servers SHOULD NOT respond to GET requests for registration resources as these requests are not authenticated.
+Servers SHOULD NOT respond to GET requests for registration resources as these requests are not authenticated.  If a client wishes to query the server for information about its account (e.g., to examine the "contact" or "certificates" fields), then it SHOULD do so by sending a POST request with an empty update.  That is, it should send a JWS whose payload is the empty JSON dictionary ("{}").
 
 
 ## Authorization Resources

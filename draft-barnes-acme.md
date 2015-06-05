@@ -322,11 +322,8 @@ recoveryToken (optional, string):
 agreement (optional, string):
 : A URI referring to a subscriber agreement or terms of service provided by the server (see below).  Including this field indicates the client's agreement with these terms.
 
-A client creates a new account with the server by sending a POST request to the server's new-registration URI.  In most cases (except for account recovery), the body of the request is a registration object containing only the "contact" field.
+A client creates a new account with the server by sending a POST request to the server's new-registration URI.  In most cases (except for account recovery, below), the body of the request is a registration object containing only the "contact" field.
 
-If the client has lost its account key pair but still has the recovery token, it may associate a new key pair with its account by including the recovery token in its new-registration request.  If a server receives such a request with a valid recovery token, then it MUST replace the public key in the old authorization (corresponding to the recovery key) with the JWK used to sign the recovery request.  The server MUST consider the old public key to be no longer valid for this account.
-
-Client implementers should note that recovery keys are very powerful.  If they are exposed to unauthorized parties, then that party will be able to hijack the corresponding account, enabling it to issue certificates under any authorizations on the account.  Improper use of a recovery token can cause legitimate account keys to be invalidate.  Client implementations should thus provide adequate safeguards around storage and use of recovery keys.
 
 ~~~~~~~~~~
 
@@ -376,6 +373,19 @@ If the client wishes to update this information in the future, it sends a POST r
 with the private key corresponding to the "key" field of the request before updating the registration.
 
 Servers SHOULD NOT respond to GET requests for registration resources as these requests are not authenticated.
+
+
+### Account Recovery
+
+Once a client has created an account with an ACME server, it is possible that the private key for the account will be lost.  The recovery token included in the registration allows the client to recover from this situtation, as long as it still has the recovery token.
+
+A client may ask to associate a new key pair with its account by including the recovery token in its new-registration request.  If a server receives such a request with a recovery token corresponding to a known account, then it MUST replace the public key in the old registration (corresponding to the recovery key) with the JWK used to sign the recovery request.  The server MUST consider the old public key to be no longer valid for this account.
+
+{::comment}
+TODO: Re-add recoveryContact here https://github.com/letsencrypt/acme-spec/issues/136
+{:/comment}
+
+Client implementers should note that recovery keys are very powerful.  If they are exposed to unauthorized parties, then that party will be able to hijack the corresponding account, enabling it to issue certificates under any authorizations on the account.  Improper use of a recovery token can cause legitimate account keys to be invalidate.  Client implementations should thus provide adequate safeguards around storage and use of recovery keys.
 
 
 ## Authorization Resources

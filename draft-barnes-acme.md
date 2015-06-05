@@ -270,8 +270,8 @@ For the "new-X" resources above, the server MUST have exactly one resource for e
 In general, the intent is for authorization and certificate resources to contain only public information, so that CAs may publish these resources to document what certificates have been issued and how they were authorized.  Non-public information, such as
 contact information, is stored in registration resources.
 
-In order to accomplish ACME transactions, a client needs to have the server's new-registration, new-authorization, and new-certificate URIs; the remaining URIs are provided to the client as a result of requests to these URIs.  To simplify
-configuration, ACME uses the "next" link relation to indicate URI to contact for the next step in processing: From registration to authorization, and from authorization to certificate issuance.  In this way, a client need only be configured with the registration URI.
+In order to accomplish ACME transactions, a client needs to have the server's new-registration, new-authorization, new-certificate, and revoke-certificate URIs; the remaining URIs are provided to the client as a result of requests to these URIs.  To simplify
+configuration, ACME provides a directory object. The client can fetch the directory object at startup to learn the URL for each resource.
 
 The "up" link relation is used with challenge resources to indicate the authorization resource to which a challenge belongs.  It is also used from certificate resources to indicate a resource from which the client may fetch a chain of CA certificates that could be used to validate the certificate in the original resource.
 
@@ -417,6 +417,31 @@ encoded according to the base64url encoding described in Section 2
 of {{RFC7515}}.  If the value of a "nonce" header parameter is not
 valid according to this encoding, then the verifier MUST reject the
 JWS as malformed.
+
+## Directory
+
+In order to help clients configure themselves with the right URLs for each ACME
+operation, ACME servers provide a directory object. This should be the root URL
+with which clients are configured. It has this structure:
+
+newRegistration (required, string): URL to the new-registration resource.
+
+newCertificate (required, string): URL to the new-certificate resource.
+
+newAuthorization (required, string): URL to the new-authorization resource.
+
+revokeCertificate (required, string): URL to the revoke-certificate resource.
+
+~~~~~~~~~~
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "newRegistration": "https://example.com/acme/new-reg",
+  "newAuthorization": "https://example.com/acme/new-authz",
+  "newRegistration": "https://example.com/acme/new-cert",
+  "newRegistration": "https://example.com/acme/revoke-cert"
+}
 
 ## Registration
 

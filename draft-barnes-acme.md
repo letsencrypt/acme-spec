@@ -50,6 +50,7 @@ normative:
   RFC5280:
   RFC5988:
   RFC6570:
+  RFC7515:
   RFC7159:
   I-D.ietf-appsawg-http-problem:
   I-D.ietf-jose-json-web-algorithms:
@@ -58,6 +59,7 @@ normative:
 
 informative:
   RFC2818:
+  RFC3552:
 
 
 --- abstract
@@ -133,6 +135,22 @@ Account Key Pair:
 Recovery Token:
 : A secret value that can be used to demonstrate prior authorization for an identifier, in a situation where all Subject Private Keys and Account Keys are lost.
 
+## Threat model
+
+For most communications between the client and the server, we assume the Internet
+Threat Model {{RFC3552}}, i.e. an attacker that can completely control messages
+between client and server. We additionally assume the attacker can read and
+modify TLS connections between client and server. This allows ACME deployment
+behind a TLS-terminating CDN, for DDoS prevention and other attack mitigation.
+
+For domain validation requests initiated by the server, by necessity we assume a less
+powerful attacker: the "off-path" attacker described in RFC3552 {{RFC3552}}. This
+attacker can send arbitrary messages to the ACME server, but cannot receive
+or respond to arbitrary messages sent by the server. This is the common threat
+model assumed by most domain-validating certificate authorities today.
+
+# Protocol Overview
+
 ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON is a text-based format, binary fields are Base64-encoded.  For Base64 encoding, we use the variant defined in {{I-D.ietf-jose-json-web-signature}}.  The important features of this encoding are (1) that it uses the URL-safe character set, and (2) that "=" padding characters are stripped.
 
 Some HTTPS bodies in ACME are authenticated and integrity-protected by being encapsulated in a JSON Web Signature (JWS) object {{I-D.ietf-jose-json-web-signature}}.  ACME uses a profile of JWS, with the following restrictions:
@@ -141,10 +159,29 @@ Some HTTPS bodies in ACME are authenticated and integrity-protected by being enc
 * If the JWS is in the JSON Serialization, it MUST NOT include more than one signature in the "signatures" array
 * The JWS Header MUST include "alg" and "jwk" fields
 
+In order to prevent an attacker from replaying ACME messages against
+different ACME resources, or at a different time than they were sent,
+every authenticated ACME request body MUST include, in the Protected
+header, two Private Header Parameters {{RFC7515}}: "acmeURL" and
+"acmeNonce". The value of "acmeURL" MUST be equal to the absolute
+URL to which the client is submitting the request. The value of "acmeNonce" MUST be
+equal to a nonce previously received from the server in the ACME-Nonce
+HTTP header of any message. The client MUST NOT reuse nonces. If a
+client needs to send a message but does not have a fresh nonce, it
+may request any GET resource from the server in order to receive one.
 
-# Protocol Overview
+The ACME server MUST send an ACME-Nonce HTTP header in response to any client
+request, including GET requests. The header MUST be unique in each response,
+with high probability, and consist of ASCII text. The server MUST store a list
+of nonces issued to clients and validate authenticated client requests against
+the list. If a client request contains a nonce that is not on the list, the
+server MUST reject that request. If a client request contains a nonce that *is*
+on the list, the server MUST remove the nonce from the list. The server MAY
+remove nonces from the list when it grows too large, since many nonces will
+never be used. The server MUST also reject client messages sent to a URL that
+does not match the value of the "acmeURL" parameter in the Protected header.
 
-ACME allows a client to request certificate management actions using a set of JSON messages carried over HTTPS.   In some ways, ACME functions much like a traditional CA, in which a user creates an account, adds identifiers to that account (proving control of the domains), and requests certificate issuance for those domains while logged in to the account.  
+ACME allows a client to request certificate management actions using a set of JSON messages carried over HTTPS.   In some ways, ACME functions much like a traditional CA, in which a user creates an account, adds identifiers to that account (proving control of the domains), and requests certificate issuance for those domains while logged in to the account.
 
 In ACME, the account is represented by an account key pair.  The "add a domain" function is accomplished by authorizing the key pair for a given domain.  Certificate issuance and revocation are authorized by a signature with the key pair.
 

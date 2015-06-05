@@ -98,7 +98,7 @@ When an operator deploys a current HTTPS server, it generally prompts him to gen
 * The ACME client prompts the operator for the intended domain name(s)
   that the web server is to stand for.
 * The ACME client presents the operator with a list of CAs from which it could
-  get a certificate.  
+  get a certificate.
   (This list will change over time based on the capabilities of CAs and updates to ACME configuration.)
   The ACME client might prompt the operator for
   payment information at this point.
@@ -423,7 +423,7 @@ The only type of identifier defined by this specification is a fully-qualified d
 
   "challenges": [
     {
-      "type": "simpleHttps",
+      "type": "simpleHttp",
       "status": "valid",
       "validated": "2014-12-01T12:05Z",
       "token": "IlirfxKKXAsHtmzK29Pj8A"
@@ -503,7 +503,7 @@ Link: <https://example.com/acme/new-cert>;rel="next"
 
   "challenges": [
     {
-      "type": "simpleHttps",
+      "type": "simpleHttp",
       "uri": "https://example.com/authz/asdf/0",
       "token": "IlirfxKKXAsHtmzK29Pj8A"
     },
@@ -526,11 +526,11 @@ Link: <https://example.com/acme/new-cert>;rel="next"
 
 ~~~~~~~~~~
 
-The client needs to respond with information to complete the challenges.  To do this, the client updates the authorization object received from the server by filling in any required information in the elements of the "challenges" dictionary.  For example, if the client wishes to complete the "simpleHttps" challenge, it needs to provide the "path" component.  (This is also the stage where the client should perform any actions required by the challenge.)
+The client needs to respond with information to complete the challenges.  To do this, the client updates the authorization object received from the server by filling in any required information in the elements of the "challenges" dictionary.  For example, if the client wishes to complete the "simpleHttp" challenge, it needs to provide the "path" component.  (This is also the stage where the client should perform any actions required by the challenge.)
 
 The client sends these updates back to the server in the form of a JSON object with the response fields required by the challenge type, carried in a POST request to the challenge URI (not authorization URI or the new-authorization URI).  This allows the client to send information only for challenges it is responding to.
 
-For example, if the client were to respond to the "simpleHttps" challenge in the above authorization, it would send the following request:
+For example, if the client were to respond to the "simpleHttp" challenge in the above authorization, it would send the following request:
 
 ~~~~~~~~~~
 
@@ -570,7 +570,7 @@ HTTP/1.1 200 OK
 
   "challenges": [
     {
-      "type": "simpleHttps"
+      "type": "simpleHttp"
       "status": "valid",
       "validated": "2014-12-01T12:05Z",
       "token": "IlirfxKKXAsHtmzK29Pj8A"
@@ -719,13 +719,13 @@ To accommodate this reality, ACME includes an extensible challenge/response fram
 
 The only general requirement for Challenge and Response payloads is that they MUST be structured as a JSON object, and they MUST contain a parameter "type" that specifies the type of Challenge or Response encoded in the object.
 
-Different challenges allow the server to obtain proof of different aspects of control over an identifier.  In some challenges, like Simple HTTPS and DVSNI, the client directly proves control of an identifier.  In other challenges, such as Recovery or Proof of Possession, the client proves historical control of the identifier, by reference to a prior authorization transaction or certificate.
+Different challenges allow the server to obtain proof of different aspects of control over an identifier.  In some challenges, like Simple HTTP and DVSNI, the client directly proves control of an identifier.  In other challenges, such as Recovery or Proof of Possession, the client proves historical control of the identifier, by reference to a prior authorization transaction or certificate.
 
 The choice of which Challenges to offer to a client under which circumstances is a matter of server policy.  A server may choose different sets of challenges depending on whether it has interacted with a domain before, and how.  For example:
 
 | Domain status                                 | Challenges typically sufficient for (re)Authorization |
 |:----------------------------------------------|:------------------------------------------------------|
-| No known prior certificates or ACME usage     | Domain Validation (DVSNI or Simple HTTPS)             |
+| No known prior certificates or ACME usage     | Domain Validation (DVSNI or Simple HTTP)             |
 | Existing valid certs, first use of ACME       | DV + Proof of Possession of previous CA-signed key    |
 | Ongoing ACME usage                            | PoP of previous Authorized key                        |
 | Ongoing ACME usage, lost Authorized key       | DV + (Recovery or PoP of ACME-certified Subject key)  |
@@ -733,14 +733,14 @@ The choice of which Challenges to offer to a client under which circumstances is
 
 The identifier validation challenges described in this section all relate to validation of domain names.  If ACME is extended in the future to support other types of identifier, there will need to be new Challenge types, and they will need to specify which types of identifier they apply to.
 
-## Simple HTTPS
+## Simple HTTP
 
-With Simple HTTPS validation, the client in an ACME transaction proves its control over a domain name by proving that it can provision resources on an HTTPS server that responds for that domain name.  The ACME server challenges the client to provision a file with a specific string as its contents.
+With Simple HTTP validation, the client in an ACME transaction proves its control over a domain name by proving that it can provision resources on an HTTP server that responds for that domain name.  The ACME server challenges the client to provision a file with a specific string as its contents.
 
-As a domain may resolve to multiple IPv4 and IPv6 addresses, the server will connect to at least one of the hosts found in A and AAAA records, at its discretion.  Simple HTTPS validation of IPv6-only domains may not be supported by all servers.
+As a domain may resolve to multiple IPv4 and IPv6 addresses, the server will connect to at least one of the hosts found in A and AAAA records, at its discretion.  The HTTP server may be made available over either HTTPS or unencrypted HTTP; the client tells the server in its response which to check.
 
 type (required, string):
-: The string "simpleHttps"
+: The string "simpleHttp"
 
 token (required, string):
 : The value to be provisioned in the file.  This value MUST have at least 128 bits of entropy, in order to prevent an attacker from guessing it.  It MUST NOT contain any non-ASCII characters.
@@ -748,7 +748,7 @@ token (required, string):
 ~~~~~~~~~~
 
 {
-  "type": "simpleHttps",
+  "type": "simpleHttp",
   "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA"
 }
 
@@ -757,28 +757,34 @@ token (required, string):
 A client responds to this Challenge by provisioning the nonce as a resource on the HTTPS server for the domain in question.  The path at which the resource is provisioned is determined by the client, but MUST begin with ".well-known/acme-challenge/".  The content type of the resource MUST be "text/plain".  The client returns the part of the path coming after that prefix in its Response message.
 
 type (required, string):
-: The string "simpleHttps"
+: The string "simpleHttp"
 
 path (required, string):
 : The string to be appended to the standard prefix ".well-known/acme-challenge/" in order to form the path at which the nonce resource is provisioned.  The result of concatenating the prefix with this value MUST match the "path" production in the standard URI format {{RFC3986}}
 
+nonsecure (optional, boolean):
+: If this attribute is present and set to "true", the server will perform its validation check over enencrypted HTTP (on port 80) rather than over HTTPS.  Otherwise the check will be done over HTTPS, on port 443.
+
 ~~~~~~~~~~
 
 {
-  "type": "simpleHttps",
-  "path": "6tbIMBC5Anhl5bOlWT5ZFA"
+  "type": "simpleHttp",
+  "path": "6tbIMBC5Anhl5bOlWT5ZFA",
+  "nonsecure": false
 }
 
 ~~~~~~~~~~
 
 Given a Challenge/Response pair, the server verifies the client's control of the domain by verifying that the resource was provisioned as expected.
 
-1. Form a URI by populating the URI template "https://{domain}/.well-known/acme-challenge/{path}", where the domain field is set to the domain name being verified and the path field is the path provided in the challenge {{RFC6570}}.
+1. Form a URI by populating the URI template {{RFC6570}} "{scheme}://{domain}/.well-known/acme-challenge/{path}", where:
+  * the scheme field is set to "http" if the "nonsecure" attribute of the response is set to true, and "https" otherwise;
+  * the domain field is set to the domain name being verified; and
+  * the path field is the path provided in the response.
 2. Verify that the resulting URI is well-formed.
-3. Dereference the URI using an HTTPS GET request.
-4. Verify that the certificate presented by the HTTPS server is a valid self-signed certificate, and contains the domain name being validated as well as the public key of the key pair being authorized.
-5. Verify that the Content-Type header of the response is either absent, or has the value "text/plain"
-6. Compare the entity body of the response with the nonce.  This comparison MUST be performed in terms of Unicode code points, taking into account the encodings of the stored nonce and the body of the request.
+3. Dereference the URI using an HTTP or HTTPS GET request.  If using HTTPS, the ACME server MUST ignore the certificate provided by the HTTPS server.
+4. Verify that the Content-Type header of the response is either absent, or has the value "text/plain"
+5. Compare the entity body of the response with the nonce.  This comparison MUST be performed in terms of Unicode code points, taking into account the encodings of the stored nonce and the body of the request.
 
 If the GET request succeeds and the entity body is equal to the nonce, then the validation is successful.  If the request fails, or the body does not match the nonce, then it has failed.
 

@@ -190,7 +190,7 @@ For example, if the client requests a domain name, the server might challenge th
 
 ~~~~~~~~~~
 
-Once the client has authorized an account key pair for an identifier, it can use the key pair to authorize the issuance of certificates for the identifier.  To do this, the client sends a PKCS#10 Certificate Signing Request (CSR) to the server (indicating the identifier(s) to be included in the issued certificate), a set of links to any required authorizations, and a signature over the CSR by the private key of the account key pair.
+Once the client has authorized an account key pair for an identifier, it can use the key pair to authorize the issuance of certificates for the identifier.  To do this, the client sends a PKCS#10 Certificate Signing Request (CSR) to the server (indicating the identifier(s) to be included in the issued certificate) and a signature over the CSR by the private key of the account key pair.
 
 If the server agrees to issue the certificate, then it creates the certificate and provides it in its response.  The certificate is assigned a URI, which the client can use to fetch updated versions of the certificate.
 
@@ -606,13 +606,10 @@ Recovery tokens are employed in response to Recovery Challenges.  Such challenge
 
 ## Certificate Issuance
 
-The holder of an authorized key pair for an identifier may use ACME to request that a certificate be issued for that identifier.  The client makes this request by sending a POST request to the server's new-certificate resource.  The body of the POST is a JWS object whose JSON payload contains a Certificate Signing Request (CSR) {{RFC2986}} and set of authorization URIs.  The CSR encodes the parameters of the requested certificate; authority to issue is demonstrated by the JWS signature and the linked authorizations.
+The holder of an authorized key pair for an identifier may use ACME to request that a certificate be issued for that identifier.  The client makes this request by sending a POST request to the server's new-certificate resource.  The body of the POST is a JWS object whose JSON payload contains a Certificate Signing Request (CSR) {{RFC2986}} and set of authorization URIs.  The CSR encodes the parameters of the requested certificate; authority to issue is demonstrated by the JWS signature, from which the server can look up related authorizations.
 
 csr (required, string):
 : A CSR encoding the parameters for the certificate being requested.  The CSR is sent in Base64-encoded version of the DER format.  (Note: This field uses the same modified Base64-encoding rules used elsewhere in this document, so it is different from PEM.)
-
-authorizations (required, array of string):
-: An array of URIs for authorization resources.
 
 ~~~~~~~~~~
 
@@ -622,9 +619,6 @@ Accept: application/pkix-cert
 
 {
   "csr": "5jNudRx6Ye4HzKEqT5...FS6aKdZeGsysoCo4H9P",
-  "authorizations": [
-    "https://example.com/acme/authz/asdf"
-  ]
 }
 /* Signed as JWS */
 
@@ -632,7 +626,7 @@ Accept: application/pkix-cert
 
 The CSR encodes the client's requests with regard to the content of the certificate to be issued.  The CSR MUST contain at least one extensionRequest attribute {{RFC2985}} requesting a subjectAltName extension, containing the requested identifiers.
 
-The values provided in the CSR are only a request, and are not guaranteed.  The server or CA may alter any fields in the certificate before issuance.  For example, the CA may remove identifiers that are not authorized for the key indicated in the "authorization" field.
+The values provided in the CSR are only a request, and are not guaranteed.  The server or CA may alter any fields in the certificate before issuance.  For example, the CA may remove identifiers that are not authorized for the account key that signed the request.
 
 If the CA decides to issue a certificate, then the server returns the certificate in a response with status code 201 (Created).  The server MUST indicate a URL for this certificate in a Location header field.
 

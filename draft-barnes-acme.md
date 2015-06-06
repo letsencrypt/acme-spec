@@ -131,7 +131,7 @@ Account Key Pair:
 : A key pair for which the ACME server considers the holder of the private key authorized to manage certificates for a given identifier.  The same key pair may be authorized for multiple identifiers.
 
 Recovery Token:
-: A secret value that can be used to associate a new account key pair with a registration, in the even that the private key of the old account key pair is lost.
+: A secret value that can be used to associate a new account key pair with a registration, in the event that the private key of the old account key pair is lost.
 
 ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON is a text-based format, binary fields are Base64-encoded.  For Base64 encoding, we use the variant defined in {{I-D.ietf-jose-json-web-signature}}.  The important features of this encoding are (1) that it uses the URL-safe character set, and (2) that "=" padding characters are stripped.
 
@@ -379,13 +379,13 @@ Servers SHOULD NOT respond to GET requests for registration resources as these r
 
 Once a client has created an account with an ACME server, it is possible that the private key for the account will be lost.  The recovery token included in the registration allows the client to recover from this situtation, as long as it still has the recovery token.
 
-A client may ask to associate a new key pair with its account by including the recovery token in its new-registration request.  If a server receives such a request with a recovery token corresponding to a known account, then it MUST replace the public key in the old registration (corresponding to the recovery key) with the JWK used to sign the recovery request.  The server MUST consider the old public key to be no longer valid for this account.
+A client may ask to associate a new key pair with its account by including the recovery token in its new-registration request.  If a server receives such a request with a recovery token corresponding to a known account, then it MUST replace the public key in the old registration (corresponding to the recovery token) with the JWK used to sign the recovery request.  The server MUST consider the old public key to be no longer valid for this account.
 
 {::comment}
 TODO: Re-add recoveryContact here https://github.com/letsencrypt/acme-spec/issues/136
 {:/comment}
 
-Client implementers should note that recovery keys are very powerful.  If they are exposed to unauthorized parties, then that party will be able to hijack the corresponding account, enabling it to issue certificates under any authorizations on the account.  Improper use of a recovery token can cause legitimate account keys to be invalidate.  Client implementations should thus provide adequate safeguards around storage and use of recovery keys.
+Client implementers should note that recovery tokens are very powerful.  If they are exposed to unauthorized parties, then that party will be able to hijack the corresponding account, enabling it to issue certificates under any authorizations on the account.  Improper use of a recovery token can cause legitimate account keys to be invalidate.  Client implementations should thus provide adequate safeguards around storage and use of recovery tokens.
 
 
 ## Authorization Resources
@@ -1017,7 +1017,7 @@ TODO
 * General authorization story
 * PoP nonce entropy
 * ToC/ToU; duration of key authorization
-* Clients need to protect recovery key
+* Clients need to protect recovery token
 * CA needs to perform a very wide range of issuance policy enforcement and sanity-check steps
 * Parser safety (for JSON, JWK, ASN.1, and any other formats that can be parsed by the ACME server)
 

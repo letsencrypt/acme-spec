@@ -159,27 +159,9 @@ Some HTTPS bodies in ACME are authenticated and integrity-protected by being enc
 * If the JWS is in the JSON Serialization, it MUST NOT include more than one signature in the "signatures" array
 * The JWS Header MUST include "alg" and "jwk" fields
 
-In order to prevent an attacker from replaying ACME messages against
-different ACME resources, or at a different time than they were sent,
-every authenticated ACME request body MUST include, in the Protected
-header, two Private Header Parameters {{RFC7515}}: "acmeURL" and
-"acmeNonce". The value of "acmeURL" MUST be equal to the absolute
-URL to which the client is submitting the request. The value of "acmeNonce" MUST be
-equal to a nonce previously received from the server in the ACME-Nonce
-HTTP header of any message. The client MUST NOT reuse nonces. If a
-client needs to send a message but does not have a fresh nonce, it
-may request any GET resource from the server in order to receive one.
+Additionally, ACME defines two JOSE Private Header fields for reply protection,
+see Replay Protection below.
 
-The ACME server MUST send an ACME-Nonce HTTP header in response to any client
-request, including GET requests. The header MUST be unique in each response,
-with high probability, and consist of ASCII text. The server MUST store a list
-of nonces issued to clients and validate authenticated client requests against
-the list. If a client request contains a nonce that is not on the list, the
-server MUST reject that request. If a client request contains a nonce that *is*
-on the list, the server MUST remove the nonce from the list. The server MAY
-remove nonces from the list when it grows too large, since many nonces will
-never be used. The server MUST also reject client messages sent to a URL that
-does not match the value of the "acmeURL" parameter in the Protected header.
 
 ACME allows a client to request certificate management actions using a set of JSON messages carried over HTTPS.   In some ways, ACME functions much like a traditional CA, in which a user creates an account, adds identifiers to that account (proving control of the domains), and requests certificate issuance for those domains while logged in to the account.
 
@@ -259,6 +241,39 @@ To revoke a certificate, the client simply sends a revocation request, signed wi
 
 Note that while ACME is defined with enough flexibility to handle different types of identifiers in principle, the primary use case addressed by this document is the case where domain names are used as identifiers.  For example, all of the identifier validation challenges described in Section {identifier-validation-challenges} below address validation of domain names.  The use of ACME for other protocols will require further specification, in order to describe how these identifiers are encoded in the protocol, and what types of validation challenges the server might require.
 
+# Replay protection
+
+In order to prevent an attacker from replaying ACME messages against
+different ACME resources, or at a different time than they were sent,
+every authenticated ACME request body MUST include, in the Protected
+header, two Private Header Parameters {{RFC7515}}: "acmeURL" and
+"acmeNonce". The value of "acmeURL" MUST be equal to the absolute URL
+to which the client is submitting the request. The server MUST reject
+client messages sent to a URL that does not exactly match the value of the
+"acmeURL" parameter in the Protected header.
+
+The value of "acmeNonce" MUST be equal to a nonce previously received
+from the server in the ACME-Nonce HTTP header of any message.
+
+The ACME server MUST send an ACME-Nonce HTTP header in response to any POST
+request from the client. The header MUST be unique in each response,
+with high probability, and consist of a random 16-byte octet string,
+Base64-encoded.
+
+The client MUST NOT reuse nonces. If a client needs to send a message
+but does not have a fresh nonce, it may submit a signed POST to the
+new-registration URL containing a body with the empty JSON object "{}".
+
+The server MUST store a list of nonces issued to clients and validate
+authenticated client requests against the list. If a client request
+contains a nonce that is not on the list, the server MUST reject that
+request with a 403 Not Found response code with a type of "urn:acme:badNonce".
+When a client receives such a problem document, it should use the ACME-Nonce HTTP
+header in the response to submit a new request, with a new nonce.
+
+If a client request contains a nonce that *is* on the list, the server
+MUST remove the nonce from the list. The server MAY additionally
+remove nonces from the list for any reason or no reason.
 
 # Certificate Management
 
@@ -339,6 +354,7 @@ When the server responds with an error status, it SHOULD provide additional info
 | unauthorized    | The client lacks sufficient authorization                |
 | serverInternal  | The server experienced an internal error                 |
 | badCSR          | The CSR is unacceptable (e.g., due to a short key)       |
+| badNonce        | The client sent a nonce that was already used            |
 
 Authorization and challenge objects can also contain error information to indicate why the server was unable to validate authorization.
 

@@ -745,6 +745,9 @@ type (required, string):
 token (required, string):
 : The value to be provisioned in the file.  This value MUST have at least 128 bits of entropy, in order to prevent an attacker from guessing it.  It MUST NOT contain any non-ASCII characters.
 
+allowedPorts (optional, array of number):
+: Ports on which the server is willing to make queries, in addition to 80 and 443.  If the challenge does not contain this attribute, then the client MUST NOT include the "port" attribute in its response.
+
 ~~~~~~~~~~
 
 {
@@ -762,8 +765,16 @@ type (required, string):
 path (required, string):
 : The string to be appended to the standard prefix ".well-known/acme-challenge/" in order to form the path at which the nonce resource is provisioned.  The result of concatenating the prefix with this value MUST match the "path" production in the standard URI format {{RFC3986}}
 
-nonsecure (optional, boolean):
-: If this attribute is present and set to "true", the server will perform its validation check over enencrypted HTTP (on port 80) rather than over HTTPS.  Otherwise the check will be done over HTTPS, on port 443.
+port (optional, number, default 443):
+: The port to which the client would like the validation request to be sent.
+
+tls (optional, boolean, default true):
+: If this attribute is present and set to "false", the server will perform its validation check over unencrypted HTTP rather than over HTTPS.
+
+If the "port" attribute is present, it MUST be within the "allowedPorts" set presented by the server.  If the server receives a "port" value that was not in the "allowedPorts" set (including if "allowedPorts" was not provided in the challenge), it MUST immediately invalidate the challenge without further processing.
+
+If the "port" attribute is set to an allowed value, then the validation request will be sent on that port, either over TLS (if "tls" is absent or "true") or directly over TCP.  Otherwise, the request will be sent on the default port for HTTP according to the "tls" attribute (443 for "true", and 80 for "false").
+
 
 ~~~~~~~~~~
 
@@ -777,8 +788,9 @@ nonsecure (optional, boolean):
 
 Given a Challenge/Response pair, the server verifies the client's control of the domain by verifying that the resource was provisioned as expected.
 
-1. Form a URI by populating the URI template {{RFC6570}} "{scheme}://{domain}/.well-known/acme-challenge/{path}", where:
+1. Form a URI by populating the URI template {{RFC6570}} "{scheme}://{domain}:{port}/.well-known/acme-challenge/{path}", where:
   * the scheme field is set to "http" if the "nonsecure" attribute of the response is set to true, and "https" otherwise;
+  * the port field is set as described above;
   * the domain field is set to the domain name being verified; and
   * the path field is the path provided in the response.
 2. Verify that the resulting URI is well-formed.

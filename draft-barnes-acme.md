@@ -709,7 +709,7 @@ The choice of which Challenges to offer to a client under which circumstances is
 | Existing valid certs, first use of ACME       | DV + Proof of Possession of previous CA-signed key    |
 | Ongoing ACME usage                            | PoP of previous Authorized key                        |
 | Ongoing ACME usage, lost Authorized key       | DV + PoP of ACME-certified Subject key                |
-| ACME usage, all keys and recovery tokens lost | Recertification by another CA + PoP of that key       |
+| ACME usage, all keys and recovery tokens lost | Proof of legal identity of the site owner             |
 
 The identifier validation challenges described in this section all relate to validation of domain names.  If ACME is extended in the future to support other types of identifier, there will need to be new Challenge types, and they will need to specify which types of identifier they apply to.
 

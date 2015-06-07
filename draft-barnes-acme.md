@@ -760,10 +760,10 @@ type (required, string):
 : The string "simpleHttp"
 
 path (required, string):
-: The string to be appended to the standard prefix ".well-known/acme-challenge/" in order to form the path at which the nonce resource is provisioned.  The result of concatenating the prefix with this value MUST match the "path" production in the standard URI format {{RFC3986}}
+: The string to be appended to the standard prefix ".well-known/acme-challenge/" in order to form the path at which the nonce resource is provisioned.  The value MUST be comprised entirely of characters from the URL-safe alphabet for Base64 encoding {{RFC4648}}, and MUST NOT be longer than 25 characters (sufficient for 128 bits of base64-encoded data).
 
-nonsecure (optional, boolean):
-: If this attribute is present and set to "true", the server will perform its validation check over enencrypted HTTP (on port 80) rather than over HTTPS.  Otherwise the check will be done over HTTPS, on port 443.
+tls (optional, boolean, default true):
+: If this attribute is present and set to "false", the server will perform its validation check over unencrypted HTTP (on port 80) rather than over HTTPS.  Otherwise the check will be done over HTTPS, on port 443.
 
 ~~~~~~~~~~
 

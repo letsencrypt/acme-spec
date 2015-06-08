@@ -45,6 +45,7 @@ normative:
   RFC3339:
   RFC3986:
   RFC4514:
+  RFC4648:
   RFC5226:
   RFC5246:
   RFC5280:
@@ -98,7 +99,7 @@ When an operator deploys a current HTTPS server, it generally prompts him to gen
 * The ACME client prompts the operator for the intended domain name(s)
   that the web server is to stand for.
 * The ACME client presents the operator with a list of CAs from which it could
-  get a certificate.  
+  get a certificate.
   (This list will change over time based on the capabilities of CAs and updates to ACME configuration.)
   The ACME client might prompt the operator for
   payment information at this point.
@@ -131,7 +132,7 @@ Account Key Pair:
 : A key pair for which the ACME server considers the holder of the private key authorized to manage certificates for a given identifier.  The same key pair may be authorized for multiple identifiers.
 
 Recovery Token:
-: A secret value that can be used to demonstrate prior authorization for an identifier, in a situation where all Subject Private Keys and Account Keys are lost.
+: A secret value that can be used to associate a new account key pair with a registration, in the event that the private key of the old account key pair is lost.
 
 ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON is a text-based format, binary fields are Base64-encoded.  For Base64 encoding, we use the variant defined in {{I-D.ietf-jose-json-web-signature}}.  The important features of this encoding are (1) that it uses the URL-safe character set, and (2) that "=" padding characters are stripped.
 
@@ -148,8 +149,7 @@ ACME allows a client to request certificate management actions using a set of JS
 
 In ACME, the account is represented by an account key pair.  The "add a domain" function is accomplished by authorizing the key pair for a given domain.  Certificate issuance and revocation are authorized by a signature with the key pair.
 
-The first phase of ACME is for the client to register with the ACME server.  The client generates an asymmetric key pair and associates this key pair with a set of contact information by signing the contact information.  The server acknowledges the
-registration by replying with a recovery token that the client can provide later to associate a new account key pair in the event that the first account key pair is lost.
+The first phase of ACME is for the client to register with the ACME server.  The client generates an asymmetric key pair and associates this key pair with a set of contact information by signing the contact information.  The server acknowledges the registration by replying with a recovery token that the client can provide later to associate a new account key pair in the event that the first account key pair is lost.
 
 ~~~~~~~~~~
 
@@ -309,13 +309,13 @@ TODO: Flesh out errors and syntax for them
 
 ## Registration
 
-An ACME registration resource represents a set of metadata associated to an account key pair, most importantly contact information and a recovery token.  Registration resources have the following structure:
+An ACME registration resource represents a set of metadata associated to an account key pair.  Registration resources have the following structure:
 
 key (required, dictionary):
 : The public key of the account key pair, encoded as a JSON Web Key object {{I-D.ietf-jose-json-web-key}}.
 
 contact (optional, array of string):
-: An array of URIs that the server can use to contact the client for issues related to this authorization. For example, the server may wish to notify the client about server-initiated revocation, or check with the client on future authorizations (see the "recoveryContact" challenge type).
+: An array of URIs that the server can use to contact the client for issues related to this authorization. For example, the server may wish to notify the client about server-initiated revocation.
 
 recoveryToken (optional, string):
 : An opaque token that the client can present to demonstrate that it participated in a prior authorization transaction.
@@ -329,7 +329,7 @@ authorizations (optional, string):
 certificates (optional, string):
 : A URI from which a list of certificates issued for this account can be fetched via a GET request.  The result of the GET request MUST be a JSON object whose "certificates" field is an array of strings, where each string is the URI of a certificate.  The server SHOULD NOT include expired certificates.
 
-A client creates a new account with the server by sending a POST request to the server's new-registration URI.  The body of the request is a registration object containing only the "contact" field.
+A client creates a new account with the server by sending a POST request to the server's new-registration URI.  In most cases (except for account recovery, below), the body of the request is a registration object containing only the "contact" field.
 
 ~~~~~~~~~~
 
@@ -346,8 +346,7 @@ Host: example.com
 
 ~~~~~~~~~~
 
-The server MUST ignore any values provided in the "key" or "recoveryToken" fields, as well as any other fields that it does not recognize.  If new fields are specified in the future, the specification of those fields MUST describe whether they may be
-provided by the client.
+The server MUST ignore any values provided in the "key" field in registration bodies sent by the client, as well as any other fields that it does not recognize.  If new fields are specified in the future, the specification of those fields MUST describe whether they may be provided by the client.
 
 The server creates a registration object with the included contact information.  The "key" element of the registration is set to the public key used to verify the JWS (i.e., the "jwk" element of the JWS header).  The server also provides a random
 recovery token.  The server returns this registration object in a 201 (Created) response, with the registration URI in a Location header field.  The server MUST also indicate its new-authorization URI using the "next" link relation.
@@ -380,6 +379,19 @@ If the client wishes to update this information in the future, it sends a POST r
 with the private key corresponding to the "key" field of the request before updating the registration.
 
 Servers SHOULD NOT respond to GET requests for registration resources as these requests are not authenticated.  If a client wishes to query the server for information about its account (e.g., to examine the "contact" or "certificates" fields), then it SHOULD do so by sending a POST request with an empty update.  That is, it should send a JWS whose payload is the empty JSON dictionary ("{}").
+
+
+### Account Recovery
+
+Once a client has created an account with an ACME server, it is possible that the private key for the account will be lost.  The recovery token included in the registration allows the client to recover from this situtation, as long as it still has the recovery token.
+
+A client may ask to associate a new key pair with its account by including the recovery token in its new-registration request.  If a server receives such a request with a recovery token corresponding to a known account, then it MUST replace the public key in the old registration (corresponding to the recovery token) with the JWK used to sign the recovery request.  The server MUST consider the old public key to be no longer valid for this account.
+
+{::comment}
+TODO: Re-add recoveryContact here https://github.com/letsencrypt/acme-spec/issues/136
+{:/comment}
+
+Client implementers should note that recovery tokens are very powerful.  If they are exposed to unauthorized parties, then that party will be able to hijack the corresponding account, enabling it to issue certificates under any authorizations on the account.  Improper use of a recovery token can cause legitimate account keys to be invalidate.  Client implementations should thus provide adequate safeguards around storage and use of recovery tokens.
 
 
 ## Authorization Resources
@@ -429,17 +441,11 @@ The only type of identifier defined by this specification is a fully-qualified d
 
   "challenges": [
     {
-      "type": "simpleHttps",
+      "type": "simpleHttp",
       "status": "valid",
       "validated": "2014-12-01T12:05Z",
       "token": "IlirfxKKXAsHtmzK29Pj8A"
       "path": "Hf5GrX4Q7EBax9hc2jJnfw"
-    },
-    {
-      "type": "recoveryToken",
-      "status": "valid",
-      "validated": "2014-12-01T12:07Z",
-      "token": "23029d88d9e123e"
     }
   ],
 }
@@ -509,7 +515,7 @@ Link: <https://example.com/acme/new-cert>;rel="next"
 
   "challenges": [
     {
-      "type": "simpleHttps",
+      "type": "simpleHttp",
       "uri": "https://example.com/authz/asdf/0",
       "token": "IlirfxKKXAsHtmzK29Pj8A"
     },
@@ -517,10 +523,6 @@ Link: <https://example.com/acme/new-cert>;rel="next"
       "type": "dns",
       "uri": "https://example.com/authz/asdf/1"
       "token": "DGyRejmCefe7v4NfDGDKfA"
-    },
-    {
-      "type": "recoveryToken",
-      "uri": "https://example.com/authz/asdf/2"
     }
   },
 
@@ -532,11 +534,11 @@ Link: <https://example.com/acme/new-cert>;rel="next"
 
 ~~~~~~~~~~
 
-The client needs to respond with information to complete the challenges.  To do this, the client updates the authorization object received from the server by filling in any required information in the elements of the "challenges" dictionary.  For example, if the client wishes to complete the "simpleHttps" challenge, it needs to provide the "path" component.  (This is also the stage where the client should perform any actions required by the challenge.)
+The client needs to respond with information to complete the challenges.  To do this, the client updates the authorization object received from the server by filling in any required information in the elements of the "challenges" dictionary.  For example, if the client wishes to complete the "simpleHttp" challenge, it needs to provide the "path" component.  (This is also the stage where the client should perform any actions required by the challenge.)
 
 The client sends these updates back to the server in the form of a JSON object with the response fields required by the challenge type, carried in a POST request to the challenge URI (not authorization URI or the new-authorization URI).  This allows the client to send information only for challenges it is responding to.
 
-For example, if the client were to respond to the "simpleHttps" challenge in the above authorization, it would send the following request:
+For example, if the client were to respond to the "simpleHttp" challenge in the above authorization, it would send the following request:
 
 ~~~~~~~~~~
 
@@ -576,39 +578,17 @@ HTTP/1.1 200 OK
 
   "challenges": [
     {
-      "type": "simpleHttps"
+      "type": "simpleHttp"
       "status": "valid",
       "validated": "2014-12-01T12:05Z",
       "token": "IlirfxKKXAsHtmzK29Pj8A"
       "path": "Hf5GrX4Q7EBax9hc2jJnfw"
-    },
-    {
-      "type": "recoveryToken",
-      "status": "valid",
-      "validated": "2014-12-01T12:07Z",
-      "token": "23029d88d9e123e"
     }
   ]
 }
 
 ~~~~~~~~~~
 
-
-### Recovery Tokens
-
-A recovery token is a fallback authentication mechanism.  In the event that a client loses all other state, including authorized key pairs and key pairs bound to certificates, the client can use the recovery token to prove that it was previously authorized for the identifier in question.
-
-This mechanism is necessary because once an ACME server has issued an Authorization Key for a given identifier, that identifier enters a higher-security state, at least with respect to the ACME server.  That state exists to protect against attacks such as DNS hijacking and router compromise which tend to inherently defeat all forms of Domain Validation.  So once a domain has begun using ACME, new DV-only authorization will not be performed without proof of continuity via possession of an Authorized Private Key or potentially a Subject Private Key for that domain.
-
-This higher state of security poses some risks.  From time to time, the administrators and owners of domains may lose access to keys they have previously had issued or certified, including Authorized private keys and Subject private keys.  For instance, the disks on which this key material is stored may suffer failures, or passphrases for these keys may be forgotten.  In some cases, the security measures that are taken to protect this sensitive data may contribute to its loss.
-
-Recovery Tokens and Recovery Challenges exist to provide a fallback mechanism to restore the state of the domain to the server-side administrative security state it was in prior to the use of ACME, such that fresh Domain Validation is sufficient for reauthorization.
-
-Recovery tokens are therefore only useful to an attacker who can also perform Domain Validation against a target domain, and as a result client administrators may choose to handle them with somewhat fewer security precautions than Authorized and Subject private keys, decreasing the risk of their loss.
-
-Recovery tokens come in several types, including high-entropy passcodes (which need to be safely preserved by the client admin) and email addresses (which are inherently hard to lose, and which can be used for verification, though they may be a little less secure).
-
-Recovery tokens are employed in response to Recovery Challenges.  Such challenges will be available if the server has issued Recovery Tokens for a given account, and the combination of a Recovery Challenge and a domain validation Challenge is a plausible alternative to other challenge sets for domains that already have extant Authorized keys.
 
 ## Certificate Issuance
 
@@ -719,28 +699,28 @@ To accommodate this reality, ACME includes an extensible challenge/response fram
 
 The only general requirement for Challenge and Response payloads is that they MUST be structured as a JSON object, and they MUST contain a parameter "type" that specifies the type of Challenge or Response encoded in the object.
 
-Different challenges allow the server to obtain proof of different aspects of control over an identifier.  In some challenges, like Simple HTTPS and DVSNI, the client directly proves control of an identifier.  In other challenges, such as Recovery or Proof of Possession, the client proves historical control of the identifier, by reference to a prior authorization transaction or certificate.
+Different challenges allow the server to obtain proof of different aspects of control over an identifier.  In some challenges, like Simple HTTP and DVSNI, the client directly proves control of an identifier.  In other challenges, such as Proof of Possession, the client proves historical control of the identifier, by reference to a prior authorization transaction or certificate.
 
 The choice of which Challenges to offer to a client under which circumstances is a matter of server policy.  A server may choose different sets of challenges depending on whether it has interacted with a domain before, and how.  For example:
 
 | Domain status                                 | Challenges typically sufficient for (re)Authorization |
 |:----------------------------------------------|:------------------------------------------------------|
-| No known prior certificates or ACME usage     | Domain Validation (DVSNI or Simple HTTPS)             |
+| No known prior certificates or ACME usage     | Domain Validation (DVSNI or Simple HTTP)             |
 | Existing valid certs, first use of ACME       | DV + Proof of Possession of previous CA-signed key    |
 | Ongoing ACME usage                            | PoP of previous Authorized key                        |
-| Ongoing ACME usage, lost Authorized key       | DV + (Recovery or PoP of ACME-certified Subject key)  |
+| Ongoing ACME usage, lost Authorized key       | DV + PoP of ACME-certified Subject key                |
 | ACME usage, all keys and recovery tokens lost | Recertification by another CA + PoP of that key       |
 
 The identifier validation challenges described in this section all relate to validation of domain names.  If ACME is extended in the future to support other types of identifier, there will need to be new Challenge types, and they will need to specify which types of identifier they apply to.
 
-## Simple HTTPS
+## Simple HTTP
 
-With Simple HTTPS validation, the client in an ACME transaction proves its control over a domain name by proving that it can provision resources on an HTTPS server that responds for that domain name.  The ACME server challenges the client to provision a file with a specific string as its contents.
+With Simple HTTP validation, the client in an ACME transaction proves its control over a domain name by proving that it can provision resources on an HTTP server that responds for that domain name.  The ACME server challenges the client to provision a file with a specific string as its contents.
 
-As a domain may resolve to multiple IPv4 and IPv6 addresses, the server will connect to at least one of the hosts found in A and AAAA records, at its discretion.  Simple HTTPS validation of IPv6-only domains may not be supported by all servers.
+As a domain may resolve to multiple IPv4 and IPv6 addresses, the server will connect to at least one of the hosts found in A and AAAA records, at its discretion.  The HTTP server may be made available over either HTTPS or unencrypted HTTP; the client tells the server in its response which to check.
 
 type (required, string):
-: The string "simpleHttps"
+: The string "simpleHttp"
 
 token (required, string):
 : The value to be provisioned in the file.  This value MUST have at least 128 bits of entropy, in order to prevent an attacker from guessing it.  It MUST NOT contain any non-ASCII characters.
@@ -748,40 +728,45 @@ token (required, string):
 ~~~~~~~~~~
 
 {
-  "type": "simpleHttps",
+  "type": "simpleHttp",
   "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA"
 }
 
 ~~~~~~~~~~
 
-A client responds to this Challenge by provisioning the nonce as a resource on the HTTPS server for the domain in question.  The path at which the resource is provisioned is determined by the client, but MUST begin with ".well-known/acme-challenge/".  The content type of the resource MUST be "text/plain".  The client returns the part of the path coming after that prefix in its Response message.
+A client responds to this Challenge by provisioning the token as a resource on the HTTP server for the domain in question.  The path at which the resource is provisioned is determined by the client, but MUST begin with ".well-known/acme-challenge/".  The content type of the resource MUST be "text/plain".  The client returns the part of the path coming after that prefix in its Response message.
 
 type (required, string):
-: The string "simpleHttps"
+: The string "simpleHttp"
 
 path (required, string):
-: The string to be appended to the standard prefix ".well-known/acme-challenge/" in order to form the path at which the nonce resource is provisioned.  The result of concatenating the prefix with this value MUST match the "path" production in the standard URI format {{RFC3986}}
+: The string to be appended to the standard prefix ".well-known/acme-challenge/" in order to form the path at which the nonce resource is provisioned.  The value MUST be comprised entirely of characters from the URL-safe alphabet for Base64 encoding {{RFC4648}}, and MUST NOT be longer than 25 characters (sufficient for 128 bits of base64-encoded data).
+
+tls (optional, boolean, default true):
+: If this attribute is present and set to "false", the server will perform its validation check over unencrypted HTTP (on port 80) rather than over HTTPS.  Otherwise the check will be done over HTTPS, on port 443.
 
 ~~~~~~~~~~
 
 {
-  "type": "simpleHttps",
-  "path": "6tbIMBC5Anhl5bOlWT5ZFA"
+  "type": "simpleHttp",
+  "path": "6tbIMBC5Anhl5bOlWT5ZFA",
+  "nonsecure": false
 }
 
 ~~~~~~~~~~
 
 Given a Challenge/Response pair, the server verifies the client's control of the domain by verifying that the resource was provisioned as expected.
 
-1. Form a URI by populating the URI template "https://{domain}/.well-known/acme-challenge/{path}", where the domain field is set to the domain name being verified and the path field is the path provided in the challenge {{RFC6570}}.
+1. Form a URI by populating the URI template {{RFC6570}} "{scheme}://{domain}/.well-known/acme-challenge/{path}", where:
+  * the scheme field is set to "http" if the "nonsecure" attribute of the response is set to true, and "https" otherwise;
+  * the domain field is set to the domain name being verified; and
+  * the path field is the path provided in the response.
 2. Verify that the resulting URI is well-formed.
-3. Dereference the URI using an HTTPS GET request.
-4. Verify that the certificate presented by the HTTPS server is a valid self-signed certificate, and contains the domain name being validated as well as the public key of the key pair being authorized.
-5. Verify that the Content-Type header of the response is either absent, or has the value "text/plain"
-6. Compare the entity body of the response with the nonce.  This comparison MUST be performed in terms of Unicode code points, taking into account the encodings of the stored nonce and the body of the request.
+3. Dereference the URI using an HTTP or HTTPS GET request.  If using HTTPS, the ACME server MUST ignore the certificate provided by the HTTPS server.
+4. Verify that the Content-Type header of the response is either absent, or has the value "text/plain"
+5. Compare the entity body of the response with the nonce.  This comparison MUST be performed in terms of Unicode code points, taking into account the encodings of the stored nonce and the body of the request.
 
-If the GET request succeeds and the entity body is equal to the nonce, then the validation is successful.  If the request fails, or the body does not match the nonce, then it has failed.
-
+If the GET request succeeds and the entity body is equal to the token, then the validation is successful.  If the request fails, or the body does not exactly match the token, then it has failed.
 
 ## Domain Validation with Server Name Indication
 
@@ -851,87 +836,6 @@ Given a Challenge/Response pair, the ACME server verifies the client's control o
 It is RECOMMENDED that the ACME server verify the challenge certificate using multi-path probing techniques to reduce the risk of DNS hijacking attacks.
 
 If the server presents a certificate matching all of the above criteria, then the validation is successful.  Otherwise, the validation fails.
-
-## Recovery Contact
-
-A server may issue a recovery contact challenge to verify that the client is the same as the entity that previously requested authorization, using contact information provided by the client in a prior authorizationRequest message.
-
-The server's message to the client may request action in-band or out-of-band to ACME.  The server can provide a token in the message that the client provides in its response.  Or the server could provide some out-of-band response channel in its message, such as a URL to click in an email.
-
-type (required, string):
-: The string "recoveryContact"
-
-activationURL (optional, string):
-: A URL the client can visit to cause a recovery message to be sent to client's contact address.
-
-successURL (optional, string):
-: A URL the client may poll to determine if the user has successfully clicked a link or completed other tasks specified by the recovery message.  This URL will return a 200 success code if the required tasks have been completed.  The client SHOULD NOT poll the URL more than once every three seconds.
-
-contact (optional, string)
-: A full or partly obfuscated version of the contact URI that the server will use to contact the client.  Client software may present this to a user in order to suggest what contact point the user should check (e.g., an email address).
-
-~~~~~~~~~~
-
-{
-  "type": "recoveryContact",
-  "activationURL" : "https://example.ca/sendrecovery/a5bd99383fb0",
-  "successURL" : "https://example.ca/confirmrecovery/bb1b9928932",
-  "contact" : "c********n@example.com"
-}
-
-~~~~~~~~~~
-
-type (required, string):
-: The string "recoveryContact"
-
-token (optional, string):
-: If the user transferred a token from a contact email or call into the client software, the client sends it here.  If it the client has received a 200 success response while polling the RecoveryContact Challenge's successURL, this field SHOULD be omitted.
-
-~~~~~~~~~~
-
-{
-  "type": "recoveryContact",
-  "token": "23029d88d9e123e"
-}
-
-~~~~~~~~~~
-
-If the value of the "token" field matches the value provided in the out-of-band message to the client, or if the client has completed the required out-of-band action, then the validation succeeds.  Otherwise, the validation fails.
-
-
-## Recovery Token
-
-A recovery token is a simple way for the server to verify that the client was previously authorized for a domain.  The client simply provides the recovery token that was provided in the Registration Resource.
-
-type (required, string):
-: The string "recoveryToken"
-
-~~~~~~~~~~
-
-{
-  "type": "recoveryToken"
-}
-
-~~~~~~~~~~
-
-The response to a recovery token challenge is simple; the client sends the requested token that it was provided by the server earlier.
-
-type (required, string):
-: The string "recoveryToken"
-
-token (optional, string):
-: The recovery token provided by the server.
-
-~~~~~~~~~~
-
-{
-  "type": "recoveryToken",
-  "token": "23029d88d9e123e"
-}
-
-~~~~~~~~~~
-
-If the value of the "token" field matches a recovery token that the server previously provided for this user, then the validation succeeds.  Otherwise, the validation fails.
 
 
 ## Proof of Possession of a Prior Key
@@ -1118,7 +1022,7 @@ TODO
 * General authorization story
 * PoP nonce entropy
 * ToC/ToU; duration of key authorization
-* Clients need to protect recovery key
+* Clients need to protect recovery token
 * CA needs to perform a very wide range of issuance policy enforcement and sanity-check steps
 * Parser safety (for JSON, JWK, ASN.1, and any other formats that can be parsed by the ACME server)
 

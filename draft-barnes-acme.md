@@ -302,7 +302,7 @@ When the server responds with an error status, it SHOULD provide additional info
 | unauthorized    | The client lacks sufficient authorization                |
 | serverInternal  | The server experienced an internal error                 |
 | badCSR          | The CSR is unacceptable (e.g., due to a short key)       |
-| badNonce        | The client sent a nonce that was already used            |
+| badNonce        | The client sent an unacceptable anti-replay nonce        |
 
 Authorization and challenge objects can also contain error information to indicate why the server was unable to validate authorization.
 

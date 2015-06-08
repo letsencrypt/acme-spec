@@ -135,22 +135,6 @@ Account Key Pair:
 Recovery Token:
 : A secret value that can be used to demonstrate prior authorization for an identifier, in a situation where all Subject Private Keys and Account Keys are lost.
 
-## Threat model
-
-For most communications between the client and the server, we assume the Internet
-Threat Model {{RFC3552}}, i.e. an attacker that can completely control messages
-between client and server. We additionally assume the attacker can read and
-modify TLS connections between client and server. This allows ACME deployment
-behind a TLS-terminating CDN, for DDoS prevention and other attack mitigation.
-
-For domain validation requests initiated by the server, by necessity we assume a less
-powerful attacker: the "off-path" attacker described in RFC3552 {{RFC3552}}. This
-attacker can send arbitrary messages to the ACME server, but cannot receive
-or respond to arbitrary messages sent by the server. This is the common threat
-model assumed by most domain-validating certificate authorities today.
-
-# Protocol Overview
-
 ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON is a text-based format, binary fields are Base64-encoded.  For Base64 encoding, we use the variant defined in {{I-D.ietf-jose-json-web-signature}}.  The important features of this encoding are (1) that it uses the URL-safe character set, and (2) that "=" padding characters are stripped.
 
 Some HTTPS bodies in ACME are authenticated and integrity-protected by being encapsulated in a JSON Web Signature (JWS) object {{I-D.ietf-jose-json-web-signature}}.  ACME uses a profile of JWS, with the following restrictions:
@@ -159,9 +143,9 @@ Some HTTPS bodies in ACME are authenticated and integrity-protected by being enc
 * If the JWS is in the JSON Serialization, it MUST NOT include more than one signature in the "signatures" array
 * The JWS Header MUST include "alg" and "jwk" fields
 
-Additionally, ACME defines two JOSE Private Header fields for reply protection,
-see Replay Protection below.
+Additionally, JWS objects used in ACME MUST include the "nonce" header field, defined below.
 
+# Protocol Overview
 
 ACME allows a client to request certificate management actions using a set of JSON messages carried over HTTPS.   In some ways, ACME functions much like a traditional CA, in which a user creates an account, adds identifiers to that account (proving control of the domains), and requests certificate issuance for those domains while logged in to the account.
 
@@ -240,40 +224,6 @@ To revoke a certificate, the client simply sends a revocation request, signed wi
 
 
 Note that while ACME is defined with enough flexibility to handle different types of identifiers in principle, the primary use case addressed by this document is the case where domain names are used as identifiers.  For example, all of the identifier validation challenges described in Section {identifier-validation-challenges} below address validation of domain names.  The use of ACME for other protocols will require further specification, in order to describe how these identifiers are encoded in the protocol, and what types of validation challenges the server might require.
-
-# Replay protection
-
-In order to prevent an attacker from replaying ACME messages against
-different ACME resources, or at a different time than they were sent,
-every authenticated ACME request body MUST include, in the Protected
-header, two Private Header Parameters {{RFC7515}}: "acmeURL" and
-"acmeNonce". The value of "acmeURL" MUST be equal to the absolute URL
-to which the client is submitting the request. The server MUST reject
-client messages sent to a URL that does not exactly match the value of the
-"acmeURL" parameter in the Protected header.
-
-The value of "acmeNonce" MUST be equal to a nonce previously received
-from the server in the ACME-Nonce HTTP header of any message.
-
-The ACME server MUST send an ACME-Nonce HTTP header in response to any POST
-request from the client. The header MUST be unique in each response,
-with high probability, and consist of a random 16-byte octet string,
-Base64-encoded.
-
-The client MUST NOT reuse nonces. If a client needs to send a message
-but does not have a fresh nonce, it may submit a signed POST to the
-new-registration URL containing a body with the empty JSON object "{}".
-
-The server MUST store a list of nonces issued to clients and validate
-authenticated client requests against the list. If a client request
-contains a nonce that is not on the list, the server MUST reject that
-request with a 403 Not Found response code with a type of "urn:acme:badNonce".
-When a client receives such a problem document, it should use the ACME-Nonce HTTP
-header in the response to submit a new request, with a new nonce.
-
-If a client request contains a nonce that *is* on the list, the server
-MUST remove the nonce from the list. The server MAY additionally
-remove nonces from the list for any reason or no reason.
 
 # Certificate Management
 
@@ -359,6 +309,80 @@ When the server responds with an error status, it SHOULD provide additional info
 Authorization and challenge objects can also contain error information to indicate why the server was unable to validate authorization.
 
 TODO: Flesh out errors and syntax for them
+
+## Replay protection
+
+In order to protect ACME resources from any possible replay attacks,
+ACME requests have a mandatory anti-replay mechanism.  This mechanism
+is based on the server maintaining a list of nonces that it has issued
+to clients, and requiring any signed request from the client to carry
+such a nonce.
+
+An ACME server MUST include an Replay-Nonce header field in each
+successful response it provides to a client, with contents as specified
+below.  (It MAY also provided one in an error response.)  The value
+provided in this header MUST be unique to this response, and MUST be
+unpredictable to parties other than the server.
+
+Every JWS sent by an ACME client MUST include, in its protected header,
+a "nonce" header parameter, with contents as defined below.  As part of
+JWS verification, the ACME server MUST verify that the value of the
+"nonce" header is a value that the server previously provided in a
+Replay-Nonce header field.  One a nonce value has appeared in an ACME
+request, the server MUST consider it invalid, in the same way as a
+value it had never issued.
+
+The precise method used to generate and track nonces is up to the server.
+For example:
+
+* The server could generate a random 128-bit value for each response,
+  keep a list of issued nonces, and strike nonces from this list as
+  they are used.
+
+* The server could provide an encrypted counter, where the counter is
+  incremented for each request, and the encryption key is known only
+  to the server.  The server can then decrypt nonce values and check
+  that the decrypted counter value is less than the current value of
+  the counter, and not on a list of counters already used in requests.
+
+### Replay-Nonce
+
+The "Replay-Nonce" header field includes a server-generated value that
+the server can use to detect unauthorized replay in future client
+requests.  The server should generate the value provided in
+Replay-Nonce in such a way that they are unique to each message and
+unpredictable to a party other than the server.
+
+The value of the Replay-Nonce field MUST be an octet string encoded
+according to the base64url encoding described in Section 2 of
+{{RFC7515}}.  Clients MUST ignore invalid Replay-Nonce values.
+
+```
+  base64url = [A-Z] / [a-z] / [0-9] / "-" / "_"
+
+  Replay-Nonce = *base64url
+```
+
+The Replay-Nonce header field SHOULD NOT be included in HTTP request
+messages.
+
+
+### "nonce" (Nonce) header parameter
+
+The "nonce" header parameter provides a unique value that enables the
+verifier of a JWS to recognize when replay has occurred.  When present,
+the "nonce" header paramete MUST be carried in the protected header
+of the JWS.
+
+Note that the "nonce" header is not a complete solution for anti-replay.
+In order to detect replay, the verifier of a JWS needs to know that
+nonce values are non-repeating and unpredictable to an attacker.
+
+The value of the "nonce" header parameter MUST be an octet string,
+encoded according to the base64url encoding described in Section 2
+of {{RFC7515}}.  If the value of a "nonce" header parameter is not
+valid according to this encoding, then the verifier MUST reject the
+JWS as malformed.
 
 ## Registration
 
@@ -1161,6 +1185,8 @@ For future work:
 TODO
 
 * Register .well-known path
+* Register Replay-Nonce HTTP header
+* Register "nonce" JWS header parameter
 * Create identifier validation method registry
 * Registries of syntax tokens, e.g., message types / error types?
 

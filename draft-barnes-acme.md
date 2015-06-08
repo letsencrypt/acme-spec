@@ -250,8 +250,9 @@ ACME is structured as a REST application with a few types of resources:
 In general, the intent is for authorization and certificate resources to contain only public information, so that CAs may publish these resources to document what certificates have been issued and how they were authorized.  Non-public information, such as
 contact information, is stored in registration resources.
 
-In order to accomplish ACME transactions, a client needs to have the server's new-registration, new-authorization, new-certificate, and revoke-certificate URIs; the remaining URIs are provided to the client as a result of requests to these URIs.  To simplify
-configuration, ACME provides a directory object. The client can fetch the directory object at startup to learn the URL for each resource.
+ACME uses different URIs for different management functions. Each function is
+listed in a directory along with its corresponding URI, so clients only need to
+be configured with the directory URI.
 
 The "up" link relation is used with challenge resources to indicate the authorization resource to which a challenge belongs.  It is also used from certificate resources to indicate a resource from which the client may fetch a chain of CA certificates that could be used to validate the certificate in the original resource.
 
@@ -312,15 +313,14 @@ TODO: Flesh out errors and syntax for them
 
 In order to help clients configure themselves with the right URLs for each ACME
 operation, ACME servers provide a directory object. This should be the root URL
-with which clients are configured. It has this structure:
+with which clients are configured. It is a JSON dictionary, whose keys are the
+names of ACME functions, and whose values are the URIs used to accomplish the
+corresponding function. The function names are:
 
-newRegistration (required, string): URL to the new-registration resource.
-
-newCertificate (required, string): URL to the new-certificate resource.
-
-newAuthorization (required, string): URL to the new-authorization resource.
-
-revokeCertificate (required, string): URL to the revoke-certificate resource.
+ - newRegistration (see Registration below)
+ - newCertificate (see Certificate Issuance below)
+ - newAuthorization (see Identifier Authorization below)
+ - revokeCertificate (see Certificate Revocation below)
 
 ~~~~~~~~~~
 HTTP/1.1 200 OK
@@ -332,6 +332,7 @@ Content-Type: application/json
   "newRegistration": "https://example.com/acme/new-cert",
   "newRegistration": "https://example.com/acme/revoke-cert"
 }
+~~~~~~~~~~
 
 ## Registration
 

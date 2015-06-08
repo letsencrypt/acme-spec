@@ -406,8 +406,8 @@ names of ACME functions, and whose values are the URIs used to accomplish the
 corresponding function. The function names are:
 
  - newRegistration (see Registration below)
- - newCertificate (see Certificate Issuance below)
  - newAuthorization (see Identifier Authorization below)
+ - newCertificate (see Certificate Issuance below)
  - revokeCertificate (see Certificate Revocation below)
 
 ~~~~~~~~~~
@@ -417,8 +417,8 @@ Content-Type: application/json
 {
   "newRegistration": "https://example.com/acme/new-reg",
   "newAuthorization": "https://example.com/acme/new-authz",
-  "newRegistration": "https://example.com/acme/new-cert",
-  "newRegistration": "https://example.com/acme/revoke-cert"
+  "newCertificate": "https://example.com/acme/new-cert",
+  "revokeCertificate": "https://example.com/acme/revoke-cert"
 }
 
 ## Registration

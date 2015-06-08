@@ -45,6 +45,7 @@ normative:
   RFC3339:
   RFC3986:
   RFC4514:
+  RFC4648:
   RFC5226:
   RFC5246:
   RFC5280:

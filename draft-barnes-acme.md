@@ -154,11 +154,12 @@ and modify TLS connections between client and server. This allows ACME
 deployment behind a TLS-terminating CDN, for DDoS prevention and other attack
 mitigation.
 
-For domain validation requests initiated by the server, we are vulnerable to a
-the "off-path" attacker described in RFC3552 {{RFC3552}}. This attacker can
-send arbitrary messages to the ACME server, but cannot receive or respond to
-arbitrary messages sent by the server. This is the common threat model assumed
-by most domain-validating certificate authorities today.
+Domain validation requests initiated by the server are more vulnerable
+than ACME messages between client and server, because they rely on
+insecure DNS. In particular, such validation requests are vulnerable
+to the "on-path" attacker described in RFC3552 {{RFC3552}}.  This is
+the common threat model assumed by most domain-validating certificate
+authorities today.
 
 # Protocol Overview
 

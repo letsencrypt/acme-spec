@@ -50,12 +50,11 @@ normative:
   RFC5280:
   RFC5988:
   RFC6570:
-  RFC7515:
   RFC7159:
+  RFC7515:
+  RFC7517:
+  RFC7518:
   I-D.ietf-appsawg-http-problem:
-  I-D.ietf-jose-json-web-algorithms:
-  I-D.ietf-jose-json-web-key:
-  I-D.ietf-jose-json-web-signature:
 
 informative:
   RFC2818:
@@ -134,9 +133,9 @@ Account Key Pair:
 Recovery Token:
 : A secret value that can be used to demonstrate prior authorization for an identifier, in a situation where all Subject Private Keys and Account Keys are lost.
 
-ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON is a text-based format, binary fields are Base64-encoded.  For Base64 encoding, we use the variant defined in {{I-D.ietf-jose-json-web-signature}}.  The important features of this encoding are (1) that it uses the URL-safe character set, and (2) that "=" padding characters are stripped.
+ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON is a text-based format, binary fields are Base64-encoded.  For Base64 encoding, we use the variant defined in {{RFC7515}}.  The important features of this encoding are (1) that it uses the URL-safe character set, and (2) that "=" padding characters are stripped.
 
-Some HTTPS bodies in ACME are authenticated and integrity-protected by being encapsulated in a JSON Web Signature (JWS) object {{I-D.ietf-jose-json-web-signature}}.  ACME uses a profile of JWS, with the following restrictions:
+Some HTTPS bodies in ACME are authenticated and integrity-protected by being encapsulated in a JSON Web Signature (JWS) object {{RFC7515}}.  ACME uses a profile of JWS, with the following restrictions:
 
 * The JWS MUST use the JSON or Flattened JSON Serialization
 * If the JWS is in the JSON Serialization, it MUST NOT include more than one signature in the "signatures" array
@@ -392,7 +391,7 @@ JWS as malformed.
 An ACME registration resource represents a set of metadata associated to an account key pair, most importantly contact information and a recovery token.  Registration resources have the following structure:
 
 key (required, dictionary):
-: The public key of the account key pair, encoded as a JSON Web Key object {{I-D.ietf-jose-json-web-key}}.
+: The public key of the account key pair, encoded as a JSON Web Key object {{RFC7517}}.
 
 contact (optional, array of string):
 : An array of URIs that the server can use to contact the client for issues related to this authorization. For example, the server may wish to notify the client about server-initiated revocation, or check with the client on future authorizations (see the "recoveryContact" challenge type).
@@ -1028,7 +1027,7 @@ type (required, string):
 : The string "proofOfPossession"
 
 alg (required, string):
-: A token indicating the cryptographic algorithm that should be used by the client to compute the signature {{I-D.ietf-jose-json-web-algorithms}}.  (MAC algorithms such as "HS*" MUST NOT be used.)  The client MUST verify that this algorithm is supported for the indicated key before responding to this challenge.
+: A token indicating the cryptographic algorithm that should be used by the client to compute the signature {{RFC7518}}.  (MAC algorithms such as "HS*" MUST NOT be used.)  The client MUST verify that this algorithm is supported for the indicated key before responding to this challenge.
 
 nonce (required, string):
 : A random 16-byte octet string, Base64-encoded
@@ -1037,7 +1036,7 @@ hints (required, object):
 : A JSON object that contains various clues for the client about what the requested key is, such that the client can find it.  Entries in the hints object may include:
 
 jwk (required, object):
-: A JSON Web Key object describing the public key whose corresponding private key should be used to generate the signature {{I-D.ietf-jose-json-web-key}}
+: A JSON Web Key object describing the public key whose corresponding private key should be used to generate the signature {{RFC7517}}
 
 certFingerprints (optional, array):
 : An array of certificate fingerprints, hex-encoded SHA1 hashes of DER-encoded certificates that are known to contain this key

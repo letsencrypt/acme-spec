@@ -359,11 +359,11 @@ The value of the Replay-Nonce field MUST be an octet string encoded
 according to the base64url encoding described in Section 2 of
 {{RFC7515}}.  Clients MUST ignore invalid Replay-Nonce values.
 
-```
+~~~~~
   base64url = [A-Z] / [a-z] / [0-9] / "-" / "_"
 
   Replay-Nonce = *base64url
-```
+~~~~~
 
 The Replay-Nonce header field SHOULD NOT be included in HTTP request
 messages.

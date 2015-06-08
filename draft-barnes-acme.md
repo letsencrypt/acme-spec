@@ -332,6 +332,10 @@ Replay-Nonce header field.  One a nonce value has appeared in an ACME
 request, the server MUST consider it invalid, in the same way as a
 value it had never issued.
 
+When a server rejects a request because its nonce value was unacceptable
+(or not present), it SHOULD provide HTTP status code 400 (Bad Request),
+and indicate the ACME error code "urn:acme:badNonce".
+
 The precise method used to generate and track nonces is up to the server.
 For example:
 

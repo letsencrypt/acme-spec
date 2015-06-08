@@ -52,13 +52,14 @@ normative:
   RFC5988:
   RFC6570:
   RFC7159:
+  RFC7515:
+  RFC7517:
+  RFC7518:
   I-D.ietf-appsawg-http-problem:
-  I-D.ietf-jose-json-web-algorithms:
-  I-D.ietf-jose-json-web-key:
-  I-D.ietf-jose-json-web-signature:
 
 informative:
   RFC2818:
+  RFC3552:
 
 
 --- abstract
@@ -134,18 +135,34 @@ Account Key Pair:
 Recovery Token:
 : A secret value that can be used to associate a new account key pair with a registration, in the event that the private key of the old account key pair is lost.
 
-ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON is a text-based format, binary fields are Base64-encoded.  For Base64 encoding, we use the variant defined in {{I-D.ietf-jose-json-web-signature}}.  The important features of this encoding are (1) that it uses the URL-safe character set, and (2) that "=" padding characters are stripped.
+ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON is a text-based format, binary fields are Base64-encoded.  For Base64 encoding, we use the variant defined in {{RFC7515}}.  The important features of this encoding are (1) that it uses the URL-safe character set, and (2) that "=" padding characters are stripped.
 
-Some HTTPS bodies in ACME are authenticated and integrity-protected by being encapsulated in a JSON Web Signature (JWS) object {{I-D.ietf-jose-json-web-signature}}.  ACME uses a profile of JWS, with the following restrictions:
+Some HTTPS bodies in ACME are authenticated and integrity-protected by being encapsulated in a JSON Web Signature (JWS) object {{RFC7515}}.  ACME uses a profile of JWS, with the following restrictions:
 
 * The JWS MUST use the JSON or Flattened JSON Serialization
 * If the JWS is in the JSON Serialization, it MUST NOT include more than one signature in the "signatures" array
 * The JWS Header MUST include "alg" and "jwk" fields
 
+Additionally, JWS objects used in ACME MUST include the "nonce" and "acmePath" header field, defined below.
+
+# Threat Model
+
+For most communications between the client and the server, we assume the
+Internet Threat Model {{RFC3552}}, i.e. an attacker that can completely control
+messages between client and server. We additionally assume the attacker can read
+and modify TLS connections between client and server. This allows ACME
+deployment behind a TLS-terminating CDN, for DDoS prevention and other attack
+mitigation.
+
+For domain validation requests initiated by the server, we are vulnerable to a
+the "off-path" attacker described in RFC3552 {{RFC3552}}. This attacker can
+send arbitrary messages to the ACME server, but cannot receive or respond to
+arbitrary messages sent by the server. This is the common threat model assumed
+by most domain-validating certificate authorities today.
 
 # Protocol Overview
 
-ACME allows a client to request certificate management actions using a set of JSON messages carried over HTTPS.   In some ways, ACME functions much like a traditional CA, in which a user creates an account, adds identifiers to that account (proving control of the domains), and requests certificate issuance for those domains while logged in to the account.  
+ACME allows a client to request certificate management actions using a set of JSON messages carried over HTTPS.   In some ways, ACME functions much like a traditional CA, in which a user creates an account, adds identifiers to that account (proving control of the domains), and requests certificate issuance for those domains while logged in to the account.
 
 In ACME, the account is represented by an account key pair.  The "add a domain" function is accomplished by authorizing the key pair for a given domain.  Certificate issuance and revocation are authorized by a signature with the key pair.
 
@@ -221,7 +238,6 @@ To revoke a certificate, the client simply sends a revocation request, signed wi
 
 
 Note that while ACME is defined with enough flexibility to handle different types of identifiers in principle, the primary use case addressed by this document is the case where domain names are used as identifiers.  For example, all of the identifier validation challenges described in Section {identifier-validation-challenges} below address validation of domain names.  The use of ACME for other protocols will require further specification, in order to describe how these identifiers are encoded in the protocol, and what types of validation challenges the server might require.
-
 
 # Certificate Management
 
@@ -302,17 +318,88 @@ When the server responds with an error status, it SHOULD provide additional info
 | unauthorized    | The client lacks sufficient authorization                |
 | serverInternal  | The server experienced an internal error                 |
 | badCSR          | The CSR is unacceptable (e.g., due to a short key)       |
+| badNonce        | The client sent an unacceptable anti-replay nonce        |
 
 Authorization and challenge objects can also contain error information to indicate why the server was unable to validate authorization.
 
 TODO: Flesh out errors and syntax for them
+
+## Replay protection
+
+In order to protect ACME resources from any possible replay attacks,
+ACME requests have a mandatory anti-replay mechanism.  This mechanism
+is based on the server maintaining a list of nonces that it has issued
+to clients, and requiring any signed request from the client to carry
+such a nonce.
+
+An ACME server MUST include an Replay-Nonce header field in each
+successful response to a POST it provides to a client, with contents as specified
+below.  It MAY also provide one in an error response.  The value
+provided in this header MUST be unique to this response, with high
+probability.
+
+Every JWS sent by an ACME client MUST include, in its protected
+header, the "nonce" and "acmePath" header parameters, with contents
+as defined below. As part of JWS verification, the ACME server MUST verify that
+the "acmePath" header parameter is exactly equal to the path to which the
+request was submitted. The server SHOULD provide HTTP status code 400 (Bad
+Request) if the path does not match.
+
+As part of JWS verification, the ACME server MUST
+verify that the value of the "nonce" header is a value that the server
+previously provided in a Replay-Nonce header field.  One a nonce value
+has appeared in an ACME request, the server MUST consider it invalid,
+in the same way as a value it had never issued.
+
+When a server rejects a request because its nonce value was unacceptable
+(or not present), it SHOULD provide HTTP status code 400 (Bad Request),
+and indicate the ACME error code "urn:acme:badNonce".
+
+The precise method used to generate and track nonces is up to the server.
+For example, the server could generate a random 128-bit value for each
+response, keep a list of issued nonces, and strike nonces from this list as
+they are used.
+
+### Replay-Nonce
+
+The "Replay-Nonce" header field includes a server-generated value that
+the server can use to detect unauthorized replay in future client
+requests.  The server should generate the value provided in
+Replay-Nonce in such a way that they are unique to each message, with high
+probability.
+
+The value of the Replay-Nonce field MUST be an octet string encoded
+according to the base64url encoding described in Section 2 of
+{{RFC7515}}.  Clients MUST ignore invalid Replay-Nonce values.
+
+~~~~~
+  base64url = [A-Z] / [a-z] / [0-9] / "-" / "_"
+
+  Replay-Nonce = *base64url
+~~~~~
+
+The Replay-Nonce header field SHOULD NOT be included in HTTP request
+messages.
+
+### "nonce" (Nonce) JWS header parameter
+
+The "nonce" header parameter provides a unique value that enables the
+verifier of a JWS to recognize when replay has occurred.
+The "nonce" header paramete MUST be carried in the protected header
+of the JWS.
+
+The value of the "nonce" header parameter MUST be an octet string,
+encoded according to the base64url encoding described in Section 2
+of {{RFC7515}}.  If the value of a "nonce" header parameter is not
+valid according to this encoding, then the verifier MUST reject the
+JWS as malformed.
 
 ## Registration
 
 An ACME registration resource represents a set of metadata associated to an account key pair.  Registration resources have the following structure:
 
 key (required, dictionary):
-: The public key of the account key pair, encoded as a JSON Web Key object {{I-D.ietf-jose-json-web-key}}.
+: The public key of the account key pair, encoded as a JSON Web Key object {{RFC7517}}.
 
 contact (optional, array of string):
 : An array of URIs that the server can use to contact the client for issues related to this authorization. For example, the server may wish to notify the client about server-initiated revocation.
@@ -852,7 +939,7 @@ type (required, string):
 : The string "proofOfPossession"
 
 alg (required, string):
-: A token indicating the cryptographic algorithm that should be used by the client to compute the signature {{I-D.ietf-jose-json-web-algorithms}}.  (MAC algorithms such as "HS*" MUST NOT be used.)  The client MUST verify that this algorithm is supported for the indicated key before responding to this challenge.
+: A token indicating the cryptographic algorithm that should be used by the client to compute the signature {{RFC7518}}.  (MAC algorithms such as "HS*" MUST NOT be used.)  The client MUST verify that this algorithm is supported for the indicated key before responding to this challenge.
 
 nonce (required, string):
 : A random 16-byte octet string, Base64-encoded
@@ -861,7 +948,7 @@ hints (required, object):
 : A JSON object that contains various clues for the client about what the requested key is, such that the client can find it.  Entries in the hints object may include:
 
 jwk (required, object):
-: A JSON Web Key object describing the public key whose corresponding private key should be used to generate the signature {{I-D.ietf-jose-json-web-key}}
+: A JSON Web Key object describing the public key whose corresponding private key should be used to generate the signature {{RFC7517}}
 
 certFingerprints (optional, array):
 : An array of certificate fingerprints, hex-encoded SHA1 hashes of DER-encoded certificates that are known to contain this key
@@ -1012,6 +1099,8 @@ For future work:
 TODO
 
 * Register .well-known path
+* Register Replay-Nonce HTTP header
+* Register "nonce" JWS header parameter
 * Create identifier validation method registry
 * Registries of syntax tokens, e.g., message types / error types?
 

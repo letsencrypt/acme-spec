@@ -324,7 +324,7 @@ agreement (optional, string):
 : A URI referring to a subscriber agreement or terms of service provided by the server (see below).  Including this field indicates the client's agreement with these terms.
 
 authorizations (optional, string):
-: A URI from which a list of authorizations granted to this account can be fetched via a GET request.  The result of the GET request MUST be a JSON object whose "authorizations" field is an array of strings, where each string is the URI of an authorization belonging to this registration.  The server SHOULD include pending authorizations, and SHOULD NOT include authorizations that are pending or expired.
+: A URI from which a list of authorizations granted to this account can be fetched via a GET request.  The result of the GET request MUST be a JSON object whose "authorizations" field is an array of strings, where each string is the URI of an authorization belonging to this registration.  The server SHOULD include pending authorizations, and SHOULD NOT include authorizations that are invalid or expired.
 
 certificates (optional, string):
 : A URI from which a list of certificates issued for this account can be fetched via a GET request.  The result of the GET request MUST be a JSON object whose "certificates" field is an array of strings, where each string is the URI of a certificate.  The server SHOULD NOT include expired certificates.

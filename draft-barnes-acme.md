@@ -838,7 +838,7 @@ tls (optional, boolean, default true):
 {
   "type": "simpleHttp",
   "path": "6tbIMBC5Anhl5bOlWT5ZFA",
-  "nonsecure": false
+  "tls": false
 }
 
 ~~~~~~~~~~
@@ -846,7 +846,7 @@ tls (optional, boolean, default true):
 Given a Challenge/Response pair, the server verifies the client's control of the domain by verifying that the resource was provisioned as expected.
 
 1. Form a URI by populating the URI template {{RFC6570}} "{scheme}://{domain}/.well-known/acme-challenge/{path}", where:
-  * the scheme field is set to "http" if the "nonsecure" attribute of the response is set to true, and "https" otherwise;
+  * the scheme field is set to "http" if the "tls" attribute of the response is set to false, and "https" otherwise;
   * the domain field is set to the domain name being verified; and
   * the path field is the path provided in the response.
 2. Verify that the resulting URI is well-formed.

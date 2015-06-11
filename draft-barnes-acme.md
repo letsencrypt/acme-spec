@@ -148,7 +148,7 @@ Additionally, JWS objects used in ACME MUST include the "nonce" and "acmePath" h
 # Threat Model
 
 For most communications between the client and the server, we assume the
-Internet Threat Model {{RFC3552}}, i.e. an attacker that can completely control
+Internet Threat Model {{RFC3552}}, i.e., an attacker that can completely control
 messages between client and server. We additionally assume the attacker can read
 and modify TLS connections between client and server. This allows ACME
 deployment behind a TLS-terminating CDN, for DDoS prevention and other attack
@@ -346,11 +346,11 @@ the "acmePath" header parameter is exactly equal to the path to which the
 request was submitted. The server SHOULD provide HTTP status code 400 (Bad
 Request) if the path does not match.
 
-As part of JWS verification, the ACME server MUST
-verify that the value of the "nonce" header is a value that the server
-previously provided in a Replay-Nonce header field.  One a nonce value
-has appeared in an ACME request, the server MUST consider it invalid,
-in the same way as a value it had never issued.
+As part of JWS verification, the ACME server MUST verify that the
+value of the "nonce" header is a value that the server previously
+provided in a Replay-Nonce header field. Once a nonce value has
+appeared in an ACME request, the server MUST consider it invalid, in
+the same way as a value it had never issued.
 
 When a server rejects a request because its nonce value was unacceptable
 (or not present), it SHOULD provide HTTP status code 400 (Bad Request),
@@ -385,9 +385,8 @@ messages.
 ### "nonce" (Nonce) JWS header parameter
 
 The "nonce" header parameter provides a unique value that enables the
-verifier of a JWS to recognize when replay has occurred.
-The "nonce" header paramete MUST be carried in the protected header
-of the JWS.
+verifier of a JWS to recognize when replay has occurred. The "nonce"
+header parameter MUST be carried in the protected header of the JWS.
 
 The value of the "nonce" header parameter MUST be an octet string,
 encoded according to the base64url encoding described in Section 2

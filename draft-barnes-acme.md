@@ -60,6 +60,7 @@ normative:
 informative:
   RFC2818:
   RFC3552:
+  W3C.CR-cors-20130129:
 
 
 --- abstract
@@ -306,6 +307,7 @@ The following table illustrates a typical sequence of requests required to estab
 | Request issuance   | POST new-cert  | 201 -> cert  |
 | Check for new cert | GET  cert      | 200          |
 
+ACME servers that are intended to be generally accessible need to use Cross-Origin Resource Sharing (CORS) in order to be accessible from browser-based clients {{W3C.CR-cors-20130129}}.  Such servers SHOULD set the Access-Control-Allow-Origin header field to the value "*".
 
 ## Errors
 

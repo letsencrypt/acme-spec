@@ -823,7 +823,18 @@ token (required, string):
 
 ~~~~~~~~~~
 
-A client responds to this Challenge by provisioning the token as a resource on the HTTP server for the domain in question.  The path at which the resource is provisioned is determined by the client, but MUST begin with ".well-known/acme-challenge/".  The content type of the resource MUST be "text/plain".  The client returns the part of the path coming after that prefix in its Response message.
+A client responds to this challenge by signing a JWS object and provisioning it as a resource on the HTTP server for the domain in question.  The payload of the JWS MUST be a JSON dictionary containing the fields "type", "token", "path", and "tls" from the ACME challenge and response, and no other fields.  The JWS MUST be signed with the client's account key pair, and MUST meet the guidelines laid out in Section {{#terminology}} above.
+
+~~~~~~~~~~
+{
+  "type": "simpleHttp",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
+  "path": "6tbIMBC5Anhl5bOlWT5ZFA",
+  "tls": false,
+}
+~~~~~~~~~~
+
+The path at which the resource is provisioned is determined by the client, but MUST begin with ".well-known/acme-challenge/".  The content type of the resource MUST be "text/plain".  In addition to expressing the path in the JWS as described above, the client returns the part of the path coming after that prefix in its Response message.
 
 type (required, string):
 : The string "simpleHttp"
@@ -852,10 +863,19 @@ Given a Challenge/Response pair, the server verifies the client's control of the
   * the path field is the path provided in the response.
 2. Verify that the resulting URI is well-formed.
 3. Dereference the URI using an HTTP or HTTPS GET request.  If using HTTPS, the ACME server MUST ignore the certificate provided by the HTTPS server.
-4. Verify that the Content-Type header of the response is either absent, or has the value "text/plain"
-5. Compare the entity body of the response with the nonce.  This comparison MUST be performed in terms of Unicode code points, taking into account the encodings of the stored nonce and the body of the request.
+4. Verify that the Content-Type header of the response is either absent, or has one of the values "application/jose" or "application/jose+json"
+5. Verify that the body of the response is a valid JWS of the type indicated by the Content-Type header (if present), signed with the client's account key
+6. Verify that the payload of the JWS meets the following criteria:
+  * It is a valid JSON dictionary
+  * It has exactly four fields
+  * Its "type" field is set to "simpleHttp"
+  * Its "token" field is equal to the "token" field in the challenge
+  * Its "path" field is equal to the "path" field in the response
+  * Its "tls" field is equal to the "tls" field in the response, or "true" if the "tls" field was absent
 
-If the GET request succeeds and the entity body is equal to the token, then the validation is successful.  If the request fails, or the body does not exactly match the token, then it has failed.
+Comparisons of the "path" and "token" fields MUST be performed in terms of Unicode code points, taking into account the encodings of the stored nonce and the body of the request.
+
+If all of the above verifications succeed, then the validation is successful.  If the request fails, or the body does not pass these checks, then it has failed.
 
 ## Domain Validation with Server Name Indication
 

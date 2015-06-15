@@ -133,9 +133,6 @@ Subject Public Key:
 Account Key Pair:
 : A key pair for which the ACME server considers the holder of the private key authorized to manage certificates for a given identifier.  The same key pair may be authorized for multiple identifiers.
 
-Recovery Token:
-: A secret value that can be used to associate a new account key pair with a registration, in the event that the private key of the old account key pair is lost.
-
 ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON is a text-based format, binary fields are Base64-encoded.  For Base64 encoding, we use the variant defined in {{RFC7515}}.  The important features of this encoding are (1) that it uses the URL-safe character set, and (2) that "=" padding characters are stripped.
 
 Some HTTPS bodies in ACME are authenticated and integrity-protected by being encapsulated in a JSON Web Signature (JWS) object {{RFC7515}}.  ACME uses a profile of JWS, with the following restrictions:
@@ -168,7 +165,7 @@ ACME allows a client to request certificate management actions using a set of JS
 
 In ACME, the account is represented by an account key pair.  The "add a domain" function is accomplished by authorizing the key pair for a given domain.  Certificate issuance and revocation are authorized by a signature with the key pair.
 
-The first phase of ACME is for the client to register with the ACME server.  The client generates an asymmetric key pair and associates this key pair with a set of contact information by signing the contact information.  The server acknowledges the registration by replying with a recovery token that the client can provide later to associate a new account key pair in the event that the first account key pair is lost.
+The first phase of ACME is for the client to register with the ACME server.  The client generates an asymmetric key pair and associates this key pair with a set of contact information by signing the contact information.  The server acknowledges the registration by replying with a registration object echoing the client's input.
 
 ~~~~~~~~~~
 
@@ -177,7 +174,7 @@ The first phase of ACME is for the client to register with the ACME server.  The
       Contact Information
       Signature                     ------->
 
-                                    <-------          Recovery Token
+                                    <-------            Registration
 
 ~~~~~~~~~~
 
@@ -410,9 +407,6 @@ key (required, dictionary):
 contact (optional, array of string):
 : An array of URIs that the server can use to contact the client for issues related to this authorization. For example, the server may wish to notify the client about server-initiated revocation.
 
-recoveryToken (optional, string):
-: An opaque token that the client can present to demonstrate that it participated in a prior authorization transaction.
-
 agreement (optional, string):
 : A URI referring to a subscriber agreement or terms of service provided by the server (see below).  Including this field indicates the client's agreement with these terms.
 
@@ -422,7 +416,7 @@ authorizations (optional, string):
 certificates (optional, string):
 : A URI from which a list of certificates issued for this account can be fetched via a GET request.  The result of the GET request MUST be a JSON object whose "certificates" field is an array of strings, where each string is the URI of a certificate.  The server SHOULD NOT include expired certificates.
 
-A client creates a new account with the server by sending a POST request to the server's new-registration URI.  In most cases (except for account recovery, below), the body of the request is a registration object containing only the "contact" field.
+A client creates a new account with the server by sending a POST request to the server's new-registration URI.  The body of the request is a registration object containing only the "contact" field.
 
 ~~~~~~~~~~
 
@@ -439,10 +433,9 @@ Host: example.com
 
 ~~~~~~~~~~
 
-The server MUST ignore any values provided in the "key" field in registration bodies sent by the client, as well as any other fields that it does not recognize.  If new fields are specified in the future, the specification of those fields MUST describe whether they may be provided by the client.
+The server MUST ignore any values provided in the "key", "authorizations", and "certificates" fields in registration bodies sent by the client, as well as any other fields that it does not recognize.  If new fields are specified in the future, the specification of those fields MUST describe whether they may be provided by the client.
 
-The server creates a registration object with the included contact information.  The "key" element of the registration is set to the public key used to verify the JWS (i.e., the "jwk" element of the JWS header).  The server also provides a random
-recovery token.  The server returns this registration object in a 201 (Created) response, with the registration URI in a Location header field.  The server MUST also indicate its new-authorization URI using the "next" link relation.
+The server creates a registration object with the included contact information.  The "key" element of the registration is set to the public key used to verify the JWS (i.e., the "jwk" element of the JWS header).  The server returns this registration object in a 201 (Created) response, with the registration URI in a Location header field.  The server MUST also indicate its new-authorization URI using the "next" link relation.
 
 If the server wishes to present the client with terms under which the ACME service is to be used, it may indicate the URI where such terms can be accessed in a Link header with link relation "terms-of-service".  As noted above, the client may indicate its
 agreement with these terms by updating its registration to include the "agreement" field, with the terms URI as its value.
@@ -461,31 +454,25 @@ Link: <https://example.com/acme/terms>;rel="terms-of-service"
   "contact": [
     "mailto:cert-admin@example.com",
     "tel:+12025551212"
-  ],
-
-  "recoveryToken": "uV2Aph7-sghuCcFVmvsiZw"
+  ]
 }
 
 ~~~~~~~~~~
 
-If the client wishes to update this information in the future, it sends a POST request with updated information to the registration URI.  The server MUST ignore any updates to the "key" or "recoveryToken" fields, and MUST verify that the request is signed
-with the private key corresponding to the "key" field of the request before updating the registration.
+If the client wishes to update this information in the future, it sends a POST request with updated information to the registration URI.  The server MUST ignore any updates to the "key", "authorizations, or "certificates" fields, and MUST verify that the request is signed with the private key corresponding to the "key" field of the request before updating the registration.
 
 Servers SHOULD NOT respond to GET requests for registration resources as these requests are not authenticated.  If a client wishes to query the server for information about its account (e.g., to examine the "contact" or "certificates" fields), then it SHOULD do so by sending a POST request with an empty update.  That is, it should send a JWS whose payload is the empty JSON dictionary ("{}").
 
 
 ### Account Recovery
 
-Once a client has created an account with an ACME server, it is possible that the private key for the account will be lost.  The recovery token included in the registration allows the client to recover from this situtation, as long as it still has the recovery token.
-
-A client may ask to associate a new key pair with its account by including the recovery token in its new-registration request.  If a server receives such a request with a recovery token corresponding to a known account, then it MUST replace the public key in the old registration (corresponding to the recovery token) with the JWK used to sign the recovery request.  The server MUST consider the old public key to be no longer valid for this account.
+Once a client has created an account with an ACME server, it is possible that the private key for the account will be lost.  The recovery contacts included in the registration allows the client to recover from this situtation, as long as it still has access to these contacts.
 
 {::comment}
 TODO: Re-add recoveryContact here https://github.com/letsencrypt/acme-spec/issues/136
 {:/comment}
 
-Client implementers should note that recovery tokens are very powerful.  If they are exposed to unauthorized parties, then that party will be able to hijack the corresponding account, enabling it to issue certificates under any authorizations on the account.  Improper use of a recovery token can cause legitimate account keys to be invalidate.  Client implementations should thus provide adequate safeguards around storage and use of recovery tokens.
-
+Clients may also offer implementation-specific recovery mechanisms.  For example, if a client creates account keys deterministically from a seed value, then this seed could be used to recover the account key by re-generating it.  Or an implementation could escrow an encrypted copy of the account key with a cloud storage provider, and give the encryption key to the user as a recovery value.
 
 ## Authorization Resources
 

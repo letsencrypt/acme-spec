@@ -238,7 +238,7 @@ To revoke a certificate, the client simply sends a revocation request, signed wi
 ~~~~~~~~~~
 
 
-Note that while ACME is defined with enough flexibility to handle different types of identifiers in principle, the primary use case addressed by this document is the case where domain names are used as identifiers.  For example, all of the identifier validation challenges described in Section {identifier-validation-challenges} below address validation of domain names.  The use of ACME for other protocols will require further specification, in order to describe how these identifiers are encoded in the protocol, and what types of validation challenges the server might require.
+Note that while ACME is defined with enough flexibility to handle different types of identifiers in principle, the primary use case addressed by this document is the case where domain names are used as identifiers.  For example, all of the identifier validation challenges described in {{identifier-validation-challenges}} below address validation of domain names.  The use of ACME for other protocols will require further specification, in order to describe how these identifiers are encoded in the protocol, and what types of validation challenges the server might require.
 
 # Certificate Management
 
@@ -506,7 +506,7 @@ expires (optional, string):
 : The date after which the server will consider this authorization invalid, encoded in the format specified in RFC 3339 {{RFC3339}}.
 
 challenges (required, array):
-: The challenges that the client needs to fulfill in order to prove possession of the identifier (for pending authorizations).  For final authorizations, the challenges that were used.  Each array entry is a dictionary with parameters required to validate the challenge, as specified in Section {identifier-validation-challenges}.
+: The challenges that the client needs to fulfill in order to prove possession of the identifier (for pending authorizations).  For final authorizations, the challenges that were used.  Each array entry is a dictionary with parameters required to validate the challenge, as specified in {{identifier-validation-challenges}}.
 
 combinations (optional, array of arrays of integers):
 : A collection of sets of challenges, each of which would be sufficient to prove possession of the identifier. Clients complete a set of challenges that that covers at least one set in this array. Challenges are identified by their indices in the challenges array.  If no "combinations" element is included in an authorization object, the client completes all challenges.
@@ -841,7 +841,7 @@ token (required, string):
 
 ~~~~~~~~~~
 
-A client responds to this challenge by signing a JWS object and provisioning it as a resource on the HTTP server for the domain in question.  The payload of the JWS MUST be a JSON dictionary containing the fields "type", "token", "path", and "tls" from the ACME challenge and response, and no other fields.  The JWS MUST be signed with the client's account key pair, and MUST meet the guidelines laid out in Section {{#terminology}} above.
+A client responds to this challenge by signing a JWS object and provisioning it as a resource on the HTTP server for the domain in question.  The payload of the JWS MUST be a JSON dictionary containing the fields "type", "token", "path", and "tls" from the ACME challenge and response, and no other fields.  The JWS MUST be signed with the client's account key pair, and MUST meet the guidelines laid out in {{terminology}} above.
 
 ~~~~~~~~~~
 {

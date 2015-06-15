@@ -863,7 +863,7 @@ token (required, string):
 
 ~~~~~~~~~~
 
-A client responds to this challenge by signing a JWS object and provisioning it as a resource on the HTTP server for the domain in question.  The payload of the JWS MUST be a JSON dictionary containing the fields "type", "token", "path", and "tls" from the ACME challenge and response, and no other fields.  The JWS MUST be signed with the client's account key pair, and MUST meet the guidelines laid out in {{terminology}} above.
+A client responds to this challenge by signing a JWS object and provisioning it as a resource on the HTTP server for the domain in question.  The payload of the JWS MUST be a JSON dictionary containing the fields "type", "token", "path", and "tls" from the ACME challenge and response, and no other fields.  The JWS MUST be signed with the client's account key pair, and MUST meet the guidelines laid out in Section {{#terminology}} above.
 
 ~~~~~~~~~~
 {

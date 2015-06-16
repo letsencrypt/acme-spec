@@ -260,6 +260,7 @@ ACME is structured as a REST application with a few types of resources:
 * A "new-registration" resource
 * A "new-authorization" resource
 * A "new-certificate" resource
+* A "revoke-certificate" resource
 
 In general, the intent is for authorization and certificate resources to contain only public information, so that CAs may publish these resources to document what certificates have been issued and how they were authorized.  Non-public information, such as
 contact information, is stored in registration resources.
@@ -278,10 +279,10 @@ The following diagram illustrates the relations between resources on an ACME ser
        .       |          .        |         .            | "up"
        V       |          V        |         V            |
       reg* ----+        authz -----+       cert-----------+
-                         . ^
-                         . | "up"
-                         V |
-                       challenge
+                         . ^                 |
+                         . | "up"            | "revoke"
+                         V |                 V
+                       challenge         revoke-cert
 
 ~~~~~~~~~~
 
@@ -291,6 +292,21 @@ The remainder of this section provides the details of how these resources are st
 All ACME requests with a non-empty body MUST encapsulate the body in a JWS object, signed using the account key pair.  The server MUST verify the JWS before processing the request.  (For readability, however, the examples below omit this encapsulation.)  Encapsulating request bodies in JWS provides a simple authentication of requests by way of key continuity.
 
 Note that this implies that GET requests are not authenticated.  Servers MUST NOT respond to GET requests for resources that might be considered sensitive.
+
+An ACME request carries a JSON dictionary that provides the details of the client's request to the server.  In order to avoid attacks that might arise from sending a request object to in improper URI, each request object MUST have a "resource" field that indicates what type of resource the request is addressed to, as defined in the below table:
+
+| Resource type      | "resource" value |
+|:-------------------|:-----------------|
+| New registration   | new-reg          |
+| New authorization  | new-authz        |
+| New certificate    | new-cert         |
+| Revoke certificate | revoke-cert      |
+| Registration       | reg              |
+| Authorization      | authz            |
+| Certificate        | cert             |
+| Challenge          | challenge        |
+
+Other fields in ACME request bodies are described below.
 
 The following table illustrates a typical sequence of requests required to establish a new account with the server, prove control of an identifier, issue a certificate, and fetch an updated certificate some time after issuance.  The "->" is a mnemonic for
  a Location header pointing to a created resource.
@@ -420,6 +436,7 @@ POST /acme/new-registration HTTP/1.1
 Host: example.com
 
 {
+  "resource": "new-reg",
   "contact": [
     "mailto:cert-admin@example.com",
     "tel:+12025551212"
@@ -554,6 +571,7 @@ POST /acme/new-authorization HTTP/1.1
 Host: example.com
 
 {
+  "resource": "new-authz",
   "identifier": {
     "type": "dns",
     "value": "example.org"
@@ -622,6 +640,7 @@ POST /acme/authz/asdf/0 HTTP/1.1
 Host: example.com
 
 {
+  "resource": "authz",
   "path": "Hf5GrX4Q7EBax9hc2jJnfw"
 }
 /* Signed as JWS */
@@ -680,6 +699,7 @@ Host: example.com
 Accept: application/pkix-cert
 
 {
+  "resource": "new-cert",
   "csr": "5jNudRx6Ye4HzKEqT5...FS6aKdZeGsysoCo4H9P",
 }
 /* Signed as JWS */
@@ -701,6 +721,7 @@ The server can provide metadata about the certificate in HTTP headers.  For exam
 HTTP/1.1 201 Created
 Content-Type: application/pkix-cert
 Link: <https://example.com/acme/ca-cert>;rel="up";title="issuer"
+Link: <https://example.com/acme/revoke-cert>;rel="revoke";title="revoke-cert"
 Location: https://example.com/acme/cert/asdf
 
 [DER-encoded certificate]
@@ -716,8 +737,8 @@ If a client sends a refresh request and the server is not willing to refresh the
 ## Certificate Revocation
 
 To request that a certificate be revoked, the client sends a POST request to
-/acme/revoke-cert.  The body of the POST is a JWS object whose JSON payload
-contains the certificate to be revoked:
+the ACME server's revoke-cert URI.  The body of the POST is a JWS object whose
+JSON payload contains the certificate to be revoked:
 
 certificate (required, string):
 : The DER form of the certificate, Base64-encoded using the JOSE Base64 variant.
@@ -728,6 +749,7 @@ POST /acme/revoke-cert HTTP/1.1
 Host: example.com
 
 {
+  "resource": "revoke-cert",
   "certificate": "MIIEDTCCAvegAwIBAgIRAP8..."
 }
 /* Signed as JWS */

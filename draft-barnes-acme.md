@@ -317,11 +317,15 @@ When the server responds with an error status, it SHOULD provide additional info
 
 | Code            | Semantic                                                 |
 |:----------------|:---------------------------------------------------------|
-| malformed       | The request message was malformed                        |
-| unauthorized    | The client lacks sufficient authorization                |
-| serverInternal  | The server experienced an internal error                 |
 | badCSR          | The CSR is unacceptable (e.g., due to a short key)       |
 | badNonce        | The client sent an unacceptable anti-replay nonce        |
+| connection      | The server could not connect to the client for DV        |
+| dnssec          | The server could not validate a DNSSEC signed domain     |
+| malformed       | The request message was malformed                        |
+| serverInternal  | The server experienced an internal error                 |
+| tls             | The server experienced a TLS error during DV             |
+| unauthorized    | The client lacks sufficient authorization                |
+| unknownHost     | The server could not resolve a domain name               |
 
 Authorization and challenge objects can also contain error information to indicate why the server was unable to validate authorization.
 

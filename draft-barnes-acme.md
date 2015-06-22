@@ -317,11 +317,15 @@ When the server responds with an error status, it SHOULD provide additional info
 
 | Code            | Semantic                                                 |
 |:----------------|:---------------------------------------------------------|
-| malformed       | The request message was malformed                        |
-| unauthorized    | The client lacks sufficient authorization                |
-| serverInternal  | The server experienced an internal error                 |
 | badCSR          | The CSR is unacceptable (e.g., due to a short key)       |
 | badNonce        | The client sent an unacceptable anti-replay nonce        |
+| connection      | The server could not connect to the client for DV        |
+| dnssec          | The server could not validate a DNSSEC signed domain     |
+| malformed       | The request message was malformed                        |
+| serverInternal  | The server experienced an internal error                 |
+| tls             | The server experienced a TLS error during DV             |
+| unauthorized    | The client lacks sufficient authorization                |
+| unknownHost     | The server could not resolve a domain name               |
 
 Authorization and challenge objects can also contain error information to indicate why the server was unable to validate authorization.
 
@@ -786,7 +790,24 @@ To accommodate this reality, ACME includes an extensible challenge/response fram
 * Content of Response payloads (in authorizationRequest messages)
 * How the server uses the Challenge and Response to verify control of an identifier
 
-The only general requirement for Challenge and Response payloads is that they MUST be structured as a JSON object, and they MUST contain a parameter "type" that specifies the type of Challenge or Response encoded in the object.
+The general structure of Challenge and Response payloads is as follows:
+
+type (required, string):
+: The type of Challenge or Response encoded in the object.
+
+uri (optional, string):
+: The URI to which a response can be posted.
+
+status (optional, string):
+: The status of this authorization.  Possible values are: "unknown", "pending", "processing", "valid", "invalid" and "revoked".  If this field is missing, then the default value is "pending".
+
+validated (optional, string):
+: The time at which this challenge was completed by the server, encoded in the format specified in RFC 3339 {{RFC3339}}.
+
+error (optional, dictionary of string):
+: The error that occurred while the server was validating the challenge, if any.  This field is structured as a problem document {{I-D.ietf-appsawg-http-problem}}.
+
+All additional fields are specified by the Challenge type.  The server MUST ignore any values provided in the "uri", "status", "validated", and "error" fields of a Response payload.  Additionally, if the server sets a Challenge's "status" to "invalid", it SHOULD also include the "error" field to help the client diagnose why they failed the challenge.
 
 Different challenges allow the server to obtain proof of different aspects of control over an identifier.  In some challenges, like Simple HTTP and DVSNI, the client directly proves control of an identifier.  In other challenges, such as Proof of Possession, the client proves historical control of the identifier, by reference to a prior authorization transaction or certificate.
 

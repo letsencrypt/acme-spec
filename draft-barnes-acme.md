@@ -807,7 +807,7 @@ validated (optional, string):
 error (optional, dictionary of string):
 : The error that occurred while the server was validating the challenge, if any.  This field is structured as a problem document {{I-D.ietf-appsawg-http-problem}}.
 
-All additional fields are specified by the Challenge type.  The server MUST ignore any values provided in the "uri", "status", "validated", and "error" fields of a Response payload.  Additionally, if the server sets a Challenge's "status" to "invalid", it SHOULD include the "error" field to tell the client why they failed the challenge.
+All additional fields are specified by the Challenge type.  The server MUST ignore any values provided in the "uri", "status", "validated", and "error" fields of a Response payload.  Additionally, if the server sets a Challenge's "status" to "invalid", it SHOULD also include the "error" field to help the client diagnose why they failed the challenge.
 
 Different challenges allow the server to obtain proof of different aspects of control over an identifier.  In some challenges, like Simple HTTP and DVSNI, the client directly proves control of an identifier.  In other challenges, such as Proof of Possession, the client proves historical control of the identifier, by reference to a prior authorization transaction or certificate.
 

@@ -619,7 +619,7 @@ Link: <https://example.com/acme/new-cert>;rel="next"
     }
   },
 
-  "combinations": [ 
+  "combinations": [
     [0, 2],
     [1, 2]
   ]
@@ -753,9 +753,11 @@ Host: example.com
 
 Before revoking a certificate, the server MUST verify at least one of these conditions
 applies:
-- the public key of the key pair signing the request matches the public key in
+
+* the public key of the key pair signing the request matches the public key in
   the certificate.
-- the key pair signing the request is an account key, and the corresponding
+
+* the key pair signing the request is an account key, and the corresponding
   account is authorized to act for all of the identifier(s) in the certificate.
 
 If the revocation succeeds, the server responds with status code 200 (OK).  If the revocation fails, the server returns an error.

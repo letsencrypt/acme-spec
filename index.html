@@ -1030,7 +1030,7 @@ Link: &lt;https://example.com/acme/new-cert&gt;;rel="next"
     }
   },
 
-  "combinations": [ 
+  "combinations": [
     [0, 2],
     [1, 2]
   ]
@@ -1135,8 +1135,14 @@ Host: example.com
 /* Signed as JWS */
 
 </pre>
-<p id="rfc.section.6.9.p.3">Before revoking a certificate, the server MUST verify at least one of these conditions applies: - the public key of the key pair signing the request matches the public key in the certificate.  - the key pair signing the request is an account key, and the corresponding account is authorized to act for all of the identifier(s) in the certificate.</p>
-<p id="rfc.section.6.9.p.4">If the revocation succeeds, the server responds with status code 200 (OK).  If the revocation fails, the server returns an error.</p>
+<p id="rfc.section.6.9.p.3">Before revoking a certificate, the server MUST verify at least one of these conditions applies:</p>
+<p/>
+
+<ul>
+  <li>the public key of the key pair signing the request matches the public key in the certificate.</li>
+  <li>the key pair signing the request is an account key, and the corresponding account is authorized to act for all of the identifier(s) in the certificate.</li>
+</ul>
+<p id="rfc.section.6.9.p.5">If the revocation succeeds, the server responds with status code 200 (OK).  If the revocation fails, the server returns an error.</p>
 <pre>
 HTTP/1.1 200 OK
 Content-Length: 0

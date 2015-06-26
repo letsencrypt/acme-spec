@@ -1445,8 +1445,8 @@ Internet-Draft                    ACME                    September 2014
    | Ongoing ACME usage, lost      | DV + PoP of ACME-certified        |
    | Authorized key                | Subject key                       |
    |                               |                                   |
-   | ACME usage, all keys and      | Recertification by another CA +   |
-   | recovery tokens lost          | PoP of that key                   |
+   | ACME usage, all keys and      | Proof of legal identity of the    |
+   | recovery tokens lost          | site owner                        |
    +-------------------------------+-----------------------------------+
 
 

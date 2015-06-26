@@ -30,6 +30,9 @@ enscript ?= enscript
 #   http://www.ghostscript.com/
 ps2pdf ?= ps2pdf 
 
+# Where to get references
+XML_RESOURCE_ORG_PREFIX ?= http://unicorn-wg.github.io/idrefs
+
 
 ## Work out what to build
 
@@ -98,7 +101,8 @@ endif
 
 .INTERMEDIATE: $(draft).xml
 %.xml: %.md
-	$(kramdown-rfc2629) $< > $@
+	XML_RESOURCE_ORG_PREFIX=$(XML_RESOURCE_ORG_PREFIX) \
+	  $(kramdown-rfc2629) $< > $@
 
 %.xml: %.org
 	$(oxtradoc) -m outline-to-xml -n "$@" $< > $@
@@ -108,7 +112,7 @@ endif
 
 %.htmltmp: %.xml
 	$(xml2rfc) $< -o $@ --html
-%.html: %.htmltmp
+%.html: %.htmltmp lib/addstyle.sed lib/style.css
 	sed -f lib/addstyle.sed $< > $@
 
 %.pdf: %.txt
@@ -144,6 +148,9 @@ GHPAGES_TMP := /tmp/ghpages$(shell echo $$$$)
 .INTERMEDIATE: $(GHPAGES_TMP)
 ifeq (,$(TRAVIS_COMMIT))
 GIT_ORIG := $(shell git branch | grep '*' | cut -c 3-)
+ifneq (,$(findstring detached from,$(GIT_ORIG)))
+GIT_ORIG := $(shell git show -s --format='format:%H')
+endif
 else
 GIT_ORIG := $(TRAVIS_COMMIT)
 endif
@@ -160,6 +167,10 @@ index.html: $(draft).html
 	cp $< $@
 
 ghpages: index.html $(draft).txt
+ifneq (true,$(TRAVIS))
+	@git show-ref refs/heads/gh-pages > /dev/null 2>&1 || \
+	  ! echo 'Error: No gh-pages branch, run `make setup-ghpages` to initialize it.'
+endif
 ifneq (,$(or $(IS_LOCAL),$(IS_MASTER)))
 	mkdir $(GHPAGES_TMP)
 	cp -f $^ $(GHPAGES_TMP)
@@ -185,3 +196,23 @@ endif
 	-git checkout -qf "$(GIT_ORIG)"
 	-rm -rf $(GHPAGES_TMP)
 endif
+
+.PHONY: setup-ghpages
+setup-ghpages:
+# Check if the gh-pages branch already exists locally
+	@if git show-ref refs/heads/gh-pages >/dev/null 2>&1; then \
+	  ! echo "Error: gh-pages branch already exists"; \
+	else true; fi
+# Check if the gh-pages branch already exists on origin
+	@if git show-ref origin/gh-pages >/dev/null 2>&1; then \
+	  echo 'Warning: gh-pages already present on the origin'; \
+	  git branch gh-pages origin/gh-pages; false; \
+	else true; fi
+	@echo "Initializing gh-pages branch"
+	git checkout --orphan gh-pages
+	git rm -rf .
+	touch index.html
+	git add index.html
+	git commit -m "Automatic setup of gh-pages."
+	git push --set-upstream origin gh-pages
+	git checkout -qf "$(GIT_ORIG)"

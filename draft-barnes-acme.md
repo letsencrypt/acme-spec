@@ -143,6 +143,7 @@ Some HTTPS bodies in ACME are authenticated and integrity-protected by being enc
 * The JWS MUST use the JSON or Flattened JSON Serialization
 * If the JWS is in the JSON Serialization, it MUST NOT include more than one signature in the "signatures" array
 * The JWS Header MUST include "alg" and "jwk" fields
+* The JWS MUST NOT have the value "none" in its "alg" field
 
 Additionally, JWS objects used in ACME MUST include the "nonce" and "acmePath" header field, defined below.
 

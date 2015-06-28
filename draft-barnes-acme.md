@@ -450,7 +450,7 @@ recovery token.  The server returns this registration object in a 201 (Created) 
 
 If the server already has a registration object with the provided account key, then it MUST return a 409 (Conflict) response and provide the URI of that registration in a Location header field.  This allows a client that has an account key but not the corresponding registration URI to recover the registration URI.
 
-If the server wishes to present the client with terms under which the ACME service is to be used, it may indicate the URI where such terms can be accessed in a Link header with link relation "terms-of-service".  As noted above, the client may indicate its
+If the server wishes to present the client with terms under which the ACME service is to be used, it MUST indicate the URI where such terms can be accessed in a Link header with link relation "terms-of-service".  As noted above, the client may indicate its
 agreement with these terms by updating its registration to include the "agreement" field, with the terms URI as its value.
 
 ~~~~~~~~~~
@@ -717,7 +717,7 @@ If the CA decides to issue a certificate, then the server returns the certificat
 
 The default format of the certificate is DER (application/pkix-cert).  The client may request other formats by including an Accept header in its request.
 
-The server can provide metadata about the certificate in HTTP headers.  For example, the server can include a Link relation header field {{RFC5988}} with relation "up" to provide a certificate under which this certificate was issued.  Or the server can include an Expires header as a hint to the client about when to re-query to refresh the certificate.  (Of course, the real expiration of the certificate is controlled by the notAfter time in the certificate itself.)
+The server can provide metadata about the certificate in HTTP headers.  In particular, the server MUST include a Link relation header field {{RFC5988}} with relation "up" to provide a certificate under which this certificate was issued.  Or the server can include an Expires header as a hint to the client about when to re-query to refresh the certificate.  (Of course, the real expiration of the certificate is controlled by the notAfter time in the certificate itself.)
 
 ~~~~~~~~~~
 

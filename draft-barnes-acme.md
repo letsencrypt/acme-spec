@@ -265,6 +265,8 @@ ACME is structured as a REST application with a few types of resources:
 * A "new-authorization" resource
 * A "new-certificate" resource
 
+For the "new-X" resources above, the server MUST have exactly one resource for each function.  This resource may be addressed by multiple URIs, but all must provide equivalent functionality.
+
 In general, the intent is for authorization and certificate resources to contain only public information, so that CAs may publish these resources to document what certificates have been issued and how they were authorized.  Non-public information, such as
 contact information, is stored in registration resources.
 

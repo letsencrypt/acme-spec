@@ -52,6 +52,7 @@ normative:
   RFC5988:
   RFC6570:
   RFC7159:
+  RFC7469:
   RFC7515:
   RFC7517:
   RFC7518:
@@ -251,7 +252,7 @@ In this section, we describe the certificate management functions that ACME enab
   * Certificate Issuance
   * Certificate Revocation
 
-Each of these functions is accomplished by the client sending a sequence of HTTPS requests to the server, carrying JSON messages.  Each subsection below describes the message formats used by the function, and the order in which messages are sent.
+Each of these functions is accomplished by the client sending a sequence of HTTPS requests to the server, carrying JSON messages.  Use of HTTPS is REQUIRED.  Clients SHOULD support HTTP public key pinning {{RFC7469}}, and servers SHOULD emit pinning headers.  Each subsection below describes the message formats used by the function, and the order in which messages are sent.
 
 ## Resources and Requests
 

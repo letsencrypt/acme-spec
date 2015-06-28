@@ -444,6 +444,8 @@ The server MUST ignore any values provided in the "key" field in registration bo
 The server creates a registration object with the included contact information.  The "key" element of the registration is set to the public key used to verify the JWS (i.e., the "jwk" element of the JWS header).  The server also provides a random
 recovery token.  The server returns this registration object in a 201 (Created) response, with the registration URI in a Location header field.  The server MUST also indicate its new-authorization URI using the "next" link relation.
 
+If the server already has a registration object with the provided account key, then it MUST return a 409 (Conflict) response and provide the URI of that registration in a Location header field.  This allows a client that has an account key but not the corresponding registration URI to recover the registration URI.
+
 If the server wishes to present the client with terms under which the ACME service is to be used, it may indicate the URI where such terms can be accessed in a Link header with link relation "terms-of-service".  As noted above, the client may indicate its
 agreement with these terms by updating its registration to include the "agreement" field, with the terms URI as its value.
 

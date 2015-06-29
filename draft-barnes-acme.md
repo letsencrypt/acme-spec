@@ -525,7 +525,7 @@ combinations (optional, array of arrays of integers):
 : A collection of sets of challenges, each of which would be sufficient to prove possession of the identifier. Clients complete a set of challenges that that covers at least one set in this array. Challenges are identified by their indices in the challenges array.  If no "combinations" element is included in an authorization object, the client completes all challenges.
 
 
-The only type of identifier defined by this specification is a fully-qualified domain name (type: "dns").  The value of the identifier MUST be the ASCII representation of the domain name.
+The only type of identifier defined by this specification is a fully-qualified domain name (type: "dns").  The value of the identifier MUST be the ASCII representation of the domain name.  Wildcard domain names (with "*" as the first label) MUST NOT be included in authorization requests.  See {{certificate-issuance}} below for more information about wildcard domains.
 
 ~~~~~~~~~~
 
@@ -712,6 +712,8 @@ Accept: application/pkix-cert
 The CSR encodes the client's requests with regard to the content of the certificate to be issued.  The CSR MUST indicate the requested identifiers, either in the commonName portion of the requested subject name, or in an extensionRequest attribute {{RFC2985}} requesting a subjectAltName extension.
 
 The values provided in the CSR are only a request, and are not guaranteed.  The server or CA may alter any fields in the certificate before issuance.  For example, the CA may remove identifiers that are not authorized for the account key that signed the request.
+
+It is up to the server's local policy to decide which names are acceptable in a certificate, given the authorizations that the server associates with the client's account key.  A server MAY consider a client authorized for a wildcard domain if it is authorized for the underlying domain name (without the "*" label).  Servers SHOULD NOT extend authorization across identifier types.  For example, if a client is authorized for "example.com", then the server should not allow the client to issue a certificate with an iPAddress subjectAltName, even if it contains an IP address to which example.com resolves.
 
 If the CA decides to issue a certificate, then the server returns the certificate in a response with status code 201 (Created).  The server MUST indicate a URL for this certificate in a Location header field.
 

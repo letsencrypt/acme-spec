@@ -1415,11 +1415,15 @@ token (required, string):
 
 ~~~~~~~~~~
 
+In response to this challenge, the client forms a JSON object with the following contents:
+
+
+
 In response to this challenge, the client first MUST verify that the token contains only ASCII characters.  If so, the client constructs the validation domain name by appending the label "_acme-challenge" to the domain name being validated.  For example, if the domain name being validated is "example.com", then the client would provision the following DNS record:
 
 ~~~~~~~~~~
 
-_acme-challenge.example.com. IN TXT "17817c66b60ce2e4012dfad92657527a"
+_acme-challenge.example.com. IN TXT "gfj9XqFv07e1wU66hSLYkiFqYakPSjAu8TsyXRg85nM"
 
 ~~~~~~~~~~
 
@@ -1432,6 +1436,11 @@ type (required, string):
 
 {
   "type": "dns"
+  "jws": {
+    "header": { "alg": "RS256" },
+    "payload": "qzu9...6bjn",
+    "signature": "r32O...ge8Y"
+  }
 }
 
 ~~~~~~~~~~

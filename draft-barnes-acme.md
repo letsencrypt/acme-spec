@@ -138,6 +138,7 @@ ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON i
 Some HTTPS bodies in ACME are authenticated and integrity-protected by being encapsulated in a JSON Web Signature (JWS) object {{RFC7515}}.  ACME uses a profile of JWS, with the following restrictions:
 
 * The JWS MUST use the JSON or Flattened JSON Serialization
+* The JWS MUST be encoded using UTF-8
 * If the JWS is in the JSON Serialization, it MUST NOT include more than one signature in the "signatures" array
 * The JWS Header MUST include "alg" and "jwk" fields
 
@@ -293,7 +294,7 @@ All ACME requests with a non-empty body MUST encapsulate the body in a JWS objec
 
 Note that this implies that GET requests are not authenticated.  Servers MUST NOT respond to GET requests for resources that might be considered sensitive.
 
-An ACME request carries a JSON dictionary that provides the details of the client's request to the server.  In order to avoid attacks that might arise from sending a request object to in improper URI, each request object MUST have a "resource" field that indicates what type of resource the request is addressed to, as defined in the below table:
+An ACME request carries a JSON dictionary that provides the details of the client's request to the server.  In order to avoid attacks that might arise from sending a request object to an improper URI, each request object MUST have a "resource" field that indicates what type of resource the request is addressed to, as defined in the below table:
 
 | Resource type      | "resource" value |
 |:-------------------|:-----------------|
@@ -866,7 +867,7 @@ A client responds to this challenge by signing a JWS object and provisioning it 
 }
 ~~~~~~~~~~
 
-The path at which the resource is provisioned is determined by the client, but MUST begin with ".well-known/acme-challenge/".  The content type of the resource MUST be "text/plain".  In addition to expressing the path in the JWS as described above, the client returns the part of the path coming after that prefix in its Response message.
+The path at which the resource is provisioned is determined by the client, but MUST begin with ".well-known/acme-challenge/".  The content type of the resource, if provided, MUST be "application/jose+json".  In addition to expressing the path in the JWS as described above, the client returns the part of the path coming after that prefix in its Response message.
 
 type (required, string):
 : The string "simpleHttp"
@@ -884,6 +885,7 @@ tls (optional, boolean, default true):
   "path": "6tbIMBC5Anhl5bOlWT5ZFA",
   "tls": false
 }
+/* Signed as JWS */
 
 ~~~~~~~~~~
 
@@ -895,7 +897,7 @@ Given a Challenge/Response pair, the server verifies the client's control of the
   * the path field is the path provided in the response.
 2. Verify that the resulting URI is well-formed.
 3. Dereference the URI using an HTTP or HTTPS GET request.  If using HTTPS, the ACME server MUST ignore the certificate provided by the HTTPS server.
-4. Verify that the Content-Type header of the response is either absent, or has one of the values "application/jose" or "application/jose+json"
+4. Verify that the Content-Type header of the response is either absent, or has the value "application/jose+json"
 5. Verify that the body of the response is a valid JWS of the type indicated by the Content-Type header (if present), signed with the client's account key
 6. Verify that the payload of the JWS meets the following criteria:
   * It is a valid JSON dictionary

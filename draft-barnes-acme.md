@@ -884,7 +884,7 @@ If the GET request succeeds and the entity body is equal to the token, then the 
 
 The Domain Validation with Server Name Indication (DVSNI) validation method aims to ensure that the ACME client has administrative access to the web server at the domain name being validated, and possession of the private key being authorized.  The ACME server verifies that the operator can reconfigure the web server by having the client create a new self-signed challenge certificate and respond to TLS connections from the ACME server with it.
 
-The challenge proceeds as follows: The ACME server sends the client a random value R, a number of challenge iterations, N, and a list of acceptable ports for which to perform the challenge. The client responds with a chosen port.  The server initiates multiple TLS connection on the client's specified port to one or more of the IPv4 or IPv6 hosts with the domain name being validated.  In the handshake, the ACME server sets the Server Name Indication extension to "\<Ri[:32]\>.\<Ri[32:]\>.acme.invalid" where Ri is calculated by SHA256(Ri-1).  The TLS server (i.e., the ACME client) should respond with a valid self-signed certificate containing both the domain name being validated with the suffix ".acme.invalid" and the domain name "\<Ri[:32]\>.\<Ri[32:]\>.acme.invalid".
+The challenge proceeds as follows: The ACME server sends the client a random value R, a number of challenge iterations, N, and a list of acceptable ports for which to perform the challenge. The client responds with a chosen port.  The server initiates multiple TLS connection on the client's specified port to one or more of the IPv4 or IPv6 hosts with the domain name being validated.  In the handshake, the ACME server sets the Server Name Indication extension to "\<Ri[0:32]\>.\<Ri[32:64]\>.acme.invalid" where Ri is calculated by SHA256(Ri-1).  The TLS server (i.e., the ACME client) should respond with a valid self-signed certificate containing both the domain name being validated with the suffix ".acme.invalid" and the domain name "\<Ri[0:32]\>.\<Ri[32:64]\>.acme.invalid".
 
 The ACME server's Challenge provides the following values.
 
@@ -916,7 +916,7 @@ The client responds to this Challenge by configuring a TLS server on one of the 
 1. Decode the server's random value R
 2. Generate R1...R(n-1) where Ri is computed as the SHA256 of R(i-1)
 3. For each iteration of R, generate a self-signed certificate with a subjectAltName extension containing two dNSName values:
-  1. A name formed by hex encoding "\<Ri\>[:32].\<Ri\>[32:].acme.invalid", referred to as the "DNS R name".
+  1. A name formed by hex encoding "\<Ri\>[0:32].\<Ri\>[32:64].acme.invalid", referred to as the "DNS R name".
   2. The requested domain appended with the suffix, ".acme.invalid"
 4. Configure the TLS server such that when a client presents the DNS R name in the SNI field, the server presents the generated certificate.
 

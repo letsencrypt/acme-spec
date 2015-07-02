@@ -280,16 +280,23 @@ The "up" link relation is used with challenge resources to indicate the authoriz
 The following diagram illustrates the relations between resources on an ACME server.  The solid lines indicate link relations, and the dotted lines correspond to relationships expressed in other ways, e.g., the Location header in a 201 (Created) response.
 
 ~~~~~~~~~~
-             "next"              "next"
-    new-reg ---+----> new-authz ---+----> new-cert    cert-chain
+
+                               directory
+                                   .
+                                   .
+       ....................................................
+       .                  .                  .            .
+       .                  .                  .            .
+       V     "next"       V      "next"      V            V
+    new-reg ---+----> new-authz ---+----> new-cert    revoke-cert
        .       |          .        |         .            ^
-       .       |          .        |         .            | "up"
+       .       |          .        |         .            | "revoke"
        V       |          V        |         V            |
       reg* ----+        authz -----+       cert-----------+
                          . ^                 |
-                         . | "up"            | "revoke"
+                         . | "up"            | "up"
                          V |                 V
-                       challenge         revoke-cert
+                       challenge         cert-chain
 
 ~~~~~~~~~~
 

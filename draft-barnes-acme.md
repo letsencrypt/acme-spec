@@ -320,7 +320,7 @@ The following table illustrates a typical sequence of requests required to estab
 |:-------------------|:---------------|:-------------|
 | Register           | POST new-reg   | 201 -> reg   |
 | Request challenges | POST new-authz | 201 -> authz |
-| Answer challenges  | POST challenge | 202          |
+| Answer challenges  | POST challenge | 200          |
 | Poll for status    | GET  authz     | 200          |
 | Request issuance   | POST new-cert  | 201 -> cert  |
 | Check for new cert | GET  cert      | 200          |
@@ -658,7 +658,7 @@ Host: example.com
 
 ~~~~~~~~~~
 
-The server updates the authorization document by updating its representation of the challenge with the response fields provided by the client.  The server MUST ignore any fields in the response object that are not specified as response fields for this type of challenge.  The server provides a 202 (Accepted) response including the updated challenge.
+The server updates the authorization document by updating its representation of the challenge with the response fields provided by the client.  The server MUST ignore any fields in the response object that are not specified as response fields for this type of challenge.  The server provides a 200 (OK) response including the updated challenge.
 
 Presumably, the client's responses provide the server with enough information to validate one or more challenges.  The server is said to "finalize" the authorization when it has completed all the validations it is going to complete, and assigns the authorization a status of "valid" or "invalid", corresponding to whether it considers the account authorized for the identifier.  If the final state is "valid", the server MUST add an "expires" field to the authorization.  When finalizing an authorization, the server MAY remove the "combinations" field (if present) or remove any unfulfilled challenges.
 

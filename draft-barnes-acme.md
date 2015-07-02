@@ -52,6 +52,7 @@ normative:
   RFC5988:
   RFC6570:
   RFC7159:
+  RFC7469:
   RFC7515:
   RFC7517:
   RFC7518:
@@ -143,6 +144,7 @@ Some HTTPS bodies in ACME are authenticated and integrity-protected by being enc
 * The JWS MUST use the JSON or Flattened JSON Serialization
 * If the JWS is in the JSON Serialization, it MUST NOT include more than one signature in the "signatures" array
 * The JWS Header MUST include "alg" and "jwk" fields
+* The JWS MUST NOT have the value "none" in its "alg" field
 
 Additionally, JWS objects used in ACME MUST include the "nonce" and "acmePath" header field, defined below.
 
@@ -250,7 +252,7 @@ In this section, we describe the certificate management functions that ACME enab
   * Certificate Issuance
   * Certificate Revocation
 
-Each of these functions is accomplished by the client sending a sequence of HTTPS requests to the server, carrying JSON messages.  Each subsection below describes the message formats used by the function, and the order in which messages are sent.
+Each of these functions is accomplished by the client sending a sequence of HTTPS requests to the server, carrying JSON messages.  Use of HTTPS is REQUIRED.  Clients SHOULD support HTTP public key pinning {{RFC7469}}, and servers SHOULD emit pinning headers.  Each subsection below describes the message formats used by the function, and the order in which messages are sent.
 
 ## Resources and Requests
 
@@ -263,6 +265,8 @@ ACME is structured as a REST application with a few types of resources:
 * A "new-registration" resource
 * A "new-authorization" resource
 * A "new-certificate" resource
+
+For the "new-X" resources above, the server MUST have exactly one resource for each function.  This resource may be addressed by multiple URIs, but all must provide equivalent functionality.
 
 In general, the intent is for authorization and certificate resources to contain only public information, so that CAs may publish these resources to document what certificates have been issued and how they were authorized.  Non-public information, such as
 contact information, is stored in registration resources.
@@ -302,7 +306,7 @@ The following table illustrates a typical sequence of requests required to estab
 |:-------------------|:---------------|:-------------|
 | Register           | POST new-reg   | 201 -> reg   |
 | Request challenges | POST new-authz | 201 -> authz |
-| Answer challenges  | POST challenge | 200          |
+| Answer challenges  | POST challenge | 202          |
 | Poll for status    | GET  authz     | 200          |
 | Request issuance   | POST new-cert  | 201 -> cert  |
 | Check for new cert | GET  cert      | 200          |
@@ -444,7 +448,9 @@ The server MUST ignore any values provided in the "key" field in registration bo
 The server creates a registration object with the included contact information.  The "key" element of the registration is set to the public key used to verify the JWS (i.e., the "jwk" element of the JWS header).  The server also provides a random
 recovery token.  The server returns this registration object in a 201 (Created) response, with the registration URI in a Location header field.  The server MUST also indicate its new-authorization URI using the "next" link relation.
 
-If the server wishes to present the client with terms under which the ACME service is to be used, it may indicate the URI where such terms can be accessed in a Link header with link relation "terms-of-service".  As noted above, the client may indicate its
+If the server already has a registration object with the provided account key, then it MUST return a 409 (Conflict) response and provide the URI of that registration in a Location header field.  This allows a client that has an account key but not the corresponding registration URI to recover the registration URI.
+
+If the server wishes to present the client with terms under which the ACME service is to be used, it MUST indicate the URI where such terms can be accessed in a Link header with link relation "terms-of-service".  As noted above, the client may indicate its
 agreement with these terms by updating its registration to include the "agreement" field, with the terms URI as its value.
 
 ~~~~~~~~~~
@@ -519,7 +525,7 @@ combinations (optional, array of arrays of integers):
 : A collection of sets of challenges, each of which would be sufficient to prove possession of the identifier. Clients complete a set of challenges that that covers at least one set in this array. Challenges are identified by their indices in the challenges array.  If no "combinations" element is included in an authorization object, the client completes all challenges.
 
 
-The only type of identifier defined by this specification is a fully-qualified domain name (type: "dns").  The value of the identifier MUST be the ASCII representation of the domain name.
+The only type of identifier defined by this specification is a fully-qualified domain name (type: "dns").  The value of the identifier MUST be the ASCII representation of the domain name.  Wildcard domain names (with "*" as the first label) MUST NOT be included in authorization requests.  See {{certificate-issuance}} below for more information about wildcard domains.
 
 ~~~~~~~~~~
 
@@ -645,7 +651,7 @@ Host: example.com
 
 ~~~~~~~~~~
 
-The server updates the authorization document by updating its representation of the challenge with the response fields provided by the client.  The server MUST ignore any fields in the response object that are not specified as response fields for this type of challenge.  The server provides a 200 response including the updated challenge.
+The server updates the authorization document by updating its representation of the challenge with the response fields provided by the client.  The server MUST ignore any fields in the response object that are not specified as response fields for this type of challenge.  The server provides a 202 (Accepted) response including the updated challenge.
 
 Presumably, the client's responses provide the server with enough information to validate one or more challenges.  The server is said to "finalize" the authorization when it has completed all the validations it is going to complete, and assigns the authorization a status of "valid" or "invalid", corresponding to whether it considers the account authorized for the identifier.  If the final state is "valid", the server MUST add an "expires" field to the authorization.  When finalizing an authorization, the server MAY remove the "combinations" field (if present) or remove any unfulfilled challenges.
 
@@ -703,15 +709,17 @@ Accept: application/pkix-cert
 
 ~~~~~~~~~~
 
-The CSR encodes the client's requests with regard to the content of the certificate to be issued.  The CSR MUST contain at least one extensionRequest attribute {{RFC2985}} requesting a subjectAltName extension, containing the requested identifiers.
+The CSR encodes the client's requests with regard to the content of the certificate to be issued.  The CSR MUST indicate the requested identifiers, either in the commonName portion of the requested subject name, or in an extensionRequest attribute {{RFC2985}} requesting a subjectAltName extension.
 
 The values provided in the CSR are only a request, and are not guaranteed.  The server or CA may alter any fields in the certificate before issuance.  For example, the CA may remove identifiers that are not authorized for the account key that signed the request.
+
+It is up to the server's local policy to decide which names are acceptable in a certificate, given the authorizations that the server associates with the client's account key.  A server MAY consider a client authorized for a wildcard domain if it is authorized for the underlying domain name (without the "*" label).  Servers SHOULD NOT extend authorization across identifier types.  For example, if a client is authorized for "example.com", then the server should not allow the client to issue a certificate with an iPAddress subjectAltName, even if it contains an IP address to which example.com resolves.
 
 If the CA decides to issue a certificate, then the server returns the certificate in a response with status code 201 (Created).  The server MUST indicate a URL for this certificate in a Location header field.
 
 The default format of the certificate is DER (application/pkix-cert).  The client may request other formats by including an Accept header in its request.
 
-The server can provide metadata about the certificate in HTTP headers.  For example, the server can include a Link relation header field {{RFC5988}} with relation "up" to provide a certificate under which this certificate was issued.  Or the server can include an Expires header as a hint to the client about when to re-query to refresh the certificate.  (Of course, the real expiration of the certificate is controlled by the notAfter time in the certificate itself.)
+The server provides metadata about the certificate in HTTP headers.  In particular, the server MUST include a Link relation header field {{RFC5988}} with relation "up" to provide a certificate under which this certificate was issued.  The server MAY also include an Expires header as a hint to the client about when to renew the certificate.  (Of course, the real expiration of the certificate is controlled by the notAfter time in the certificate itself.)
 
 ~~~~~~~~~~
 

@@ -265,6 +265,7 @@ ACME is structured as a REST application with a few types of resources:
 * A "new-authorization" resource
 * A "new-certificate" resource
 * A "revoke-certificate" resource
+* A "renew-certificate" resource
 
 For the "new-X" resources above, the server MUST have exactly one resource for each function.  This resource may be addressed by multiple URIs, but all must provide equivalent functionality.
 
@@ -315,6 +316,7 @@ An ACME request carries a JSON dictionary that provides the details of the clien
 | New authorization  | new-authz        |
 | New certificate    | new-cert         |
 | Revoke certificate | revoke-cert      |
+| Renew certificate  | renew-cert       |
 | Registration       | reg              |
 | Authorization      | authz            |
 | Certificate        | cert             |
@@ -765,18 +767,37 @@ The server provides metadata about the certificate in HTTP headers.  In particul
 HTTP/1.1 201 Created
 Content-Type: application/pkix-cert
 Link: <https://example.com/acme/ca-cert>;rel="up";title="issuer"
-Link: <https://example.com/acme/revoke-cert>;rel="revoke";title="revoke-cert"
+Link: <https://example.com/acme/revoke-cert>;rel="revoke"
+Link: <https://example.com/acme/renew-cert>;rel="renew"
 Location: https://example.com/acme/cert/asdf
 
 [DER-encoded certificate]
 
 ~~~~~~~~~~
 
-## Certificate Refresh
+## Certificate Renewal
 
-To refresh the certificate, the client simply sends a GET request to the certificate URL.  This allows the server to provide the client with updated certificates with the same content and different validity intervals, for as long as all of the authorization objects underlying the certificate are valid.
+Often, a client wishes to request a new certificate with the same contents as another certificates, but with updated notBefore and notAfter dates.  This operation is referred to as "renewal" of the certificate.
 
-If a client sends a refresh request and the server is not willing to refresh the certificate, the server MUST respond with status code 403 (Forbidden).  If the client still wishes to obtain a certificate, it can re-initiate the authorization process for any expired authorizations related to the certificate.
+To request renewal of an existing certificate, the client sends a POST request to the ACME server's renew-certificate URI, containing a JSON object that indicates the certificate to be renewed.  Unlike other ACME bodies, this POST body is not required to be signed with the account key.  Renewal is a low-risk transaction, and allowing renewal without the account key's signature allows for the account key to be better protected (since it is used less commonly).
+
+base (required, string):
+: The URI for the certificate to be renewed.
+
+~~~~~~~~~~
+POST /acme/renew-cert HTTP/1.1
+Host: example.com
+Accept: application/pkix-cert
+
+{
+  "base": "https://example.com/acme/cert/asdf"
+}
+~~~~~~~~~~
+
+The server MUST verify that the certificate referenced by the "base" URL is one that is it issued.  If the base certificate has been revoked, then the server MUST NOT renew it, and SHOULD return a 403 (Forbidden) status code.  The server SHOULD agree to renew expired certificates, if they otherwise meet its policy for renewal.
+
+If the server agrees to renew the certificate, then its response is the same as for the new-certificate transaction.  The new certificate SHOULD be assigned a different URI from the base certificate.
+
 
 ## Certificate Revocation
 

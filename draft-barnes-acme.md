@@ -260,6 +260,7 @@ ACME is structured as a REST application with a few types of resources:
 * Authorization resources, representing an account's authorization to act for an identifier
 * Challenge resources, representing a challenge to prove control of an identifier
 * Certificate resources, representing issued certificates
+* A "directory" resource
 * A "new-registration" resource
 * A "new-authorization" resource
 * A "new-certificate" resource
@@ -424,23 +425,20 @@ JWS as malformed.
 In order to help clients configure themselves with the right URLs for each ACME
 operation, ACME servers provide a directory object. This should be the root URL
 with which clients are configured. It is a JSON dictionary, whose keys are the
-names of ACME functions, and whose values are the URIs used to accomplish the
-corresponding function. The function names are:
+"resource" values listed in {{resources-and-requests}}, and whos values are the
+URIs used to accomplish the corresponding function.
 
- - newRegistration (see Registration below)
- - newAuthorization (see Identifier Authorization below)
- - newCertificate (see Certificate Issuance below)
- - revokeCertificate (see Certificate Revocation below)
+Clients access the directory by sending a GET request to the directory URI. 
 
 ~~~~~~~~~~
 HTTP/1.1 200 OK
 Content-Type: application/json
 
 {
-  "newRegistration": "https://example.com/acme/new-reg",
-  "newAuthorization": "https://example.com/acme/new-authz",
-  "newCertificate": "https://example.com/acme/new-cert",
-  "revokeCertificate": "https://example.com/acme/revoke-cert"
+  "new-reg": "https://example.com/acme/new-reg",
+  "new-authz": "https://example.com/acme/new-authz",
+  "new-cert": "https://example.com/acme/new-cert",
+  "revoke-cert": "https://example.com/acme/revoke-cert"
 }
 ~~~~~~~~~~
 

@@ -526,7 +526,7 @@ agreement with these terms by updating its registration to include the "agreemen
 
 HTTP/1.1 201 Created
 Content-Type: application/json
-Location: https://example.com/reg/asdf
+Location: https://example.com/acme/reg/asdf
 Link: <https://example.com/acme/new-authz>;rel="next"
 Link: <https://example.com/acme/recover-reg>;rel="recover"
 Link: <https://example.com/acme/terms>;rel="terms-of-service"
@@ -589,14 +589,14 @@ Host: example.com
 
 ~~~~~~~~~~
 
-If the server agrees to create a recovery key, then it generates its own random ECDH key pair and combines it with with the client's public key as described in {{key-agreement}} above.  The derived secret value is the recovery key.  The server chooses the length of the recovery key and indicates this in the "length" field of the recoveryKey object (in units of bits).  The server MAY generate a confirmation value and include it in the "confirm" field of the recoveryKey object (base64-encoded).
+If the server agrees to create a recovery key, then it generates its own random ECDH key pair and combines it with with the client's public key as described in {{key-agreement}} above.  The derived secret value is the recovery key.  The server chooses the length of the recovery key and indicates this in the "length" field of the recoveryKey object (in units of bits).  The server MUST generate a confirmation value and include it in the "confirm" field of the recoveryKey object (base64-encoded).
 
 
 ~~~~~~~~~~
 
 HTTP/1.1 201 Created
 Content-Type: application/json
-Location: https://example.com/reg/asdf
+Location: https://example.com/acme/reg/asdf
 
 {
   "key": { /* JWK from JWS header */ },
@@ -607,15 +607,15 @@ Location: https://example.com/reg/asdf
   ],
 
   "recoveryKey": {
-    "client": { 
-      "kty": "EC", 
+    "client": {
+      "kty": "EC",
       "crv": "P-256",
-      "x": "...","y": "..." 
+      "x": "...","y": "..."
     },
-    "server": { 
-      "kty": "EC", 
+    "server": {
+      "kty": "EC",
       "crv": "P-256",
-      "x": "...","y": "..." 
+      "x": "...","y": "..."
     },
     "length": 80,
     "confirm": "_VPtXjAFDBC0O_JTnv8MCS7uTyb1NVlQtUvr5xcLjOo"
@@ -624,9 +624,32 @@ Location: https://example.com/reg/asdf
 
 ~~~~~~~~~~
 
+On receiving the server's response, the client MUST compute the recovery key and check that it matches the confirmation value.  (This ensures that the "length" field was not tampered with in transit.)  If the confirmation value does not match, then the client should discard the recovery key; it will not be usable for recovery on this registration.
+
+Clients may refresh the recovery key associated with a registration by sending a POST request with a new recoveryKey object.  If the server agrees to refresh the recovery key, then it responds in the same way as to a new registration request that asks for a recovery key.
+
+~~~~~~~~~~
+
+POST /acme/reg/asdf HTTP/1.1
+Host: example.com
+
+{
+  "resource": "reg",
+  "recoveryKey": {
+    "client": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "...","y": "..."
+    }
+  }
+}
+/* Signed as JWS */
+
+~~~~~~~~~~
+
 ## Account Recovery
 
-Once a client has created an account with an ACME server, it is possible that the private key for the account will be lost.  The recovery contacts included in the registration allows the client to recover from this situtation, as long as it still has access to these contacts.  
+Once a client has created an account with an ACME server, it is possible that the private key for the account will be lost.  The recovery contacts included in the registration allows the client to recover from this situtation, as long as it still has access to these contacts.
 
 By "recovery", we mean that the information associated with an old account key is bound to a new account key.  When a recovery process succeeds, the server provides the client with a new registration whose contents are the same as base registration object -- except for the "key" field, which is set to the new account key.  The server reassigns resources associated with the base registration to the new registration (e.g., authorizations and certificates).  The server SHOULD delete the old registration resource after it has been used as a base for recovery.
 
@@ -637,7 +660,7 @@ In addition to the recovery mechanisms defined by ACME, individual client implem
 With token-based recovery, the client proves to the server that it holds a secret value established in the initial registration transaction.  The client requests token-based recovery by sending a MAC over the new account key, using the recovery key from the initial registration.
 
 method (required, string):
-: The string "contact"
+: The string "token"
 
 base (required, string):
 : The URI for the registration to be recovered.
@@ -677,7 +700,7 @@ If those conditions are met, and the recovery request is otherwise acceptable to
 
 HTTP/1.1 201 Created
 Content-Type: application/json
-Location: https://example.com/reg/asdf
+Location: https://example.com/acme/reg/asdf
 Link: <https://example.com/acme/new-authz>;rel="next"
 Link: <https://example.com/acme/recover-reg>;rel="recover"
 Link: <https://example.com/acme/terms>;rel="terms-of-service"
@@ -732,7 +755,7 @@ If the server agrees to attempt contact-based recovery, then it creates a new re
 
 HTTP/1.1 201 Created
 Content-Type: application/json
-Location: https://example.com/reg/qwer
+Location: https://example.com/acme/reg/qwer
 
 {
   "key": { /* new account key from JWS header */ },

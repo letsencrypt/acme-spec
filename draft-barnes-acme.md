@@ -260,6 +260,7 @@ ACME is structured as a REST application with a few types of resources:
 * Authorization resources, representing an account's authorization to act for an identifier
 * Challenge resources, representing a challenge to prove control of an identifier
 * Certificate resources, representing issued certificates
+* A "directory" resource
 * A "new-registration" resource
 * A "new-authorization" resource
 * A "new-certificate" resource
@@ -270,24 +271,32 @@ For the "new-X" resources above, the server MUST have exactly one resource for e
 In general, the intent is for authorization and certificate resources to contain only public information, so that CAs may publish these resources to document what certificates have been issued and how they were authorized.  Non-public information, such as
 contact information, is stored in registration resources.
 
-In order to accomplish ACME transactions, a client needs to have the server's new-registration, new-authorization, and new-certificate URIs; the remaining URIs are provided to the client as a result of requests to these URIs.  To simplify
-configuration, ACME uses the "next" link relation to indicate URI to contact for the next step in processing: From registration to authorization, and from authorization to certificate issuance.  In this way, a client need only be configured with the registration URI.
+ACME uses different URIs for different management functions. Each function is
+listed in a directory along with its corresponding URI, so clients only need to
+be configured with the directory URI.
 
 The "up" link relation is used with challenge resources to indicate the authorization resource to which a challenge belongs.  It is also used from certificate resources to indicate a resource from which the client may fetch a chain of CA certificates that could be used to validate the certificate in the original resource.
 
 The following diagram illustrates the relations between resources on an ACME server.  The solid lines indicate link relations, and the dotted lines correspond to relationships expressed in other ways, e.g., the Location header in a 201 (Created) response.
 
 ~~~~~~~~~~
-             "next"              "next"
-    new-reg ---+----> new-authz ---+----> new-cert    cert-chain
+
+                               directory
+                                   .
+                                   .
+       ....................................................
+       .                  .                  .            .
+       .                  .                  .            .
+       V     "next"       V      "next"      V            V
+    new-reg ---+----> new-authz ---+----> new-cert    revoke-cert
        .       |          .        |         .            ^
-       .       |          .        |         .            | "up"
+       .       |          .        |         .            | "revoke"
        V       |          V        |         V            |
       reg* ----+        authz -----+       cert-----------+
                          . ^                 |
-                         . | "up"            | "revoke"
+                         . | "up"            | "up"
                          V |                 V
-                       challenge         revoke-cert
+                       challenge         cert-chain
 
 ~~~~~~~~~~
 
@@ -417,6 +426,28 @@ encoded according to the base64url encoding described in Section 2
 of {{RFC7515}}.  If the value of a "nonce" header parameter is not
 valid according to this encoding, then the verifier MUST reject the
 JWS as malformed.
+
+## Directory
+
+In order to help clients configure themselves with the right URLs for each ACME
+operation, ACME servers provide a directory object. This should be the root URL
+with which clients are configured. It is a JSON dictionary, whose keys are the
+"resource" values listed in {{resources-and-requests}}, and whos values are the
+URIs used to accomplish the corresponding function.
+
+Clients access the directory by sending a GET request to the directory URI. 
+
+~~~~~~~~~~
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "new-reg": "https://example.com/acme/new-reg",
+  "new-authz": "https://example.com/acme/new-authz",
+  "new-cert": "https://example.com/acme/new-cert",
+  "revoke-cert": "https://example.com/acme/revoke-cert"
+}
+~~~~~~~~~~
 
 ## Registration
 

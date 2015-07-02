@@ -719,7 +719,7 @@ If the CA decides to issue a certificate, then the server returns the certificat
 
 The default format of the certificate is DER (application/pkix-cert).  The client may request other formats by including an Accept header in its request.
 
-The server can provide metadata about the certificate in HTTP headers.  In particular, the server MUST include a Link relation header field {{RFC5988}} with relation "up" to provide a certificate under which this certificate was issued.  Or the server can include an Expires header as a hint to the client about when to re-query to refresh the certificate.  (Of course, the real expiration of the certificate is controlled by the notAfter time in the certificate itself.)
+The server provides metadata about the certificate in HTTP headers.  In particular, the server MUST include a Link relation header field {{RFC5988}} with relation "up" to provide a certificate under which this certificate was issued.  The server MAY also include an Expires header as a hint to the client about when to renew the certificate.  (Of course, the real expiration of the certificate is controlled by the notAfter time in the certificate itself.)
 
 ~~~~~~~~~~
 

@@ -444,6 +444,7 @@ Content-Type: application/json
 
 {
   "new-reg": "https://example.com/acme/new-reg",
+  "recover-reg": "https://example.com/acme/recover-reg",
   "new-authz": "https://example.com/acme/new-authz",
   "new-cert": "https://example.com/acme/new-cert",
   "revoke-cert": "https://example.com/acme/revoke-cert"

@@ -49,6 +49,7 @@ normative:
   RFC5226:
   RFC5246:
   RFC5280:
+  RFC5753:
   RFC5988:
   RFC6570:
   RFC7159:
@@ -57,6 +58,12 @@ normative:
   RFC7517:
   RFC7518:
   I-D.ietf-appsawg-http-problem:
+  SEC1:
+    target: http://www.secg.org/sec1-v2.pdf
+    title: "SEC 1: Elliptic Curve Cryptography"
+    author:
+      organization: Standards for Efficient Cryptography Group
+    date: 2009-05-01
 
 informative:
   RFC2818:
@@ -427,6 +434,24 @@ encoded according to the base64url encoding described in Section 2
 of {{RFC7515}}.  If the value of a "nonce" header parameter is not
 valid according to this encoding, then the verifier MUST reject the
 JWS as malformed.
+
+## Key Agreement
+
+Certain elements of the protocol will require the establishment of a shared secret between the client and the server, in such a way that an entity observing the ACME protocol cannot derive the secret.  In these cases, we use a simple ECDH key exchange, based on the system used by CMS {{RFC5753}}:
+
+* Inputs:
+  * Client-generated key pair
+  * Server-generated key pair
+  * Length of the shared secret to be derived
+* Perform the ECDH primitive operation to obtain X_P (Section 3.3.1 of {{SEC1}})
+* Select a hash algorithm according to the curve being used:
+  * For "P-256", use SHA-256
+  * For "P-384", use SHA-384
+  * For "P-512", use SHA-512
+* Derive the shared secret value using the KDF in Section 3.6.1 of {{SEC1}} using the selected hash algorithm
+
+The parties may also generate a key confirmation value H(ZZ), where ZZ is the shared secret and H is the selected hash algorithm.  Use of the confirmation value prevents tampering with protocol elements that encode the length of the desired secret, but allow an attacker to attempt to recover the shared secret via a preimage attack.
+
 
 ## Directory
 

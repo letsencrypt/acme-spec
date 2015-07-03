@@ -265,7 +265,6 @@ ACME is structured as a REST application with a few types of resources:
 * A "new-authorization" resource
 * A "new-certificate" resource
 * A "revoke-certificate" resource
-* A "renew-certificate" resource
 
 For the "new-X" resources above, the server MUST have exactly one resource for each function.  This resource may be addressed by multiple URIs, but all must provide equivalent functionality.
 
@@ -316,7 +315,6 @@ An ACME request carries a JSON dictionary that provides the details of the clien
 | New authorization  | new-authz        |
 | New certificate    | new-cert         |
 | Revoke certificate | revoke-cert      |
-| Renew certificate  | renew-cert       |
 | Registration       | reg              |
 | Authorization      | authz            |
 | Certificate        | cert             |
@@ -756,7 +754,17 @@ The values provided in the CSR are only a request, and are not guaranteed.  The 
 
 It is up to the server's local policy to decide which names are acceptable in a certificate, given the authorizations that the server associates with the client's account key.  A server MAY consider a client authorized for a wildcard domain if it is authorized for the underlying domain name (without the "*" label).  Servers SHOULD NOT extend authorization across identifier types.  For example, if a client is authorized for "example.com", then the server should not allow the client to issue a certificate with an iPAddress subjectAltName, even if it contains an IP address to which example.com resolves.
 
-If the CA decides to issue a certificate, then the server returns the certificate in a response with status code 201 (Created).  The server MUST indicate a URL for this certificate in a Location header field.
+If the CA decides to issue a certificate, then the server creates a new certificate resource and returns a URI for it in the Location header field of a 201 (Created) response.
+
+~~~~~~~~~~
+
+HTTP/1.1 201 Created
+Location: https://example.com/acme/cert/asdf
+Retry-After: 120
+
+~~~~~~~~~~
+
+If the CA has not yet issued the certificate, the body of this response will be empty, and MUST include a Retry-After header to indicate when the server believes the certificate will be issued (as in the example above).  After that time, the client may send a GET request to the certificate URI in order to get the certificate.
 
 The default format of the certificate is DER (application/pkix-cert).  The client may request other formats by including an Accept header in its request.
 
@@ -764,12 +772,16 @@ The server provides metadata about the certificate in HTTP headers.  In particul
 
 ~~~~~~~~~~
 
-HTTP/1.1 201 Created
+GET /acme/cert/asdf HTTP/1.1
+Host: example.com
+Accept: application/pkix-cert
+
+HTTP/1.1 200 OK
 Content-Type: application/pkix-cert
 Link: <https://example.com/acme/ca-cert>;rel="up";title="issuer"
 Link: <https://example.com/acme/revoke-cert>;rel="revoke"
-Link: <https://example.com/acme/renew-cert>;rel="renew"
 Location: https://example.com/acme/cert/asdf
+Content-Location: https://example.com/acme/cert-seq/12345
 
 [DER-encoded certificate]
 
@@ -779,25 +791,11 @@ Location: https://example.com/acme/cert/asdf
 
 Often, a client wishes to request a new certificate with the same contents as another certificates, but with updated notBefore and notAfter dates.  This operation is referred to as "renewal" of the certificate.
 
-To request renewal of an existing certificate, the client sends a POST request to the ACME server's renew-certificate URI, containing a JSON object that indicates the certificate to be renewed.  Unlike other ACME bodies, this POST body is not required to be signed with the account key.  Renewal is a low-risk transaction, and allowing renewal without the account key's signature allows for the account key to be better protected (since it is used less commonly).
+If the CA allows a certificate to be renewed, then it publishes renewed versions of the certificate through the same certificate URI.  Clients retrieve renewed versions of the certificate using a GET query to the certificate URI, which the server should then return in a 200 (OK) response.  The server SHOULD provide a URI for each specific certificate in the Content-Location header field, as shown above.
 
-base (required, string):
-: The URI for the certificate to be renewed.
+To avoid unnecessary renewals, the CA may choose not to issue a renewed certificate until it receives such a request.  In such cases, if the CA requires some time to generate the new certificate, the CA MUST return a 202 (Accepted) response, with a Retry-After header field that indicates when the new certifcate will be available.  The CA MAY include the current (non-renewed) certificate as the body of the response.
 
-~~~~~~~~~~
-POST /acme/renew-cert HTTP/1.1
-Host: example.com
-Accept: application/pkix-cert
-
-{
-  "base": "https://example.com/acme/cert/asdf"
-}
-~~~~~~~~~~
-
-The server MUST verify that the certificate referenced by the "base" URL is one that is it issued.  If the base certificate has been revoked, then the server MUST NOT renew it, and SHOULD return a 403 (Forbidden) status code.  The server SHOULD agree to renew expired certificates, if they otherwise meet its policy for renewal.
-
-If the server agrees to renew the certificate, then its response is the same as for the new-certificate transaction.  The new certificate SHOULD be assigned a different URI from the base certificate.
-
+From the client's perspective, there is no difference between a certificate URI that allows renewal and one that does not.  If the client wishes to obtain a renewed certiifcate, and a GET request to the certficate URI does not yield one, then the client may initiate a new-certificate transaction to request one.
 
 ## Certificate Revocation
 

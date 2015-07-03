@@ -1404,7 +1404,7 @@ type (required, string):
 : The string "dns"
 
 token (required, string):
-: An ASCII string that uniquely identifies this challenge
+: An ASCII string that uniquely identifies this challenge among challenges issued by this server
 
 serverPublicKey (required, JWK):
 : An ECDH public key that will be used to generate a shared secret
@@ -1442,11 +1442,12 @@ The to compute the MAC key, the client generates an ECDH key pair and uses it wi
 
 Once the client has generated the validation object and the MAC key, it serializes the validation object to UTF-8, and forms an HMAC-based JWS with the JSON object as its payload.  This JWS is NOT REQUIRED to have the "nonce" header parameter.
 
-The record provisioned to the DNS is the "signature" value from the JWS, i.e., the base64-encoded MAC value.  If so, the client constructs the validation domain name by appending the label "_acme-challenge" to the domain name being validated, then provisions a TXT record with the signature value under that name. For example, if the domain name being validated is "example.com", then the client would provision the following DNS record:
+The record provisioned to the DNS is the "signature" value from the JWS, i.e., the base64-encoded MAC value.  If so, the client constructs the validation domain name by appending the label "_acme-challenge" to the domain name being validated, then provisions a TXT record with the signature value under that name. For example, if the domain name being validated is "example.com", then the client would provision the following DNS record (with line breaks for display purposes only):
 
 ~~~~~~~~~~
 
-_acme-challenge.example.com. IN TXT "gfj9XqFv07e1wU66hSLYkiFqYakPSjAu8TsyXRg85nM"
+_acme-challenge.example.com. 300 IN TXT
+    "gfj9XqFv07e1wU66hSLYkiFqYakPSjAu8TsyXRg85nM"
 
 ~~~~~~~~~~
 
@@ -1469,7 +1470,7 @@ validation (required, JWS):
   "validation": {
     "header": { "alg": "HS256" },
     "payload": "qzu9...6bjn",
-    "signature": "r32O...ge8Y"
+    "signature": "gfj9XqFv07e1wU66hSLYkiFqYakPSjAu8TsyXRg85nM"
   }
 }
 
@@ -1477,15 +1478,15 @@ validation (required, JWS):
 
 To validate a DNS challenge, the server performs the following steps:
 
-1. Query for TXT records under the validation domain name.
-2. Verify that the contents of the TXT record match the "signature" value in the "validation" JWS.
-3. Derive a 256-bit MAC key using the "clientPublicKey" value and the private key corresponding to the "serverPublicKey" value
-4. Verify the "validation" JWS using the MAC key
-5. Decode the payload of the JWS as UTF-8 encoded JSON
-6. Verify that the there are exactly three fields in the decoded object, and that:
+1. Derive a 256-bit MAC key using the "clientPublicKey" value and the private key corresponding to the "serverPublicKey" value
+2. Verify the "validation" JWS using the MAC key
+3. Decode the payload of the JWS as UTF-8 encoded JSON
+4. Verify that the there are exactly three fields in the decoded object, and that:
   * The "type" field is set to "dns"
   * The "token" field matches the "token" value in the challenge
   * The "accountKey" field matches the account key for which the challenge was issued
+5. Query for TXT records under the validation domain name.
+6. Verify that the contents of one of the TXT records match the "signature" value in the "validation" JWS.
 
 If all of the above verifications succeed, then the validation is successful.  If no DNS record is found, or DNS record and response payload do not pass these checks, then the validation fails.
 

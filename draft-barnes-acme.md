@@ -587,9 +587,7 @@ Host: example.com
 
 The server MUST validate that the elliptic curve ("crv") and length value chosen by the client are acceptable, and that is otherwise willing to create a recovery key.  If not, then it MUST reject the new-registration request.
 
-If the server agrees to create a recovery key, then it generates its own random ECDH key pair and combines it with with the client's public key as described in {{key-agreement}} above, using the label "recovery".  The derived secret value is the recovery key.  The server then returns to the client the ECDH key that it generated.
-
-Servers SHOULD generate a fresh key pair for every transaction, but MAY re-use an ECDH key pair, as long as they ensure that it is never used twice with the same client public key.
+If the server agrees to create a recovery key, then it generates its own random ECDH key pair and combines it with with the client's public key as described in {{key-agreement}} above, using the label "recovery".  The derived secret value is the recovery key.  The server then returns to the client the ECDH key that it generated.  The server MUST generate a fresh key pair for every transaction.
 
 server (required, JWK):
 : The server's ECDH public key
@@ -677,8 +675,8 @@ Host: example.com
 On receiving such a request the server MUST verify that:
 
 * The base registration has a recovery key associated with it
-* The "alg" value represents a MAC algorithm
-* The MAC verifies using the recovery key
+* The "alg" value in the "mac" JWS represents a MAC algorithm
+* The "mac" JWS is valid according to the validation rules in {{RFC7515}}, using the recovery key as the MAC key
 * The JWK in the payload represents the new account key (i.e. the key used to verify the ACME message)
 
 If those conditions are met, and the recovery request is otherwise acceptable to the server, then the recovery process has succeeded.  The server creates a new registration resource based on the base registration and the new account key, and returns it on a 201 (Created) response, together with a Location header indicating a URI for the new registration.  If the recovery request is unsuccessful, the server returns an error response, such as 403 (Forbidden).
@@ -755,7 +753,7 @@ Location: https://example.com/acme/reg/qwer
 
 ~~~~~~~~~~
 
-After recovery has been initiated, the server follows its chosen recovery process, out-of-band to ACME.  While the recovery process is ongoing, the client may poll the registration resource's URI for status, by sending a POST request with a trivial body ({"resource":"reg"}).  If the recovery process is still pending, the server sends a 202 (Accepted) status code, and a Retry-After header field. If the recovery process has failed, the server sends an error code (e.g., 404), and SHOULD delete the stub registration resource.  
+After recovery has been initiated, the server follows its chosen recovery process, out-of-band to ACME.  While the recovery process is ongoing, the client may poll the registration resource's URI for status, by sending a POST request with a trivial body ({"resource":"reg"}).  If the recovery process is still pending, the server sends a 202 (Accepted) status code, and a Retry-After header field. If the recovery process has failed, the server sends an error code (e.g., 404), and SHOULD delete the stub registration resource.
 
 If the recovery process has succeeded, then the server will send a 200 (OK) response, containing the full registration object (copied from the old registration).  The client may now use this in the same way as if he had gotten it from a new-registration transaction.
 

@@ -473,7 +473,7 @@ ul.toc a:first-child {
 <link href="#rfc.section.6.8" rel="Chapter" title="6.8 Authorization Resources"/>
 <link href="#rfc.section.6.9" rel="Chapter" title="6.9 Identifier Authorization"/>
 <link href="#rfc.section.6.10" rel="Chapter" title="6.10 Certificate Issuance"/>
-<link href="#rfc.section.6.11" rel="Chapter" title="6.11 Certificate Refresh"/>
+<link href="#rfc.section.6.11" rel="Chapter" title="6.11 Certificate Renewal"/>
 <link href="#rfc.section.6.12" rel="Chapter" title="6.12 Certificate Revocation"/>
 <link href="#rfc.section.7" rel="Chapter" title="7 Identifier Validation Challenges"/>
 <link href="#rfc.section.7.1" rel="Chapter" title="7.1 Simple HTTP"/>
@@ -593,7 +593,7 @@ ul.toc a:first-child {
 </ul><li>6.8.   <a href="#rfc.section.6.8">Authorization Resources</a></li>
 <li>6.9.   <a href="#rfc.section.6.9">Identifier Authorization</a></li>
 <li>6.10.   <a href="#rfc.section.6.10">Certificate Issuance</a></li>
-<li>6.11.   <a href="#rfc.section.6.11">Certificate Refresh</a></li>
+<li>6.11.   <a href="#rfc.section.6.11">Certificate Renewal</a></li>
 <li>6.12.   <a href="#rfc.section.6.12">Certificate Revocation</a></li>
 </ul><li>7.   <a href="#rfc.section.7">Identifier Validation Challenges</a></li>
 <ul><li>7.1.   <a href="#rfc.section.7.1">Simple HTTP</a></li>
@@ -1375,22 +1375,44 @@ Accept: application/pkix-cert
 <p id="rfc.section.6.10.p.3">The CSR encodes the client&#8217;s requests with regard to the content of the certificate to be issued.  The CSR MUST indicate the requested identifiers, either in the commonName portion of the requested subject name, or in an extensionRequest attribute <a href="#RFC2985">[RFC2985]</a> requesting a subjectAltName extension.</p>
 <p id="rfc.section.6.10.p.4">The values provided in the CSR are only a request, and are not guaranteed.  The server or CA may alter any fields in the certificate before issuance.  For example, the CA may remove identifiers that are not authorized for the account key that signed the request.</p>
 <p id="rfc.section.6.10.p.5">It is up to the server&#8217;s local policy to decide which names are acceptable in a certificate, given the authorizations that the server associates with the client&#8217;s account key.  A server MAY consider a client authorized for a wildcard domain if it is authorized for the underlying domain name (without the &#8220;*&#8221; label).  Servers SHOULD NOT extend authorization across identifier types.  For example, if a client is authorized for &#8220;example.com&#8221;, then the server should not allow the client to issue a certificate with an iPAddress subjectAltName, even if it contains an IP address to which example.com resolves.</p>
-<p id="rfc.section.6.10.p.6">If the CA decides to issue a certificate, then the server returns the certificate in a response with status code 201 (Created).  The server MUST indicate a URL for this certificate in a Location header field.</p>
-<p id="rfc.section.6.10.p.7">The default format of the certificate is DER (application/pkix-cert).  The client may request other formats by including an Accept header in its request.</p>
-<p id="rfc.section.6.10.p.8">The server provides metadata about the certificate in HTTP headers.  In particular, the server MUST include a Link relation header field <a href="#RFC5988">[RFC5988]</a> with relation &#8220;up&#8221; to provide a certificate under which this certificate was issued.  The server MAY also include an Expires header as a hint to the client about when to renew the certificate.  (Of course, the real expiration of the certificate is controlled by the notAfter time in the certificate itself.)</p>
+<p id="rfc.section.6.10.p.6">If the CA decides to issue a certificate, then the server creates a new certificate resource and returns a URI for it in the Location header field of a 201 (Created) response.</p>
 <pre>
 HTTP/1.1 201 Created
+Location: https://example.com/acme/cert/asdf
+
+</pre>
+<p id="rfc.section.6.10.p.7">If the CA has not yet issued the certificate, the body of this response will be empty.  The client should then send a GET request to the certificate URI to poll for the certificate.  As long as the certificate is unavailable, the server MUST provide a 202 (Accepted) response and include a Retry-After header to indicate when the server believes the certificate will be issued (as in the example above).</p>
+<pre>
+GET /acme/cert/asdf HTTP/1.1
+Host: example.com
+Accept: application/pkix-cert
+
+HTTP/1.1 202 Accepted
+Retry-After: 120
+
+</pre>
+<p id="rfc.section.6.10.p.8">The default format of the certificate is DER (application/pkix-cert).  The client may request other formats by including an Accept header in its request.</p>
+<p id="rfc.section.6.10.p.9">The server provides metadata about the certificate in HTTP headers.  In particular, the server MUST include a Link relation header field <a href="#RFC5988">[RFC5988]</a> with relation &#8220;up&#8221; to provide a certificate under which this certificate was issued.  The server MAY also include an Expires header as a hint to the client about when to renew the certificate.  (Of course, the real expiration of the certificate is controlled by the notAfter time in the certificate itself.)</p>
+<pre>
+GET /acme/cert/asdf HTTP/1.1
+Host: example.com
+Accept: application/pkix-cert
+
+HTTP/1.1 200 OK
 Content-Type: application/pkix-cert
 Link: &lt;https://example.com/acme/ca-cert&gt;;rel="up";title="issuer"
-Link: &lt;https://example.com/acme/revoke-cert&gt;;rel="revoke";title="revoke-cert"
+Link: &lt;https://example.com/acme/revoke-cert&gt;;rel="revoke"
 Location: https://example.com/acme/cert/asdf
+Content-Location: https://example.com/acme/cert-seq/12345
 
 [DER-encoded certificate]
 
 </pre>
-<h1 id="rfc.section.6.11"><a href="#rfc.section.6.11">6.11.</a> <a href="#certificate-refresh" id="certificate-refresh">Certificate Refresh</a></h1>
-<p id="rfc.section.6.11.p.1">To refresh the certificate, the client simply sends a GET request to the certificate URL.  This allows the server to provide the client with updated certificates with the same content and different validity intervals, for as long as all of the authorization objects underlying the certificate are valid.</p>
-<p id="rfc.section.6.11.p.2">If a client sends a refresh request and the server is not willing to refresh the certificate, the server MUST respond with status code 403 (Forbidden).  If the client still wishes to obtain a certificate, it can re-initiate the authorization process for any expired authorizations related to the certificate.</p>
+<h1 id="rfc.section.6.11"><a href="#rfc.section.6.11">6.11.</a> <a href="#certificate-renewal" id="certificate-renewal">Certificate Renewal</a></h1>
+<p id="rfc.section.6.11.p.1">Often, a client wishes to request a new certificate with the same contents as another certificates, but with updated notBefore and notAfter dates.  This operation is referred to as &#8220;renewal&#8221; of the certificate.</p>
+<p id="rfc.section.6.11.p.2">If the CA allows a certificate to be renewed, then it publishes renewed versions of the certificate through the same certificate URI.  Clients retrieve renewed versions of the certificate using a GET query to the certificate URI, which the server should then return in a 200 (OK) response.  The server SHOULD provide a URI for each specific certificate in the Content-Location header field, as shown above.  Requests to specific certificate URIs MUST always result in the same certificate.</p>
+<p id="rfc.section.6.11.p.3">To avoid unnecessary renewals, the CA may choose not to issue a renewed certificate until it receives such a request.  In such cases, if the CA requires some time to generate the new certificate, the CA MUST return a 202 (Accepted) response, with a Retry-After header field that indicates when the new certifcate will be available.  The CA MAY include the current (non-renewed) certificate as the body of the response.</p>
+<p id="rfc.section.6.11.p.4">From the client&#8217;s perspective, there is no difference between a certificate URI that allows renewal and one that does not.  If the client wishes to obtain a renewed certiifcate, and a GET request to the certficate URI does not yield one, then the client may initiate a new-certificate transaction to request one.</p>
 <h1 id="rfc.section.6.12"><a href="#rfc.section.6.12">6.12.</a> <a href="#certificate-revocation" id="certificate-revocation">Certificate Revocation</a></h1>
 <p id="rfc.section.6.12.p.1">To request that a certificate be revoked, the client sends a POST request to the ACME server&#8217;s revoke-cert URI.  The body of the POST is a JWS object whose JSON payload contains the certificate to be revoked:</p>
 <p/>

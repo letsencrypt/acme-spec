@@ -96,16 +96,16 @@ Table of Contents
      6.8.  Authorization Resources . . . . . . . . . . . . . . . . .  25
      6.9.  Identifier Authorization  . . . . . . . . . . . . . . . .  26
      6.10. Certificate Issuance  . . . . . . . . . . . . . . . . . .  30
-     6.11. Certificate Refresh . . . . . . . . . . . . . . . . . . .  32
-     6.12. Certificate Revocation  . . . . . . . . . . . . . . . . .  32
-   7.  Identifier Validation Challenges  . . . . . . . . . . . . . .  33
-     7.1.  Simple HTTP . . . . . . . . . . . . . . . . . . . . . . .  35
-     7.2.  Domain Validation with Server Name Indication . . . . . .  38
-     7.3.  Proof of Possession of a Prior Key  . . . . . . . . . . .  40
-     7.4.  DNS . . . . . . . . . . . . . . . . . . . . . . . . . . .  43
-     7.5.  Other possibilities . . . . . . . . . . . . . . . . . . .  44
-   8.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  44
-   9.  Security Considerations . . . . . . . . . . . . . . . . . . .  45
+     6.11. Certificate Renewal . . . . . . . . . . . . . . . . . . .  32
+     6.12. Certificate Revocation  . . . . . . . . . . . . . . . . .  33
+   7.  Identifier Validation Challenges  . . . . . . . . . . . . . .  34
+     7.1.  Simple HTTP . . . . . . . . . . . . . . . . . . . . . . .  36
+     7.2.  Domain Validation with Server Name Indication . . . . . .  39
+     7.3.  Proof of Possession of a Prior Key  . . . . . . . . . . .  41
+     7.4.  DNS . . . . . . . . . . . . . . . . . . . . . . . . . . .  44
+     7.5.  Other possibilities . . . . . . . . . . . . . . . . . . .  45
+   8.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  45
+   9.  Security Considerations . . . . . . . . . . . . . . . . . . .  46
 
 
 
@@ -114,11 +114,11 @@ Barnes, et al.            Expires March 5, 2015                 [Page 2]
 Internet-Draft                    ACME                    September 2014
 
 
-   10. Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .  45
-   11. References  . . . . . . . . . . . . . . . . . . . . . . . . .  45
-     11.1.  Normative References . . . . . . . . . . . . . . . . . .  45
-     11.2.  Informative References . . . . . . . . . . . . . . . . .  47
-   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  47
+   10. Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .  46
+   11. References  . . . . . . . . . . . . . . . . . . . . . . . . .  46
+     11.1.  Normative References . . . . . . . . . . . . . . . . . .  46
+     11.2.  Informative References . . . . . . . . . . . . . . . . .  48
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  48
 
 1.  Introduction
 
@@ -1715,9 +1715,36 @@ Internet-Draft                    ACME                    September 2014
    subjectAltName, even if it contains an IP address to which
    example.com resolves.
 
-   If the CA decides to issue a certificate, then the server returns the
-   certificate in a response with status code 201 (Created).  The server
-   MUST indicate a URL for this certificate in a Location header field.
+   If the CA decides to issue a certificate, then the server creates a
+   new certificate resource and returns a URI for it in the Location
+   header field of a 201 (Created) response.
+
+   HTTP/1.1 201 Created
+   Location: https://example.com/acme/cert/asdf
+
+
+   If the CA has not yet issued the certificate, the body of this
+   response will be empty.  The client should then send a GET request to
+   the certificate URI to poll for the certificate.  As long as the
+   certificate is unavailable, the server MUST provide a 202 (Accepted)
+   response and include a Retry-After header to indicate when the server
+   believes the certificate will be issued (as in the example above).
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 31]
+
+Internet-Draft                    ACME                    September 2014
+
+
+   GET /acme/cert/asdf HTTP/1.1
+   Host: example.com
+   Accept: application/pkix-cert
+
+   HTTP/1.1 202 Accepted
+   Retry-After: 120
+
 
    The default format of the certificate is DER (application/pkix-cert).
    The client may request other formats by including an Accept header in
@@ -1731,35 +1758,58 @@ Internet-Draft                    ACME                    September 2014
    (Of course, the real expiration of the certificate is controlled by
    the notAfter time in the certificate itself.)
 
+   GET /acme/cert/asdf HTTP/1.1
+   Host: example.com
+   Accept: application/pkix-cert
+
+   HTTP/1.1 200 OK
+   Content-Type: application/pkix-cert
+   Link: <https://example.com/acme/ca-cert>;rel="up";title="issuer"
+   Link: <https://example.com/acme/revoke-cert>;rel="revoke"
+   Location: https://example.com/acme/cert/asdf
+   Content-Location: https://example.com/acme/cert-seq/12345
+
+   [DER-encoded certificate]
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 31]
+6.11.  Certificate Renewal
+
+   Often, a client wishes to request a new certificate with the same
+   contents as another certificates, but with updated notBefore and
+   notAfter dates.  This operation is referred to as "renewal" of the
+   certificate.
+
+   If the CA allows a certificate to be renewed, then it publishes
+   renewed versions of the certificate through the same certificate URI.
+   Clients retrieve renewed versions of the certificate using a GET
+   query to the certificate URI, which the server should then return in
+   a 200 (OK) response.  The server SHOULD provide a URI for each
+   specific certificate in the Content-Location header field, as shown
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 32]
 
 Internet-Draft                    ACME                    September 2014
 
 
-HTTP/1.1 201 Created
-Content-Type: application/pkix-cert
-Link: <https://example.com/acme/ca-cert>;rel="up";title="issuer"
-Link: <https://example.com/acme/revoke-cert>;rel="revoke";title="revoke-cert"
-Location: https://example.com/acme/cert/asdf
+   above.  Requests to specific certificate URIs MUST always result in
+   the same certificate.
 
-[DER-encoded certificate]
+   To avoid unnecessary renewals, the CA may choose not to issue a
+   renewed certificate until it receives such a request.  In such cases,
+   if the CA requires some time to generate the new certificate, the CA
+   MUST return a 202 (Accepted) response, with a Retry-After header
+   field that indicates when the new certifcate will be available.  The
+   CA MAY include the current (non-renewed) certificate as the body of
+   the response.
 
-
-6.11.  Certificate Refresh
-
-   To refresh the certificate, the client simply sends a GET request to
-   the certificate URL.  This allows the server to provide the client
-   with updated certificates with the same content and different
-   validity intervals, for as long as all of the authorization objects
-   underlying the certificate are valid.
-
-   If a client sends a refresh request and the server is not willing to
-   refresh the certificate, the server MUST respond with status code 403
-   (Forbidden).  If the client still wishes to obtain a certificate, it
-   can re-initiate the authorization process for any expired
-   authorizations related to the certificate.
+   From the client's perspective, there is no difference between a
+   certificate URI that allows renewal and one that does not.  If the
+   client wishes to obtain a renewed certiifcate, and a GET request to
+   the certficate URI does not yield one, then the client may initiate a
+   new-certificate transaction to request one.
 
 6.12.  Certificate Revocation
 
@@ -1787,16 +1837,18 @@ Location: https://example.com/acme/cert/asdf
    o  the public key of the key pair signing the request matches the
       public key in the certificate.
 
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 32]
-
-Internet-Draft                    ACME                    September 2014
-
-
    o  the key pair signing the request is an account key, and the
       corresponding account is authorized to act for all of the
       identifier(s) in the certificate.
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 33]
+
+Internet-Draft                    ACME                    September 2014
+
 
    If the revocation succeeds, the server responds with status code 200
    (OK).  If the revocation fails, the server returns an error.
@@ -1842,18 +1894,18 @@ Internet-Draft                    ACME                    September 2014
    type (required, string):  The type of Challenge or Response encoded
       in the object.
 
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 33]
-
-Internet-Draft                    ACME                    September 2014
-
-
    uri (optional, string):  The URI to which a response can be posted.
 
    status (optional, string):  The status of this authorization.
       Possible values are: "unknown", "pending", "processing", "valid",
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 34]
+
+Internet-Draft                    ACME                    September 2014
+
+
       "invalid" and "revoked".  If this field is missing, then the
       default value is "pending".
 
@@ -1901,7 +1953,11 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 34]
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 35]
 
 Internet-Draft                    ACME                    September 2014
 
@@ -1957,7 +2013,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 35]
+Barnes, et al.            Expires March 5, 2015                [Page 36]
 
 Internet-Draft                    ACME                    September 2014
 
@@ -2013,7 +2069,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 36]
+Barnes, et al.            Expires March 5, 2015                [Page 37]
 
 Internet-Draft                    ACME                    September 2014
 
@@ -2069,7 +2125,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 37]
+Barnes, et al.            Expires March 5, 2015                [Page 38]
 
 Internet-Draft                    ACME                    September 2014
 
@@ -2125,7 +2181,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 38]
+Barnes, et al.            Expires March 5, 2015                [Page 39]
 
 Internet-Draft                    ACME                    September 2014
 
@@ -2181,7 +2237,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 39]
+Barnes, et al.            Expires March 5, 2015                [Page 40]
 
 Internet-Draft                    ACME                    September 2014
 
@@ -2237,7 +2293,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 40]
+Barnes, et al.            Expires March 5, 2015                [Page 41]
 
 Internet-Draft                    ACME                    September 2014
 
@@ -2293,7 +2349,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 41]
+Barnes, et al.            Expires March 5, 2015                [Page 42]
 
 Internet-Draft                    ACME                    September 2014
 
@@ -2349,7 +2405,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 42]
+Barnes, et al.            Expires March 5, 2015                [Page 43]
 
 Internet-Draft                    ACME                    September 2014
 
@@ -2405,7 +2461,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 43]
+Barnes, et al.            Expires March 5, 2015                [Page 44]
 
 Internet-Draft                    ACME                    September 2014
 
@@ -2461,7 +2517,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 44]
+Barnes, et al.            Expires March 5, 2015                [Page 45]
 
 Internet-Draft                    ACME                    September 2014
 
@@ -2517,7 +2573,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 45]
+Barnes, et al.            Expires March 5, 2015                [Page 46]
 
 Internet-Draft                    ACME                    September 2014
 
@@ -2573,7 +2629,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 46]
+Barnes, et al.            Expires March 5, 2015                [Page 47]
 
 Internet-Draft                    ACME                    September 2014
 
@@ -2629,7 +2685,7 @@ Authors' Addresses
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 47]
+Barnes, et al.            Expires March 5, 2015                [Page 48]
 
 Internet-Draft                    ACME                    September 2014
 
@@ -2685,4 +2741,4 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 48]
+Barnes, et al.            Expires March 5, 2015                [Page 49]

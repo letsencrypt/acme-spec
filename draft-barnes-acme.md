@@ -49,6 +49,7 @@ normative:
   RFC5226:
   RFC5246:
   RFC5280:
+  RFC5753:
   RFC5988:
   RFC6570:
   RFC7159:
@@ -57,6 +58,12 @@ normative:
   RFC7517:
   RFC7518:
   I-D.ietf-appsawg-http-problem:
+  SEC1:
+    target: http://www.secg.org/sec1-v2.pdf
+    title: "SEC 1: Elliptic Curve Cryptography"
+    author:
+      organization: Standards for Efficient Cryptography Group
+    date: 2009-05-01
 
 informative:
   RFC2818:
@@ -309,16 +316,17 @@ Note that this implies that GET requests are not authenticated.  Servers MUST NO
 
 An ACME request carries a JSON dictionary that provides the details of the client's request to the server.  In order to avoid attacks that might arise from sending a request object to an improper URI, each request object MUST have a "resource" field that indicates what type of resource the request is addressed to, as defined in the below table:
 
-| Resource type      | "resource" value |
-|:-------------------|:-----------------|
-| New registration   | new-reg          |
-| New authorization  | new-authz        |
-| New certificate    | new-cert         |
-| Revoke certificate | revoke-cert      |
-| Registration       | reg              |
-| Authorization      | authz            |
-| Certificate        | cert             |
-| Challenge          | challenge        |
+| Resource type        | "resource" value |
+|:---------------------|:-----------------|
+| New registration     | new-reg          |
+| Recover registration | recover-reg      |
+| New authorization    | new-authz        |
+| New certificate      | new-cert         |
+| Revoke certificate   | revoke-cert      |
+| Registration         | reg              |
+| Authorization        | authz            |
+| Certificate          | cert             |
+| Challenge            | challenge        |
 
 Other fields in ACME request bodies are described below.
 
@@ -427,6 +435,29 @@ of {{RFC7515}}.  If the value of a "nonce" header parameter is not
 valid according to this encoding, then the verifier MUST reject the
 JWS as malformed.
 
+## Key Agreement
+
+Certain elements of the protocol will require the establishment of a shared secret between the client and the server, in such a way that an entity observing the ACME protocol cannot derive the secret.  In these cases, we use a simple ECDH key exchange, based on the system used by CMS {{RFC5753}}:
+
+* Inputs:
+  * Client-generated key pair
+  * Server-generated key pair
+  * Length of the shared secret to be derived
+  * Label
+* Perform the ECDH primitive operation to obtain Z (Section 3.3.1 of {{SEC1}})
+* Select a hash algorithm according to the curve being used:
+  * For "P-256", use SHA-256
+  * For "P-384", use SHA-384
+  * For "P-521", use SHA-512
+* Derive the shared secret value using the KDF in Section 3.6.1 of {{SEC1}} using Z and the selected hash algorithm, and with the UTF-8 encoding of the label as the SharedInfo value
+
+In cases where the length of the derived secret is shorter than the output length of the chosen hash algorithm, the KDF referenced above reduces to a single hash invocation.  The shared secret is equal to the leftmost octets of the following:
+
+~~~~~~~~~~
+H( Z || 00000001 || label )
+~~~~~~~~~~
+
+
 ## Directory
 
 In order to help clients configure themselves with the right URLs for each ACME
@@ -443,6 +474,7 @@ Content-Type: application/json
 
 {
   "new-reg": "https://example.com/acme/new-reg",
+  "recover-reg": "https://example.com/acme/recover-reg",
   "new-authz": "https://example.com/acme/new-authz",
   "new-cert": "https://example.com/acme/new-cert",
   "revoke-cert": "https://example.com/acme/revoke-cert"
@@ -499,8 +531,9 @@ agreement with these terms by updating its registration to include the "agreemen
 
 HTTP/1.1 201 Created
 Content-Type: application/json
-Location: https://example.com/reg/asdf
+Location: https://example.com/acme/reg/asdf
 Link: <https://example.com/acme/new-authz>;rel="next"
+Link: <https://example.com/acme/recover-reg>;rel="recover"
 Link: <https://example.com/acme/terms>;rel="terms-of-service"
 
 {
@@ -516,18 +549,214 @@ Link: <https://example.com/acme/terms>;rel="terms-of-service"
 
 If the client wishes to update this information in the future, it sends a POST request with updated information to the registration URI.  The server MUST ignore any updates to the "key", "authorizations, or "certificates" fields, and MUST verify that the request is signed with the private key corresponding to the "key" field of the request before updating the registration.
 
-Servers SHOULD NOT respond to GET requests for registration resources as these requests are not authenticated.  If a client wishes to query the server for information about its account (e.g., to examine the "contact" or "certificates" fields), then it SHOULD do so by sending a POST request with an empty update.  That is, it should send a JWS whose payload is the empty JSON dictionary ("{}").
+Servers SHOULD NOT respond to GET requests for registration resources as these requests are not authenticated.  If a client wishes to query the server for information about its account (e.g., to examine the "contact" or "certificates" fields), then it SHOULD do so by sending a POST request with an empty update.  That is, it should send a JWS whose payload is trivial ({"resource":"reg"}).
 
+### Recovery Keys
 
-### Account Recovery
+If the client wishes to establish a secret key with the server that it can use to recover this account later (a "recovery key"), then it must perform a simple key agreement protocol as part of the new-registration transaction.  The client and server perform an ECDH exchange through the new-registration transaction (using the technique in {{key-agreement}}), and the result is the recovery key.
+
+To request a recovery key, the client includes a "recoveryKey" field in its new-registration request.  The value of this field is a JSON object.
+
+client (required, JWK):
+: The client's ECDH public key
+
+length (required, number):
+: The length of the derived secret, in octets.
+
+In the client's request, this object contains a JWK for a random ECDH public key generated by the client and the client-selected length value.  Clients need to choose length values that balance security and usability.  On the one hand, a longer secret makes it makes it more difficult for an attacker to recover the secret when it is used to for recovery (see {{mac-based-recovery}}).  On the other hand, clients may which to make the recovery key short enough for a user to easily write it down.
+
+~~~~~~~~~~
+
+POST /acme/new-registration HTTP/1.1
+Host: example.com
+
+{
+  "resource": "new-reg",
+  "contact": [
+    "mailto:cert-admin@example.com",
+    "tel:+12025551212"
+  ],
+  "recoveryKey": {
+    "client": { "kty": "EC", ... },
+    "length": 128
+  }
+}
+/* Signed as JWS */
+
+~~~~~~~~~~
+
+The server MUST validate that the elliptic curve ("crv") and length value chosen by the client are acceptable, and that is otherwise willing to create a recovery key.  If not, then it MUST reject the new-registration request.
+
+If the server agrees to create a recovery key, then it generates its own random ECDH key pair and combines it with with the client's public key as described in {{key-agreement}} above, using the label "recovery".  The derived secret value is the recovery key.  The server then returns to the client the ECDH key that it generated.  The server MUST generate a fresh key pair for every transaction.
+
+server (required, JWK):
+: The server's ECDH public key
+
+~~~~~~~~~~
+
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: https://example.com/acme/reg/asdf
+
+{
+  "key": { /* JWK from JWS header */ },
+
+  "contact": [
+    "mailto:cert-admin@example.com",
+    "tel:+12025551212"
+  ],
+
+  "recoveryKey": {
+    "server": { "kty": "EC", ... }
+  }
+}
+
+~~~~~~~~~~
+
+On receiving the server's response, the client can compute the recovery key by combining the server's public key together with the private key corresponding to the public key that it sent to the server.
+
+Clients may refresh the recovery key associated with a registration by sending a POST request with a new recoveryKey object.  If the server agrees to refresh the recovery key, then it responds in the same way as to a new registration request that asks for a recovery key.
+
+~~~~~~~~~~
+
+POST /acme/reg/asdf HTTP/1.1
+Host: example.com
+
+{
+  "resource": "reg",
+  "recoveryKey": {
+    "client": { "kty": "EC", ... }
+  }
+}
+/* Signed as JWS */
+
+~~~~~~~~~~
+
+## Account Recovery
 
 Once a client has created an account with an ACME server, it is possible that the private key for the account will be lost.  The recovery contacts included in the registration allows the client to recover from this situtation, as long as it still has access to these contacts.
 
-{::comment}
-TODO: Re-add recoveryContact here https://github.com/letsencrypt/acme-spec/issues/136
-{:/comment}
+By "recovery", we mean that the information associated with an old account key is bound to a new account key.  When a recovery process succeeds, the server provides the client with a new registration whose contents are the same as base registration object -- except for the "key" field, which is set to the new account key.  The server reassigns resources associated with the base registration to the new registration (e.g., authorizations and certificates).  The server SHOULD delete the old registration resource after it has been used as a base for recovery.
 
-Clients may also offer implementation-specific recovery mechanisms.  For example, if a client creates account keys deterministically from a seed value, then this seed could be used to recover the account key by re-generating it.  Or an implementation could escrow an encrypted copy of the account key with a cloud storage provider, and give the encryption key to the user as a recovery value.
+In addition to the recovery mechanisms defined by ACME, individual client implementations may also offer implementation-specific recovery mechanisms.  For example, if a client creates account keys deterministically from a seed value, then this seed could be used to recover the account key by re-generating it.  Or an implementation could escrow an encrypted copy of the account key with a cloud storage provider, and give the encryption key to the user as a recovery value.
+
+### MAC-Based Recovery
+
+With MAC-based recovery, the client proves to the server that it holds a secret value established in the initial registration transaction.  The client requests MAC-based recovery by sending a MAC over the new account key, using the recovery key from the initial registration.
+
+method (required, string):
+: The string "mac"
+
+base (required, string):
+: The URI for the registration to be recovered.
+
+mac (required, string):
+: A JSON-formatted JWS object using an HMAC algorithm, whose payload is the JWK representation of the public key of the new account key pair.
+
+~~~~~~~~~~
+
+POST /acme/recover-registration HTTP/1.1
+Host: example.com
+
+{
+  "resource": "recover-reg",
+  "method": "mac",
+  "base": "https://example.com/acme/reg/asdf",
+  "mac": {
+    "header": { "alg": "HS256" },
+    "payload": base64(JWK(newAccountKey)),
+    "signature": "5wUrDI3eAaV4wl2Rfj3aC0Pp--XB3t4YYuNgacv_D3U"
+  }
+}
+/* Signed as JWS, with new account key */
+
+~~~~~~~~~~
+
+On receiving such a request the server MUST verify that:
+
+* The base registration has a recovery key associated with it
+* The "alg" value in the "mac" JWS represents a MAC algorithm
+* The "mac" JWS is valid according to the validation rules in {{RFC7515}}, using the recovery key as the MAC key
+* The JWK in the payload represents the new account key (i.e. the key used to verify the ACME message)
+
+If those conditions are met, and the recovery request is otherwise acceptable to the server, then the recovery process has succeeded.  The server creates a new registration resource based on the base registration and the new account key, and returns it on a 201 (Created) response, together with a Location header indicating a URI for the new registration.  If the recovery request is unsuccessful, the server returns an error response, such as 403 (Forbidden).
+
+~~~~~~~~~~
+
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: https://example.com/acme/reg/asdf
+Link: <https://example.com/acme/new-authz>;rel="next"
+Link: <https://example.com/acme/recover-reg>;rel="recover"
+Link: <https://example.com/acme/terms>;rel="terms-of-service"
+
+{
+  "key": { /* JWK from JWS header */ },
+
+  "contact": [
+    "mailto:cert-admin@example.com",
+    "tel:+12025551212"
+  ],
+
+  "authorizations": [...],
+  "certificate": [...]
+}
+
+~~~~~~~~~~
+
+
+
+### Contact-Based Recovery
+
+In the contact-based recovery process, the client requests that the server send a message to one of the contact URIs registered for the account.  That message indicates some action that the server requires the client's user to perform, e.g., clicking a link in an email.  If the user successfully completes the server's required actions, then the server will bind the account to the new account key.
+
+(Note that this process is almost entirely out of band with respect to ACME.  ACME only allows the client to initiate the process, and the server to indicate the result.)
+
+To initiate contact-based recovery, the client sends a POST request to the server's recover-registration URI, with a body specifying which registration is to be recovered.  The body of the request MUST be signed by the client's new account key pair.
+
+method (required, string):
+: The string "contact"
+
+base (required, string):
+: The URI for the registration to be recovered.
+
+~~~~~~~~~~
+
+POST /acme/recover-registration HTTP/1.1
+Host: example.com
+
+{
+  "resource": "recover-reg",
+  "method": "contact",
+  "base": "https://example.com/acme/reg/asdf"
+}
+/* Signed as JWS, with new account key */
+
+~~~~~~~~~~
+
+If the server agrees to attempt contact-based recovery, then it creates a new registration resource containing a stub registration object.  The stub registration has the client's new account key and anonymized contacts, in order to allow the the client to know which contacts to check.  The server returns the stub contact in a 201 (Created) response, along with a Location header field indicating the URI for the new registration resource (which will be the registration URI if the recovery succeeds).
+
+~~~~~~~~~~
+
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: https://example.com/acme/reg/qwer
+
+{
+  "key": { /* new account key from JWS header */ },
+
+  "contact": [
+    "mailto:c********n@example.com",
+    "tel:+1********12"
+  ]
+}
+
+~~~~~~~~~~
+
+After recovery has been initiated, the server follows its chosen recovery process, out-of-band to ACME.  While the recovery process is ongoing, the client may poll the registration resource's URI for status, by sending a POST request with a trivial body ({"resource":"reg"}).  If the recovery process is still pending, the server sends a 202 (Accepted) status code, and a Retry-After header field. If the recovery process has failed, the server sends an error code (e.g., 404), and SHOULD delete the stub registration resource.
+
+If the recovery process has succeeded, then the server will send a 200 (OK) response, containing the full registration object (copied from the old registration).  The client may now use this in the same way as if he had gotten it from a new-registration transaction.
+
 
 ## Authorization Resources
 

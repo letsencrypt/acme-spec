@@ -983,7 +983,27 @@ The values provided in the CSR are only a request, and are not guaranteed.  The 
 
 It is up to the server's local policy to decide which names are acceptable in a certificate, given the authorizations that the server associates with the client's account key.  A server MAY consider a client authorized for a wildcard domain if it is authorized for the underlying domain name (without the "*" label).  Servers SHOULD NOT extend authorization across identifier types.  For example, if a client is authorized for "example.com", then the server should not allow the client to issue a certificate with an iPAddress subjectAltName, even if it contains an IP address to which example.com resolves.
 
-If the CA decides to issue a certificate, then the server returns the certificate in a response with status code 201 (Created).  The server MUST indicate a URL for this certificate in a Location header field.
+If the CA decides to issue a certificate, then the server creates a new certificate resource and returns a URI for it in the Location header field of a 201 (Created) response.
+
+~~~~~~~~~~
+
+HTTP/1.1 201 Created
+Location: https://example.com/acme/cert/asdf
+
+~~~~~~~~~~
+
+If the CA has not yet issued the certificate, the body of this response will be empty.  The client should then send a GET request to the certificate URI to poll for the certificate.  As long as the certificate is unavailable, the server MUST provide a 202 (Accepted) response and include a Retry-After header to indicate when the server believes the certificate will be issued (as in the example above).
+
+~~~~~~~~~~
+
+GET /acme/cert/asdf HTTP/1.1
+Host: example.com
+Accept: application/pkix-cert
+
+HTTP/1.1 202 Accepted
+Retry-After: 120
+
+~~~~~~~~~~
 
 The default format of the certificate is DER (application/pkix-cert).  The client may request other formats by including an Accept header in its request.
 
@@ -991,21 +1011,30 @@ The server provides metadata about the certificate in HTTP headers.  In particul
 
 ~~~~~~~~~~
 
-HTTP/1.1 201 Created
+GET /acme/cert/asdf HTTP/1.1
+Host: example.com
+Accept: application/pkix-cert
+
+HTTP/1.1 200 OK
 Content-Type: application/pkix-cert
 Link: <https://example.com/acme/ca-cert>;rel="up";title="issuer"
-Link: <https://example.com/acme/revoke-cert>;rel="revoke";title="revoke-cert"
+Link: <https://example.com/acme/revoke-cert>;rel="revoke"
 Location: https://example.com/acme/cert/asdf
+Content-Location: https://example.com/acme/cert-seq/12345
 
 [DER-encoded certificate]
 
 ~~~~~~~~~~
 
-## Certificate Refresh
+## Certificate Renewal
 
-To refresh the certificate, the client simply sends a GET request to the certificate URL.  This allows the server to provide the client with updated certificates with the same content and different validity intervals, for as long as all of the authorization objects underlying the certificate are valid.
+Often, a client wishes to request a new certificate with the same contents as another certificates, but with updated notBefore and notAfter dates.  This operation is referred to as "renewal" of the certificate.
 
-If a client sends a refresh request and the server is not willing to refresh the certificate, the server MUST respond with status code 403 (Forbidden).  If the client still wishes to obtain a certificate, it can re-initiate the authorization process for any expired authorizations related to the certificate.
+If the CA allows a certificate to be renewed, then it publishes renewed versions of the certificate through the same certificate URI.  Clients retrieve renewed versions of the certificate using a GET query to the certificate URI, which the server should then return in a 200 (OK) response.  The server SHOULD provide a URI for each specific certificate in the Content-Location header field, as shown above.  Requests to specific certificate URIs MUST always result in the same certificate.
+
+To avoid unnecessary renewals, the CA may choose not to issue a renewed certificate until it receives such a request.  In such cases, if the CA requires some time to generate the new certificate, the CA MUST return a 202 (Accepted) response, with a Retry-After header field that indicates when the new certifcate will be available.  The CA MAY include the current (non-renewed) certificate as the body of the response.
+
+From the client's perspective, there is no difference between a certificate URI that allows renewal and one that does not.  If the client wishes to obtain a renewed certiifcate, and a GET request to the certficate URI does not yield one, then the client may initiate a new-certificate transaction to request one.
 
 ## Certificate Revocation
 

@@ -989,11 +989,21 @@ If the CA decides to issue a certificate, then the server creates a new certific
 
 HTTP/1.1 201 Created
 Location: https://example.com/acme/cert/asdf
-Retry-After: 120
 
 ~~~~~~~~~~
 
-If the CA has not yet issued the certificate, the body of this response will be empty.  The client should then use the certificate URI to poll for the certificate.  As long as the certificate is unavailable, the server MUST provide a 202 (Accepted) response and include a Retry-After header to indicate when the server believes the certificate will be issued (as in the example above).
+If the CA has not yet issued the certificate, the body of this response will be empty.  The client should then send a GET request to the certificate URI to poll for the certificate.  As long as the certificate is unavailable, the server MUST provide a 202 (Accepted) response and include a Retry-After header to indicate when the server believes the certificate will be issued (as in the example above).
+
+~~~~~~~~~~
+
+GET /acme/cert/asdf HTTP/1.1
+Host: example.com
+Accept: application/pkix-cert
+
+HTTP/1.1 202 Accepted
+Retry-After: 120
+
+~~~~~~~~~~
 
 The default format of the certificate is DER (application/pkix-cert).  The client may request other formats by including an Accept header in its request.
 

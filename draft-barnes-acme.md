@@ -1077,6 +1077,13 @@ Content-Language: en
 
 There are few types of identifier in the world for which there is a standardized mechanism to prove possession of a given identifier.  In all practical cases, CAs rely on a variety of means to test whether an entity applying for a certificate with a given identifier actually controls that identifier.
 
+Challenges provide the server with assurance the an account key holder is also the entity that controls an identifier.  A challenge must require that in order for an entity to successfully complete it the entity must both:
+
+* Hold the private key of the account key pair used to respond to the challenge
+* Control the identifier in question
+
+For the challenges defined in this document, these properties are discussed in {{security-considerations}}.  New challenges will need to document how they accomplish these goals.
+
 To accommodate this reality, ACME includes an extensible challenge/response framework for identifier validation.  This section describes an initial set of Challenge types.  Each challenge must describe:
 
 * Content of Challenge payloads (in Challenge messages)

@@ -49,13 +49,21 @@ normative:
   RFC5226:
   RFC5246:
   RFC5280:
+  RFC5753:
   RFC5988:
   RFC6570:
   RFC7159:
+  RFC7469:
   RFC7515:
   RFC7517:
   RFC7518:
   I-D.ietf-appsawg-http-problem:
+  SEC1:
+    target: http://www.secg.org/sec1-v2.pdf
+    title: "SEC 1: Elliptic Curve Cryptography"
+    author:
+      organization: Standards for Efficient Cryptography Group
+    date: 2009-05-01
 
 informative:
   RFC2818:
@@ -133,16 +141,15 @@ Subject Public Key:
 Account Key Pair:
 : A key pair for which the ACME server considers the holder of the private key authorized to manage certificates for a given identifier.  The same key pair may be authorized for multiple identifiers.
 
-Recovery Token:
-: A secret value that can be used to associate a new account key pair with a registration, in the event that the private key of the old account key pair is lost.
-
 ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON is a text-based format, binary fields are Base64-encoded.  For Base64 encoding, we use the variant defined in {{RFC7515}}.  The important features of this encoding are (1) that it uses the URL-safe character set, and (2) that "=" padding characters are stripped.
 
 Some HTTPS bodies in ACME are authenticated and integrity-protected by being encapsulated in a JSON Web Signature (JWS) object {{RFC7515}}.  ACME uses a profile of JWS, with the following restrictions:
 
 * The JWS MUST use the JSON or Flattened JSON Serialization
+* The JWS MUST be encoded using UTF-8
 * If the JWS is in the JSON Serialization, it MUST NOT include more than one signature in the "signatures" array
 * The JWS Header MUST include "alg" and "jwk" fields
+* The JWS MUST NOT have the value "none" in its "alg" field
 
 Additionally, JWS objects used in ACME MUST include the "nonce" and "acmePath" header field, defined below.
 
@@ -168,7 +175,7 @@ ACME allows a client to request certificate management actions using a set of JS
 
 In ACME, the account is represented by an account key pair.  The "add a domain" function is accomplished by authorizing the key pair for a given domain.  Certificate issuance and revocation are authorized by a signature with the key pair.
 
-The first phase of ACME is for the client to register with the ACME server.  The client generates an asymmetric key pair and associates this key pair with a set of contact information by signing the contact information.  The server acknowledges the registration by replying with a recovery token that the client can provide later to associate a new account key pair in the event that the first account key pair is lost.
+The first phase of ACME is for the client to register with the ACME server.  The client generates an asymmetric key pair and associates this key pair with a set of contact information by signing the contact information.  The server acknowledges the registration by replying with a registration object echoing the client's input.
 
 ~~~~~~~~~~
 
@@ -177,7 +184,7 @@ The first phase of ACME is for the client to register with the ACME server.  The
       Contact Information
       Signature                     ------->
 
-                                    <-------          Recovery Token
+                                    <-------            Registration
 
 ~~~~~~~~~~
 
@@ -239,7 +246,7 @@ To revoke a certificate, the client simply sends a revocation request, signed wi
 ~~~~~~~~~~
 
 
-Note that while ACME is defined with enough flexibility to handle different types of identifiers in principle, the primary use case addressed by this document is the case where domain names are used as identifiers.  For example, all of the identifier validation challenges described in Section {identifier-validation-challenges} below address validation of domain names.  The use of ACME for other protocols will require further specification, in order to describe how these identifiers are encoded in the protocol, and what types of validation challenges the server might require.
+Note that while ACME is defined with enough flexibility to handle different types of identifiers in principle, the primary use case addressed by this document is the case where domain names are used as identifiers.  For example, all of the identifier validation challenges described in {{identifier-validation-challenges}} below address validation of domain names.  The use of ACME for other protocols will require further specification, in order to describe how these identifiers are encoded in the protocol, and what types of validation challenges the server might require.
 
 # Certificate Management
 
@@ -250,7 +257,7 @@ In this section, we describe the certificate management functions that ACME enab
   * Certificate Issuance
   * Certificate Revocation
 
-Each of these functions is accomplished by the client sending a sequence of HTTPS requests to the server, carrying JSON messages.  Each subsection below describes the message formats used by the function, and the order in which messages are sent.
+Each of these functions is accomplished by the client sending a sequence of HTTPS requests to the server, carrying JSON messages.  Use of HTTPS is REQUIRED.  Clients SHOULD support HTTP public key pinning {{RFC7469}}, and servers SHOULD emit pinning headers.  Each subsection below describes the message formats used by the function, and the order in which messages are sent.
 
 ## Resources and Requests
 
@@ -260,31 +267,43 @@ ACME is structured as a REST application with a few types of resources:
 * Authorization resources, representing an account's authorization to act for an identifier
 * Challenge resources, representing a challenge to prove control of an identifier
 * Certificate resources, representing issued certificates
+* A "directory" resource
 * A "new-registration" resource
 * A "new-authorization" resource
 * A "new-certificate" resource
+* A "revoke-certificate" resource
+
+For the "new-X" resources above, the server MUST have exactly one resource for each function.  This resource may be addressed by multiple URIs, but all must provide equivalent functionality.
 
 In general, the intent is for authorization and certificate resources to contain only public information, so that CAs may publish these resources to document what certificates have been issued and how they were authorized.  Non-public information, such as
 contact information, is stored in registration resources.
 
-In order to accomplish ACME transactions, a client needs to have the server's new-registration, new-authorization, and new-certificate URIs; the remaining URIs are provided to the client as a result of requests to these URIs.  To simplify
-configuration, ACME uses the "next" link relation to indicate URI to contact for the next step in processing: From registration to authorization, and from authorization to certificate issuance.  In this way, a client need only be configured with the registration URI.
+ACME uses different URIs for different management functions. Each function is
+listed in a directory along with its corresponding URI, so clients only need to
+be configured with the directory URI.
 
 The "up" link relation is used with challenge resources to indicate the authorization resource to which a challenge belongs.  It is also used from certificate resources to indicate a resource from which the client may fetch a chain of CA certificates that could be used to validate the certificate in the original resource.
 
 The following diagram illustrates the relations between resources on an ACME server.  The solid lines indicate link relations, and the dotted lines correspond to relationships expressed in other ways, e.g., the Location header in a 201 (Created) response.
 
 ~~~~~~~~~~
-             "next"              "next"
-    new-reg ---+----> new-authz ---+----> new-cert    cert-chain
+
+                               directory
+                                   .
+                                   .
+       ....................................................
+       .                  .                  .            .
+       .                  .                  .            .
+       V     "next"       V      "next"      V            V
+    new-reg ---+----> new-authz ---+----> new-cert    revoke-cert
        .       |          .        |         .            ^
-       .       |          .        |         .            | "up"
+       .       |          .        |         .            | "revoke"
        V       |          V        |         V            |
       reg* ----+        authz -----+       cert-----------+
-                         . ^
-                         . | "up"
-                         V |
-                       challenge
+                         . ^                 |
+                         . | "up"            | "up"
+                         V |                 V
+                       challenge         cert-chain
 
 ~~~~~~~~~~
 
@@ -294,6 +313,22 @@ The remainder of this section provides the details of how these resources are st
 All ACME requests with a non-empty body MUST encapsulate the body in a JWS object, signed using the account key pair.  The server MUST verify the JWS before processing the request.  (For readability, however, the examples below omit this encapsulation.)  Encapsulating request bodies in JWS provides a simple authentication of requests by way of key continuity.
 
 Note that this implies that GET requests are not authenticated.  Servers MUST NOT respond to GET requests for resources that might be considered sensitive.
+
+An ACME request carries a JSON dictionary that provides the details of the client's request to the server.  In order to avoid attacks that might arise from sending a request object to an improper URI, each request object MUST have a "resource" field that indicates what type of resource the request is addressed to, as defined in the below table:
+
+| Resource type        | "resource" value |
+|:---------------------|:-----------------|
+| New registration     | new-reg          |
+| Recover registration | recover-reg      |
+| New authorization    | new-authz        |
+| New certificate      | new-cert         |
+| Revoke certificate   | revoke-cert      |
+| Registration         | reg              |
+| Authorization        | authz            |
+| Certificate          | cert             |
+| Challenge            | challenge        |
+
+Other fields in ACME request bodies are described below.
 
 The following table illustrates a typical sequence of requests required to establish a new account with the server, prove control of an identifier, issue a certificate, and fetch an updated certificate some time after issuance.  The "->" is a mnemonic for
  a Location header pointing to a created resource.
@@ -400,6 +435,52 @@ of {{RFC7515}}.  If the value of a "nonce" header parameter is not
 valid according to this encoding, then the verifier MUST reject the
 JWS as malformed.
 
+## Key Agreement
+
+Certain elements of the protocol will require the establishment of a shared secret between the client and the server, in such a way that an entity observing the ACME protocol cannot derive the secret.  In these cases, we use a simple ECDH key exchange, based on the system used by CMS {{RFC5753}}:
+
+* Inputs:
+  * Client-generated key pair
+  * Server-generated key pair
+  * Length of the shared secret to be derived
+  * Label
+* Perform the ECDH primitive operation to obtain Z (Section 3.3.1 of {{SEC1}})
+* Select a hash algorithm according to the curve being used:
+  * For "P-256", use SHA-256
+  * For "P-384", use SHA-384
+  * For "P-521", use SHA-512
+* Derive the shared secret value using the KDF in Section 3.6.1 of {{SEC1}} using Z and the selected hash algorithm, and with the UTF-8 encoding of the label as the SharedInfo value
+
+In cases where the length of the derived secret is shorter than the output length of the chosen hash algorithm, the KDF referenced above reduces to a single hash invocation.  The shared secret is equal to the leftmost octets of the following:
+
+~~~~~~~~~~
+H( Z || 00000001 || label )
+~~~~~~~~~~
+
+
+## Directory
+
+In order to help clients configure themselves with the right URLs for each ACME
+operation, ACME servers provide a directory object. This should be the root URL
+with which clients are configured. It is a JSON dictionary, whose keys are the
+"resource" values listed in {{resources-and-requests}}, and whos values are the
+URIs used to accomplish the corresponding function.
+
+Clients access the directory by sending a GET request to the directory URI. 
+
+~~~~~~~~~~
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "new-reg": "https://example.com/acme/new-reg",
+  "recover-reg": "https://example.com/acme/recover-reg",
+  "new-authz": "https://example.com/acme/new-authz",
+  "new-cert": "https://example.com/acme/new-cert",
+  "revoke-cert": "https://example.com/acme/revoke-cert"
+}
+~~~~~~~~~~
+
 ## Registration
 
 An ACME registration resource represents a set of metadata associated to an account key pair.  Registration resources have the following structure:
@@ -410,9 +491,6 @@ key (required, dictionary):
 contact (optional, array of string):
 : An array of URIs that the server can use to contact the client for issues related to this authorization. For example, the server may wish to notify the client about server-initiated revocation.
 
-recoveryToken (optional, string):
-: An opaque token that the client can present to demonstrate that it participated in a prior authorization transaction.
-
 agreement (optional, string):
 : A URI referring to a subscriber agreement or terms of service provided by the server (see below).  Including this field indicates the client's agreement with these terms.
 
@@ -422,7 +500,7 @@ authorizations (optional, string):
 certificates (optional, string):
 : A URI from which a list of certificates issued for this account can be fetched via a GET request.  The result of the GET request MUST be a JSON object whose "certificates" field is an array of strings, where each string is the URI of a certificate.  The server SHOULD NOT include expired certificates.
 
-A client creates a new account with the server by sending a POST request to the server's new-registration URI.  In most cases (except for account recovery, below), the body of the request is a registration object containing only the "contact" field.
+A client creates a new account with the server by sending a POST request to the server's new-registration URI.  The body of the request is a registration object containing only the "contact" field.
 
 ~~~~~~~~~~
 
@@ -430,6 +508,7 @@ POST /acme/new-registration HTTP/1.1
 Host: example.com
 
 {
+  "resource": "new-reg",
   "contact": [
     "mailto:cert-admin@example.com",
     "tel:+12025551212"
@@ -439,20 +518,176 @@ Host: example.com
 
 ~~~~~~~~~~
 
-The server MUST ignore any values provided in the "key" field in registration bodies sent by the client, as well as any other fields that it does not recognize.  If new fields are specified in the future, the specification of those fields MUST describe whether they may be provided by the client.
+The server MUST ignore any values provided in the "key", "authorizations", and "certificates" fields in registration bodies sent by the client, as well as any other fields that it does not recognize.  If new fields are specified in the future, the specification of those fields MUST describe whether they may be provided by the client.
 
-The server creates a registration object with the included contact information.  The "key" element of the registration is set to the public key used to verify the JWS (i.e., the "jwk" element of the JWS header).  The server also provides a random
-recovery token.  The server returns this registration object in a 201 (Created) response, with the registration URI in a Location header field.  The server MUST also indicate its new-authorization URI using the "next" link relation.
+The server creates a registration object with the included contact information.  The "key" element of the registration is set to the public key used to verify the JWS (i.e., the "jwk" element of the JWS header).  The server returns this registration object in a 201 (Created) response, with the registration URI in a Location header field.  The server MUST also indicate its new-authorization URI using the "next" link relation.
 
-If the server wishes to present the client with terms under which the ACME service is to be used, it may indicate the URI where such terms can be accessed in a Link header with link relation "terms-of-service".  As noted above, the client may indicate its
+If the server already has a registration object with the provided account key, then it MUST return a 409 (Conflict) response and provide the URI of that registration in a Location header field.  This allows a client that has an account key but not the corresponding registration URI to recover the registration URI.
+
+If the server wishes to present the client with terms under which the ACME service is to be used, it MUST indicate the URI where such terms can be accessed in a Link header with link relation "terms-of-service".  As noted above, the client may indicate its
 agreement with these terms by updating its registration to include the "agreement" field, with the terms URI as its value.
 
 ~~~~~~~~~~
 
 HTTP/1.1 201 Created
 Content-Type: application/json
-Location: https://example.com/reg/asdf
+Location: https://example.com/acme/reg/asdf
 Link: <https://example.com/acme/new-authz>;rel="next"
+Link: <https://example.com/acme/recover-reg>;rel="recover"
+Link: <https://example.com/acme/terms>;rel="terms-of-service"
+
+{
+  "key": { /* JWK from JWS header */ },
+
+  "contact": [
+    "mailto:cert-admin@example.com",
+    "tel:+12025551212"
+  ]
+}
+
+~~~~~~~~~~
+
+If the client wishes to update this information in the future, it sends a POST request with updated information to the registration URI.  The server MUST ignore any updates to the "key", "authorizations, or "certificates" fields, and MUST verify that the request is signed with the private key corresponding to the "key" field of the request before updating the registration.
+
+Servers SHOULD NOT respond to GET requests for registration resources as these requests are not authenticated.  If a client wishes to query the server for information about its account (e.g., to examine the "contact" or "certificates" fields), then it SHOULD do so by sending a POST request with an empty update.  That is, it should send a JWS whose payload is trivial ({"resource":"reg"}).
+
+### Recovery Keys
+
+If the client wishes to establish a secret key with the server that it can use to recover this account later (a "recovery key"), then it must perform a simple key agreement protocol as part of the new-registration transaction.  The client and server perform an ECDH exchange through the new-registration transaction (using the technique in {{key-agreement}}), and the result is the recovery key.
+
+To request a recovery key, the client includes a "recoveryKey" field in its new-registration request.  The value of this field is a JSON object.
+
+client (required, JWK):
+: The client's ECDH public key
+
+length (required, number):
+: The length of the derived secret, in octets.
+
+In the client's request, this object contains a JWK for a random ECDH public key generated by the client and the client-selected length value.  Clients need to choose length values that balance security and usability.  On the one hand, a longer secret makes it makes it more difficult for an attacker to recover the secret when it is used to for recovery (see {{mac-based-recovery}}).  On the other hand, clients may which to make the recovery key short enough for a user to easily write it down.
+
+~~~~~~~~~~
+
+POST /acme/new-registration HTTP/1.1
+Host: example.com
+
+{
+  "resource": "new-reg",
+  "contact": [
+    "mailto:cert-admin@example.com",
+    "tel:+12025551212"
+  ],
+  "recoveryKey": {
+    "client": { "kty": "EC", ... },
+    "length": 128
+  }
+}
+/* Signed as JWS */
+
+~~~~~~~~~~
+
+The server MUST validate that the elliptic curve ("crv") and length value chosen by the client are acceptable, and that is otherwise willing to create a recovery key.  If not, then it MUST reject the new-registration request.
+
+If the server agrees to create a recovery key, then it generates its own random ECDH key pair and combines it with with the client's public key as described in {{key-agreement}} above, using the label "recovery".  The derived secret value is the recovery key.  The server then returns to the client the ECDH key that it generated.  The server MUST generate a fresh key pair for every transaction.
+
+server (required, JWK):
+: The server's ECDH public key
+
+~~~~~~~~~~
+
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: https://example.com/acme/reg/asdf
+
+{
+  "key": { /* JWK from JWS header */ },
+
+  "contact": [
+    "mailto:cert-admin@example.com",
+    "tel:+12025551212"
+  ],
+
+  "recoveryKey": {
+    "server": { "kty": "EC", ... }
+  }
+}
+
+~~~~~~~~~~
+
+On receiving the server's response, the client can compute the recovery key by combining the server's public key together with the private key corresponding to the public key that it sent to the server.
+
+Clients may refresh the recovery key associated with a registration by sending a POST request with a new recoveryKey object.  If the server agrees to refresh the recovery key, then it responds in the same way as to a new registration request that asks for a recovery key.
+
+~~~~~~~~~~
+
+POST /acme/reg/asdf HTTP/1.1
+Host: example.com
+
+{
+  "resource": "reg",
+  "recoveryKey": {
+    "client": { "kty": "EC", ... }
+  }
+}
+/* Signed as JWS */
+
+~~~~~~~~~~
+
+## Account Recovery
+
+Once a client has created an account with an ACME server, it is possible that the private key for the account will be lost.  The recovery contacts included in the registration allows the client to recover from this situtation, as long as it still has access to these contacts.
+
+By "recovery", we mean that the information associated with an old account key is bound to a new account key.  When a recovery process succeeds, the server provides the client with a new registration whose contents are the same as base registration object -- except for the "key" field, which is set to the new account key.  The server reassigns resources associated with the base registration to the new registration (e.g., authorizations and certificates).  The server SHOULD delete the old registration resource after it has been used as a base for recovery.
+
+In addition to the recovery mechanisms defined by ACME, individual client implementations may also offer implementation-specific recovery mechanisms.  For example, if a client creates account keys deterministically from a seed value, then this seed could be used to recover the account key by re-generating it.  Or an implementation could escrow an encrypted copy of the account key with a cloud storage provider, and give the encryption key to the user as a recovery value.
+
+### MAC-Based Recovery
+
+With MAC-based recovery, the client proves to the server that it holds a secret value established in the initial registration transaction.  The client requests MAC-based recovery by sending a MAC over the new account key, using the recovery key from the initial registration.
+
+method (required, string):
+: The string "mac"
+
+base (required, string):
+: The URI for the registration to be recovered.
+
+mac (required, string):
+: A JSON-formatted JWS object using an HMAC algorithm, whose payload is the JWK representation of the public key of the new account key pair.
+
+~~~~~~~~~~
+
+POST /acme/recover-registration HTTP/1.1
+Host: example.com
+
+{
+  "resource": "recover-reg",
+  "method": "mac",
+  "base": "https://example.com/acme/reg/asdf",
+  "mac": {
+    "header": { "alg": "HS256" },
+    "payload": base64(JWK(newAccountKey)),
+    "signature": "5wUrDI3eAaV4wl2Rfj3aC0Pp--XB3t4YYuNgacv_D3U"
+  }
+}
+/* Signed as JWS, with new account key */
+
+~~~~~~~~~~
+
+On receiving such a request the server MUST verify that:
+
+* The base registration has a recovery key associated with it
+* The "alg" value in the "mac" JWS represents a MAC algorithm
+* The "mac" JWS is valid according to the validation rules in {{RFC7515}}, using the recovery key as the MAC key
+* The JWK in the payload represents the new account key (i.e. the key used to verify the ACME message)
+
+If those conditions are met, and the recovery request is otherwise acceptable to the server, then the recovery process has succeeded.  The server creates a new registration resource based on the base registration and the new account key, and returns it on a 201 (Created) response, together with a Location header indicating a URI for the new registration.  If the recovery request is unsuccessful, the server returns an error response, such as 403 (Forbidden).
+
+~~~~~~~~~~
+
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: https://example.com/acme/reg/asdf
+Link: <https://example.com/acme/new-authz>;rel="next"
+Link: <https://example.com/acme/recover-reg>;rel="recover"
 Link: <https://example.com/acme/terms>;rel="terms-of-service"
 
 {
@@ -463,28 +698,64 @@ Link: <https://example.com/acme/terms>;rel="terms-of-service"
     "tel:+12025551212"
   ],
 
-  "recoveryToken": "uV2Aph7-sghuCcFVmvsiZw"
+  "authorizations": [...],
+  "certificate": [...]
 }
 
 ~~~~~~~~~~
 
-If the client wishes to update this information in the future, it sends a POST request with updated information to the registration URI.  The server MUST ignore any updates to the "key" or "recoveryToken" fields, and MUST verify that the request is signed
-with the private key corresponding to the "key" field of the request before updating the registration.
-
-Servers SHOULD NOT respond to GET requests for registration resources as these requests are not authenticated.  If a client wishes to query the server for information about its account (e.g., to examine the "contact" or "certificates" fields), then it SHOULD do so by sending a POST request with an empty update.  That is, it should send a JWS whose payload is the empty JSON dictionary ("{}").
 
 
-### Account Recovery
+### Contact-Based Recovery
 
-Once a client has created an account with an ACME server, it is possible that the private key for the account will be lost.  The recovery token included in the registration allows the client to recover from this situtation, as long as it still has the recovery token.
+In the contact-based recovery process, the client requests that the server send a message to one of the contact URIs registered for the account.  That message indicates some action that the server requires the client's user to perform, e.g., clicking a link in an email.  If the user successfully completes the server's required actions, then the server will bind the account to the new account key.
 
-A client may ask to associate a new key pair with its account by including the recovery token in its new-registration request.  If a server receives such a request with a recovery token corresponding to a known account, then it MUST replace the public key in the old registration (corresponding to the recovery token) with the JWK used to sign the recovery request.  The server MUST consider the old public key to be no longer valid for this account.
+(Note that this process is almost entirely out of band with respect to ACME.  ACME only allows the client to initiate the process, and the server to indicate the result.)
 
-{::comment}
-TODO: Re-add recoveryContact here https://github.com/letsencrypt/acme-spec/issues/136
-{:/comment}
+To initiate contact-based recovery, the client sends a POST request to the server's recover-registration URI, with a body specifying which registration is to be recovered.  The body of the request MUST be signed by the client's new account key pair.
 
-Client implementers should note that recovery tokens are very powerful.  If they are exposed to unauthorized parties, then that party will be able to hijack the corresponding account, enabling it to issue certificates under any authorizations on the account.  Improper use of a recovery token can cause legitimate account keys to be invalidate.  Client implementations should thus provide adequate safeguards around storage and use of recovery tokens.
+method (required, string):
+: The string "contact"
+
+base (required, string):
+: The URI for the registration to be recovered.
+
+~~~~~~~~~~
+
+POST /acme/recover-registration HTTP/1.1
+Host: example.com
+
+{
+  "resource": "recover-reg",
+  "method": "contact",
+  "base": "https://example.com/acme/reg/asdf"
+}
+/* Signed as JWS, with new account key */
+
+~~~~~~~~~~
+
+If the server agrees to attempt contact-based recovery, then it creates a new registration resource containing a stub registration object.  The stub registration has the client's new account key and anonymized contacts, in order to allow the the client to know which contacts to check.  The server returns the stub contact in a 201 (Created) response, along with a Location header field indicating the URI for the new registration resource (which will be the registration URI if the recovery succeeds).
+
+~~~~~~~~~~
+
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: https://example.com/acme/reg/qwer
+
+{
+  "key": { /* new account key from JWS header */ },
+
+  "contact": [
+    "mailto:c********n@example.com",
+    "tel:+1********12"
+  ]
+}
+
+~~~~~~~~~~
+
+After recovery has been initiated, the server follows its chosen recovery process, out-of-band to ACME.  While the recovery process is ongoing, the client may poll the registration resource's URI for status, by sending a POST request with a trivial body ({"resource":"reg"}).  If the recovery process is still pending, the server sends a 202 (Accepted) status code, and a Retry-After header field. If the recovery process has failed, the server sends an error code (e.g., 404), and SHOULD delete the stub registration resource.
+
+If the recovery process has succeeded, then the server will send a 200 (OK) response, containing the full registration object (copied from the old registration).  The client may now use this in the same way as if he had gotten it from a new-registration transaction.
 
 
 ## Authorization Resources
@@ -513,13 +784,13 @@ expires (optional, string):
 : The date after which the server will consider this authorization invalid, encoded in the format specified in RFC 3339 {{RFC3339}}.
 
 challenges (required, array):
-: The challenges that the client needs to fulfill in order to prove possession of the identifier (for pending authorizations).  For final authorizations, the challenges that were used.  Each array entry is a dictionary with parameters required to validate the challenge, as specified in Section {identifier-validation-challenges}.
+: The challenges that the client needs to fulfill in order to prove possession of the identifier (for pending authorizations).  For final authorizations, the challenges that were used.  Each array entry is a dictionary with parameters required to validate the challenge, as specified in {{identifier-validation-challenges}}.
 
 combinations (optional, array of arrays of integers):
 : A collection of sets of challenges, each of which would be sufficient to prove possession of the identifier. Clients complete a set of challenges that that covers at least one set in this array. Challenges are identified by their indices in the challenges array.  If no "combinations" element is included in an authorization object, the client completes all challenges.
 
 
-The only type of identifier defined by this specification is a fully-qualified domain name (type: "dns").  The value of the identifier MUST be the ASCII representation of the domain name.
+The only type of identifier defined by this specification is a fully-qualified domain name (type: "dns").  The value of the identifier MUST be the ASCII representation of the domain name.  Wildcard domain names (with "*" as the first label) MUST NOT be included in authorization requests.  See {{certificate-issuance}} below for more information about wildcard domains.
 
 ~~~~~~~~~~
 
@@ -571,6 +842,7 @@ POST /acme/new-authorization HTTP/1.1
 Host: example.com
 
 {
+  "resource": "new-authz",
   "identifier": {
     "type": "dns",
     "value": "example.org"
@@ -639,13 +911,14 @@ POST /acme/authz/asdf/0 HTTP/1.1
 Host: example.com
 
 {
+  "resource": "authz",
   "path": "Hf5GrX4Q7EBax9hc2jJnfw"
 }
 /* Signed as JWS */
 
 ~~~~~~~~~~
 
-The server updates the authorization document by updating its representation of the challenge with the response fields provided by the client.  The server MUST ignore any fields in the response object that are not specified as response fields for this type of challenge.  The server provides a 200 response including the updated challenge.
+The server updates the authorization document by updating its representation of the challenge with the response fields provided by the client.  The server MUST ignore any fields in the response object that are not specified as response fields for this type of challenge.  The server provides a 200 (OK) response including the updated challenge.
 
 Presumably, the client's responses provide the server with enough information to validate one or more challenges.  The server is said to "finalize" the authorization when it has completed all the validations it is going to complete, and assigns the authorization a status of "valid" or "invalid", corresponding to whether it considers the account authorized for the identifier.  If the final state is "valid", the server MUST add an "expires" field to the authorization.  When finalizing an authorization, the server MAY remove the "combinations" field (if present) or remove any unfulfilled challenges.
 
@@ -697,44 +970,77 @@ Host: example.com
 Accept: application/pkix-cert
 
 {
+  "resource": "new-cert",
   "csr": "5jNudRx6Ye4HzKEqT5...FS6aKdZeGsysoCo4H9P",
 }
 /* Signed as JWS */
 
 ~~~~~~~~~~
 
-The CSR encodes the client's requests with regard to the content of the certificate to be issued.  The CSR MUST contain at least one extensionRequest attribute {{RFC2985}} requesting a subjectAltName extension, containing the requested identifiers.
+The CSR encodes the client's requests with regard to the content of the certificate to be issued.  The CSR MUST indicate the requested identifiers, either in the commonName portion of the requested subject name, or in an extensionRequest attribute {{RFC2985}} requesting a subjectAltName extension.
 
 The values provided in the CSR are only a request, and are not guaranteed.  The server or CA may alter any fields in the certificate before issuance.  For example, the CA may remove identifiers that are not authorized for the account key that signed the request.
 
-If the CA decides to issue a certificate, then the server returns the certificate in a response with status code 201 (Created).  The server MUST indicate a URL for this certificate in a Location header field.
+It is up to the server's local policy to decide which names are acceptable in a certificate, given the authorizations that the server associates with the client's account key.  A server MAY consider a client authorized for a wildcard domain if it is authorized for the underlying domain name (without the "*" label).  Servers SHOULD NOT extend authorization across identifier types.  For example, if a client is authorized for "example.com", then the server should not allow the client to issue a certificate with an iPAddress subjectAltName, even if it contains an IP address to which example.com resolves.
 
-The default format of the certificate is DER (application/pkix-cert).  The client may request other formats by including an Accept header in its request.
-
-The server can provide metadata about the certificate in HTTP headers.  For example, the server can include a Link relation header field {{RFC5988}} with relation "up" to provide a certificate under which this certificate was issued.  Or the server can include an Expires header as a hint to the client about when to re-query to refresh the certificate.  (Of course, the real expiration of the certificate is controlled by the notAfter time in the certificate itself.)
+If the CA decides to issue a certificate, then the server creates a new certificate resource and returns a URI for it in the Location header field of a 201 (Created) response.
 
 ~~~~~~~~~~
 
 HTTP/1.1 201 Created
+Location: https://example.com/acme/cert/asdf
+
+~~~~~~~~~~
+
+If the CA has not yet issued the certificate, the body of this response will be empty.  The client should then send a GET request to the certificate URI to poll for the certificate.  As long as the certificate is unavailable, the server MUST provide a 202 (Accepted) response and include a Retry-After header to indicate when the server believes the certificate will be issued (as in the example above).
+
+~~~~~~~~~~
+
+GET /acme/cert/asdf HTTP/1.1
+Host: example.com
+Accept: application/pkix-cert
+
+HTTP/1.1 202 Accepted
+Retry-After: 120
+
+~~~~~~~~~~
+
+The default format of the certificate is DER (application/pkix-cert).  The client may request other formats by including an Accept header in its request.
+
+The server provides metadata about the certificate in HTTP headers.  In particular, the server MUST include a Link relation header field {{RFC5988}} with relation "up" to provide a certificate under which this certificate was issued.  The server MAY also include an Expires header as a hint to the client about when to renew the certificate.  (Of course, the real expiration of the certificate is controlled by the notAfter time in the certificate itself.)
+
+~~~~~~~~~~
+
+GET /acme/cert/asdf HTTP/1.1
+Host: example.com
+Accept: application/pkix-cert
+
+HTTP/1.1 200 OK
 Content-Type: application/pkix-cert
 Link: <https://example.com/acme/ca-cert>;rel="up";title="issuer"
+Link: <https://example.com/acme/revoke-cert>;rel="revoke"
 Location: https://example.com/acme/cert/asdf
+Content-Location: https://example.com/acme/cert-seq/12345
 
 [DER-encoded certificate]
 
 ~~~~~~~~~~
 
-## Certificate Refresh
+## Certificate Renewal
 
-To refresh the certificate, the client simply sends a GET request to the certificate URL.  This allows the server to provide the client with updated certificates with the same content and different validity intervals, for as long as all of the authorization objects underlying the certificate are valid.
+Often, a client wishes to request a new certificate with the same contents as another certificates, but with updated notBefore and notAfter dates.  This operation is referred to as "renewal" of the certificate.
 
-If a client sends a refresh request and the server is not willing to refresh the certificate, the server MUST respond with status code 403 (Forbidden).  If the client still wishes to obtain a certificate, it can re-initiate the authorization process for any expired authorizations related to the certificate.
+If the CA allows a certificate to be renewed, then it publishes renewed versions of the certificate through the same certificate URI.  Clients retrieve renewed versions of the certificate using a GET query to the certificate URI, which the server should then return in a 200 (OK) response.  The server SHOULD provide a URI for each specific certificate in the Content-Location header field, as shown above.  Requests to specific certificate URIs MUST always result in the same certificate.
+
+To avoid unnecessary renewals, the CA may choose not to issue a renewed certificate until it receives such a request.  In such cases, if the CA requires some time to generate the new certificate, the CA MUST return a 202 (Accepted) response, with a Retry-After header field that indicates when the new certifcate will be available.  The CA MAY include the current (non-renewed) certificate as the body of the response.
+
+From the client's perspective, there is no difference between a certificate URI that allows renewal and one that does not.  If the client wishes to obtain a renewed certiifcate, and a GET request to the certficate URI does not yield one, then the client may initiate a new-certificate transaction to request one.
 
 ## Certificate Revocation
 
 To request that a certificate be revoked, the client sends a POST request to
-/acme/revoke-cert.  The body of the POST is a JWS object whose JSON payload
-contains the certificate to be revoked:
+the ACME server's revoke-cert URI.  The body of the POST is a JWS object whose
+JSON payload contains the certificate to be revoked:
 
 certificate (required, string):
 : The DER form of the certificate, Base64-encoded using the JOSE Base64 variant.
@@ -745,6 +1051,7 @@ POST /acme/revoke-cert HTTP/1.1
 Host: example.com
 
 {
+  "resource": "revoke-cert",
   "certificate": "MIIEDTCCAvegAwIBAgIRAP8..."
 }
 /* Signed as JWS */
@@ -846,7 +1153,18 @@ token (required, string):
 
 ~~~~~~~~~~
 
-A client responds to this Challenge by provisioning the token as a resource on the HTTP server for the domain in question.  The path at which the resource is provisioned is determined by the client, but MUST begin with ".well-known/acme-challenge/".  The content type of the resource MUST be "text/plain".  The client returns the part of the path coming after that prefix in its Response message.
+A client responds to this challenge by signing a JWS object and provisioning it as a resource on the HTTP server for the domain in question.  The payload of the JWS MUST be a JSON dictionary containing the fields "type", "token", "path", and "tls" from the ACME challenge and response, and no other fields.  The JWS MUST be signed with the client's account key pair, and MUST meet the guidelines laid out in {{terminology}} above.
+
+~~~~~~~~~~
+{
+  "type": "simpleHttp",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
+  "path": "6tbIMBC5Anhl5bOlWT5ZFA",
+  "tls": false,
+}
+~~~~~~~~~~
+
+The path at which the resource is provisioned is determined by the client, but MUST begin with ".well-known/acme-challenge/".  The content type of the resource, if provided, MUST be "application/jose+json".  In addition to expressing the path in the JWS as described above, the client returns the part of the path coming after that prefix in its Response message.
 
 type (required, string):
 : The string "simpleHttp"
@@ -864,6 +1182,7 @@ tls (optional, boolean, default true):
   "path": "6tbIMBC5Anhl5bOlWT5ZFA",
   "tls": false
 }
+/* Signed as JWS */
 
 ~~~~~~~~~~
 
@@ -875,10 +1194,19 @@ Given a Challenge/Response pair, the server verifies the client's control of the
   * the path field is the path provided in the response.
 2. Verify that the resulting URI is well-formed.
 3. Dereference the URI using an HTTP or HTTPS GET request.  If using HTTPS, the ACME server MUST ignore the certificate provided by the HTTPS server.
-4. Verify that the Content-Type header of the response is either absent, or has the value "text/plain"
-5. Compare the entity body of the response with the nonce.  This comparison MUST be performed in terms of Unicode code points, taking into account the encodings of the stored nonce and the body of the request.
+4. Verify that the Content-Type header of the response is either absent, or has the value "application/jose+json"
+5. Verify that the body of the response is a valid JWS of the type indicated by the Content-Type header (if present), signed with the client's account key
+6. Verify that the payload of the JWS meets the following criteria:
+  * It is a valid JSON dictionary
+  * It has exactly four fields
+  * Its "type" field is set to "simpleHttp"
+  * Its "token" field is equal to the "token" field in the challenge
+  * Its "path" field is equal to the "path" field in the response
+  * Its "tls" field is equal to the "tls" field in the response, or "true" if the "tls" field was absent
 
-If the GET request succeeds and the entity body is equal to the token, then the validation is successful.  If the request fails, or the body does not exactly match the token, then it has failed.
+Comparisons of the "path" and "token" fields MUST be performed in terms of Unicode code points, taking into account the encodings of the stored nonce and the body of the request.
+
+If all of the above verifications succeed, then the validation is successful.  If the request fails, or the body does not pass these checks, then it has failed.
 
 ## Domain Validation with Server Name Indication
 

@@ -1077,12 +1077,12 @@ Content-Language: en
 
 There are few types of identifier in the world for which there is a standardized mechanism to prove possession of a given identifier.  In all practical cases, CAs rely on a variety of means to test whether an entity applying for a certificate with a given identifier actually controls that identifier.
 
-Challenges provide the server with assurance the an account key holder is also the entity that controls an identifier.  A challenge must require that in order for an entity to successfully complete it the entity must both:
+Challenges provide the server with assurance the an account key holder is also the entity that controls an identifier.  For each type of challenge, it must be the case that in order for an entity to successfully complete it the entity must both:
 
 * Hold the private key of the account key pair used to respond to the challenge
 * Control the identifier in question
 
-For the challenges defined in this document, these properties are discussed in {{security-considerations}}.  New challenges will need to document how they accomplish these goals.
+{{security-considerations}} documents how the challenges defined in this document meet these requirements.  New challenges will need to document how they do.
 
 To accommodate this reality, ACME includes an extensible challenge/response framework for identifier validation.  This section describes an initial set of Challenge types.  Each challenge must describe:
 
@@ -1450,10 +1450,10 @@ TODO
 
 # Security Considerations
 
-ACME is a protocol for managing certificate that attest to identifier/key bindings.  Thus the foremost security goal of ACME is to ensure the integrity of this process.  ACME identifies clients by their account keys, so this overall goal breaks down into two more precise goals:
+ACME is a protocol for managing certificates that attest to identifier/key bindings.  Thus the foremost security goal of ACME is to ensure the integrity of this process, i.e., to ensure that the bindings attested by certificates are correct, and that only authorized entities can manage certificates.  ACME identifies clients by their account keys, so this overall goal breaks down into two more precise goals:
 
 1. Only an entity that controls a identifier can get an account key authorized for that identifier
-2. A certificate can only be managed by the holder of an account key authorized for the identifiers in the certifcate
+2. Once authorized, an account key's authorizations cannot be improperly transferred to another account key
 
 In this section, we discuss the threat model that underlies ACME and the ways that ACME achieves these security goals within that threat model.  We also discuss the denial-of-service risks that ACME servers face, and a few other miscellaneous considerations.
 
@@ -1481,49 +1481,60 @@ As a service on the Internet, ACME broadly exists within the Internet threat mod
 +------------+
 ~~~~~~~~~~
 
-In practice, the risks to these channels are not entirely separate, but they are different in most cases.  For example, a CDN employed by the ACME server might be able to tampler with a ACME messages, but not read the client's email (contact channel) or change DNS records for the client's domain names (validation channel).  
+In practice, the risks to these channels are not entirely separate, but they are different in most cases.  Each of the three channels, for example, uses a different communications pattern: the ACME channel will comprise inbound HTTPS connections to the ACME server, the validation channel outbound HTTP or DNS requests, and the contact channel will use channels such as email and PSTN.
 
 Broadly speaking, ACME aims to be secure against active and passive attackers on any individual channel.  Some vulnerabilities arise (noted below), when an attacker can exploit both the ACME channel and one of the others.
 
-On the ACME channel, in addition to network-layer attackers, we also try to defeat an application-layer man in the middle.  Having protections for this case allows an ACME-enabled CA to make use of intermediaries such as Content Distribution Networks (CDNs) with minimal risk.  It also provides defense in depth, e.g., to address cases where a client is behind a middlebox that acts as a man in the middle.
+On the ACME channel, in addition to network-layer attackers, we also need to account for application-layer man in the middle attacks, and for abusive use of the protocol itself.  Protection against application-layer MitM addresses potential attackers such as Content Distribution Networks (CDNs) and middleboxes with a TLS MitM function.  Preventing abusive use of ACME means ensuring that an attacker with access to the validation or contact channels can't obtain illegitimate authorization by acting as an ACME client (legitimately, in terms of the protocol).
 
 ## Integrity of Authorizations
 
-ACME allows anyone to request challenges for an identifier, by registering an account key and sending a new-authorization request under that account key.  The integrity of the authorization process thus depends on the identifier validation challenges to ensure that the challenge can only be completed by someone who both (1) holds the private key of the account key pair, and (2) controls the identifier in question.
+ACME allows anyone to request challenges for an identifier by registering an account key and sending a new-authorization request under that account key.  The integrity of the authorization process thus depends on the identifier validation challenges to ensure that the challenge can only be completed by someone who both (1) holds the private key of the account key pair, and (2) controls the identifier in question.
+
+Validation resposnes need to be bound to an account key pair in order to avoid situations where an ACME MitM can switch out a legitimate domain holder's account key for one of his choosing, e.g.:
+
+* Legitimate domain holder registers account key pair A
+* MitM registers account key pair B
+* Legitimate domain holder sends a new-authorization request signed under account key A
+* MitM suppresses the legitimate request, but sends the same request signed under account key B
+* ACME server issues challenges and MitM forwards them to the legitimate domain holder
+* Legitimate domain holder provisions the validation response
+* ACME server performs validation query and sees the response provisioned by the legitimate domain holder
+* Because the challenges were issued in response to a message signed account key B, the ACME server grants authoriztion to account key B (the MitM) instead of account key A (the legitimate domain holder)
 
 All of the challenges above that require an out-of-band query by the server have a binding to the account private key, such that the only the account private key holder can successfully respond to the validation query:
 
 * Simple HTTP: The value provided in the validation request is signed by the account private key.
 * DVSNI: The validation TLS request uses the account key pair as the server's key pair.
-* DNS: The MAC key is derived from an ECDH key for which only the account key holder knows the private key.
+* DNS: The MAC covers the account key, and the MAC key is derived from an ECDH public key signed with the accont private key.
+* Proof of possession of a prior key: The signature by the prior key covers the account public key.
 
-The "proof of possession" challenge, which requires no out-of-band query, is bound to an account key by having the prior key sign over the account public key, assuring that the signature cannot be replayed to authorize a different account key.
+The association of challenges to identifiers is typically done by requiring the client to perform some action that only someone who effectively controls the identifier can perform.  For the challenges in this document, the actions are:
 
-The association of challenges to identifiers is typically done by requiring the client to respond to a validation query through a channel that only someon in control of the identifier can access.  Thus, each challenge makes an assumption about the underlying channel:
+* Simple HTTP: Provision files under .well-known on a web server for the domain
+* DVSNI: Configure a TLS server for the domain
+* DNS: Provision DNS resource records for the domain
+* Proof of possession of a prior key: Sign using the private key specified by the server
 
-* Simple HTTP: Only the domain owner can provision files under .well-known on a web server for the domain
-* DVSNI: Only the domain owner can configure a TLS server for the domain
-* DNS: Only the domain owner can provision records for the domain
+There are several ways that these assumptions can be violated, both by misconfiguration and by attack.  For example, on a web server that allows non-administrative users to write to .well-known, any user can claim to own the server's hostname by responding to a Simple HTTP challenge, and likewise for TLS configuration and DVSNI.
 
-There are several ways that these assumptions can be violated, both by misconfiguration and by attack.  For example, on a web server that allows non-administrative users to write to .well-known, any user can claim to own the server's hostname by responding to a Simple HTTP challenge.
+The use of hosting providers is a particular risk for ACME validation.  If the owner of the domain has outsourced operation of DNS or web services to a hosting provider, there is nothing that can be done against tampering by the hosting provider.  As far as the outside world is concerned, the zone or web site provided by the hosting provider is the real thing.
 
 The DNS is a common point of vulnerability for all of these challenges.  An entity that can provision false DNS records for a domain can attack the DNS challenge directly, and can provision false A/AAAA records to direct the ACME server to send its DVSNI or Simple HTTP validation query to a server of the attacker's choosing.  There are a few different mitigations that ACME servers can apply:
 
-* Checking the DNSSEC status of DNS records used in ACME validation
+* Checking the DNSSEC status of DNS records used in ACME validation (for zones that are DNSSEC-enabled)
 * Querying the DNS from multiple vantage points to address local attackers
 * Performing DNS queries only over TCP, to require an on-path attacker
 
-Of course, if the owner of the domain has outsourced operation of the zone to a hosting provider, there is nothing that can be done against tampering by the hosting provider, since as far as the outside world is concerned, the zone provided by the hosting provider is the real zone.
-
 Given these considerations, the ACME validation process makes it impossible for any attacker on the ACME channel, or a passive attacker on the validation channel to hijack the authorization process to authorize a key of the attacker's choice.
 
-An attacker that can only see the ACME channel can't even generate a validation response that would satisfy the server, because of the binding to the account key.  A passive attacker on the validation channel can observe the correct validation response and even replay it, but that response can only be used with the account key for which it was generated.
+An attacker that can only see the ACME channel would need to convince the validation server to provide a response that would authorize the attacker's account key, but this is prevented by binding the validation response to the account key used to request challenges.  A passive attacker on the validation channel can observe the correct validation response and even replay it, but that response can only be used with the account key for which it was generated.
 
-An active attacker on the validation channel can subvert the ACME process, by performing normal ACME transactions and providing a validation response for his own account key.  For identifiers where the server already has some credential associated with the domain, however, this attack can be prevented by requiring the client to complete a proof-of-possession challenge.
+An active attacker on the validation channel can subvert the ACME process, by performing normal ACME transactions and providing a validation response for his own account key.  The risks due to hosting providers noted above are a particular case.  For identifiers where the server already has some credential associated with the domain this attack can be prevented by requiring the client to complete a proof-of-possession challenge.
 
 ## Preventing Authorization Hijacking
 
-To first order, ACME assures that only authorized entities can manage certificates by requiring that a client's request for a management action be signed with an account key, and checking the authorizations attached to the account key.  The question is then whether the account recovery processes described in {{account-recovery}} can be exploited by an attacker to hijack the authorizations attached to one key and assign them to a key of the attacker's choosing.
+The account recovery processes described in {{account-recovery}} allow authorization to be transferred from one account key to another, in case the former account key pair's private key is lost.  ACME needs to prevent these processes from being exploited by an attacker to hijack the authorizations attached to one key and assign them to a key of the attacker's choosing.
 
 Recovery takes place in two steps:
 1. Provisioning recovery information (contact or recovery key)
@@ -1531,11 +1542,9 @@ Recovery takes place in two steps:
 
 The provisioning process needs to ensure that only the account key holder ends up with information that is useful for recovery.  The recovery process needs to assure that only the (now former) account key holder can successfully execute recovery, i.e., that this entity is the only one that can choose the new account key that receives the capabilities held by the account being recovered.
 
-MAC-based recovery only needs to assure these properties in the face of an ACME man in the middle.  MAC-based recovery only uses the ACME channel, and that channel is protected from network attackers by the use of HTTPS.
+MAC-based recovery can be performed if the attacker knows the account key and registration URI for the account being recovered.  Both of these are difficult to obtain for a network attacker, because ACME usess HTTPS), though if the recovery key and registration URI are sufficiently preductable, the attacker might be able to guess them.  An ACME MitM can see the registration URI, but still has to guess the recovery key, since neitherthe ECDH in the provisioning phase nor HMAC in the recovery phase will reveal it to him.
 
-In provisioning for MAC-based recovery, the recovery key is only accessible to the account private key holder, because it depends on the private ECDH key generated by that entity.  Even though an ACME MitM can observe the key agreement messages in the "recoveryKey" field of the registration transaction, the use of ECDH prevents him from learning the recovery key.
-
-Likewise, the use of HMAC in the MAC-based recovery process proves to the server that the requestor has the recovery key without exposing the recovery key.  The fact that the MAC covers the new account key means the ACME MitM can't replay it to authorize a key of his choosing.
+ACME clients can thus mitigate problems with MAC-based recovery by using long recovery keys.  ACME servers should enforce a minimum recovery key length, and impose rate limits on recovery to limit an attacker's ability to test different guesses about the recovery key.
 
 Contact-based recovery uses both the ACME channel and the contact channel.  The provisioning process is only visible to an ACME MitM, and even then, the MitM can only observe the contact information provided.  If the ACME attacker does not also have access to the contact channel, there is no risk.
 
@@ -1557,7 +1566,9 @@ At the application layer, ACME requires the server to perform a few potentially 
 * Identifier validation transactions require outbound connections to potentially attacker-controlled servers
 * Certificate issuance can require interactions with cryptographic hardware
 
-All of these can be mitigated by the application of appropriate rate limits.  Issues closer to the front end, like POST body validation, cna be addressed using HTTP request limiting.  For validation and certificate requests, there are other identifiers on which rate limits can be keyed.  For example, the server might limit the rate at which any individual account key can issue certificates, or the rate at which validation can be requested within a given subtree of the DNS.
+An attacker can also cause the ACME server to send validation requests to a domain of its choosing by submitting authorization requests for the victim domain.
+
+All of these attacks can be mitigated by the application of appropriate rate limits.  Issues closer to the front end, like POST body validation, can be addressed using HTTP request limiting.  For validation and certificate requests, there are other identifiers on which rate limits can be keyed.  For example, the server might limit the rate at which any individual account key can issue certificates, or the rate at which validation can be requested within a given subtree of the DNS.
 
 
 ## CA Policy Considerations

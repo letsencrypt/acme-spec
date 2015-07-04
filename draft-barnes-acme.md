@@ -466,7 +466,7 @@ with which clients are configured. It is a JSON dictionary, whose keys are the
 "resource" values listed in {{resources-and-requests}}, and whos values are the
 URIs used to accomplish the corresponding function.
 
-Clients access the directory by sending a GET request to the directory URI. 
+Clients access the directory by sending a GET request to the directory URI.
 
 ~~~~~~~~~~
 HTTP/1.1 200 OK
@@ -1245,7 +1245,7 @@ The client responds to this Challenge by configuring a TLS server on the chosen 
 2. Compute a nonce domain name by appending the suffix ".acme.invalid" to the nonce provided by the server.
 3. Configure the TLS server such that when a client presents the nonce domain name in the SNI field, the server presents the generated certificate.
 
-The client SHOULD introduce its own entropy into each certificates (e.g. using a random serial number.)
+The client SHOULD introduce its own entropy into each certificates (e.g. include a random serial number).
 
 The client's responds with the desired port and key used within the certificate.:
 

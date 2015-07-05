@@ -1016,9 +1016,9 @@ Often, a client wishes to request a new certificate with the same contents as an
 
 If the CA allows a certificate to be renewed, then it publishes renewed versions of the certificate through the same certificate URI.  Clients retrieve renewed versions of the certificate using a GET query to the certificate URI, which the server should then return in a 200 (OK) response.  The server SHOULD provide a URI for each specific certificate in the Content-Location header field, as shown above.  Requests to specific certificate URIs MUST always result in the same certificate.
 
-To avoid unnecessary renewals, the CA may choose not to issue a renewed certificate until it receives such a request.  In such cases, if the CA requires some time to generate the new certificate, the CA MUST return a 202 (Accepted) response, with a Retry-After header field that indicates when the new certifcate will be available.  The CA MAY include the current (non-renewed) certificate as the body of the response.
+To avoid unnecessary renewals, the CA may choose not to issue a renewed certificate until it receives such a request.  In such cases, if the CA requires some time to generate the new certificate, the CA MUST return a 202 (Accepted) response, with a Retry-After header field that indicates when the new certificate will be available.  The CA MAY include the current (non-renewed) certificate as the body of the response.
 
-From the client's perspective, there is no difference between a certificate URI that allows renewal and one that does not.  If the client wishes to obtain a renewed certiifcate, and a GET request to the certficate URI does not yield one, then the client may initiate a new-certificate transaction to request one.
+From the client's perspective, there is no difference between a certificate URI that allows renewal and one that does not.  If the client wishes to obtain a renewed certificate, and a GET request to the certificate URI does not yield one, then the client may initiate a new-certificate transaction to request one.
 
 ## Certificate Revocation
 
@@ -1524,7 +1524,7 @@ The DNS is a common point of vulnerability for all of these challenges.  An enti
 
 * Checking the DNSSEC status of DNS records used in ACME validation (for zones that are DNSSEC-enabled)
 * Querying the DNS from multiple vantage points to address local attackers
-* Performing DNS queries only over TCP, to require an on-path attacker
+* Applying mitigations against DNS off-path attackers, e.g., adding entropy to requests {{I-D.vixie-dnsext-dns0x20}} or only using TCP
 
 Given these considerations, the ACME validation process makes it impossible for any attacker on the ACME channel, or a passive attacker on the validation channel to hijack the authorization process to authorize a key of the attacker's choice.
 

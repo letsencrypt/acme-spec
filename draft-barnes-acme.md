@@ -375,10 +375,10 @@ to clients, and requiring any signed request from the client to carry
 such a nonce.
 
 An ACME server MUST include an Replay-Nonce header field in each
-successful response to a POST it provides to a client, with contents as specified
-below.  It MAY also provide one in an error response.  The value
-provided in this header MUST be unique to this response, with high
-probability.
+successful response it provides to a client, with contents as specified
+below.  It MAY also provide one in an error response.  Providing nonces
+in response to all requests enables a client to obtain a fresh nonce
+by sending a HEAD requests to any ACME resource.
 
 Every JWS sent by an ACME client MUST include, in its protected
 header, the "nonce" and "acmePath" header parameters, with contents

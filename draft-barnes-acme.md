@@ -1280,7 +1280,7 @@ If the server presents a certificate matching all of the above criteria, then th
 
 ## Proof of Possession of a Prior Key
 
-The Proof of Possession challenge verifies that a client possesses a private key corresponding to a server-specified public key, as demonstrated by its ability to correctly sign server-provided data with that key.
+The Proof of Possession challenge verifies that a client possesses a private key corresponding to a server-specified public key, as demonstrated by its ability to sign with that key.
 
 This method is useful if a server policy calls for issuing a certificate only to an entity that already possesses the subject private key of a particular prior related certificate (perhaps issued by a different CA).  It may also help enable other kinds of server policy that are related to authenticating a client's identity using digital signatures.
 
@@ -1291,110 +1291,97 @@ The server provides the following fields as part of the challenge:
 type (required, string):
 : The string "proofOfPossession"
 
-alg (required, string):
-: A token indicating the cryptographic algorithm that should be used by the client to compute the signature {{RFC7518}}.  (MAC algorithms such as "HS*" MUST NOT be used.)  The client MUST verify that this algorithm is supported for the indicated key before responding to this challenge.
-
-nonce (required, string):
-: A random 16-byte octet string, Base64-encoded
+identifier (required, identifier):
+: The ACME identifier for which authorization is being validated
 
 hints (required, object):
 : A JSON object that contains various clues for the client about what the requested key is, such that the client can find it.  Entries in the hints object may include:
 
-jwk (required, object):
-: A JSON Web Key object describing the public key whose corresponding private key should be used to generate the signature {{RFC7517}}
+  jwks (required, array of JWK):
+  : A JSON Web Key object describing acceptable public keys
 
-certFingerprints (optional, array):
-: An array of certificate fingerprints, hex-encoded SHA1 hashes of DER-encoded certificates that are known to contain this key
+  certs (optional, array of string):
+  : An array of certificates, in Base64-encoded DER format, that contain acceptable public keys.
 
-certs (optional, array):
-: An array of certificates, in Base64-encoded DER format, that contain acceptable public keys.
-
-subjectKeyIdentifiers (optional, array):
-: An array of hex-encoded Subject Key Identifiers (SKIDs) from certificate(s) that contain the key.  Because of divergences in the way that SKIDs are calculated {{RFC5280}}, there may conceivably be more than one of these.
-
-serialNumbers (optional, array of numbers):
-: An array of serial numbers of certificates that are known to contain the requested key
-
-issuers (optional, array):
-: An array of X.509 Distinguished Names {{RFC5280}} of CAs that have been observed to issue certificates for this key, in text form {{RFC4514}}
-
-authorizedFor (optional, array):
-: An array of domain names, if any, for which this server regards the key as an ACME Authorized key.
 
 ~~~~~~~~~~
 
 {
   "type": "proofOfPossession",
-  "alg": "RS256",
-  "nonce": "eET5udtV7aoX8Xl8gYiZIA",
-  "hints" : {
+  "hints": {
     "jwk": {
-        "kty": "RSA",
-        "e": "AQAB",
-        "n": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ"
+      "kty": "RSA",
+      "e": "AQAB",
+      "n": "AMswMT...3aVtjE"
     },
-    "certFingerprints": [
-      "93416768eb85e33adc4277f4c9acd63e7418fcfe",
-      "16d95b7b63f1972b980b14c20291f3c0d1855d95",
-      "48b46570d9fc6358108af43ad1649484def0debf"
-    ],
-    "subjectKeyIdentifiers":  [
-      "d0083162dcc4c8a23ecb8aecbd86120e56fd24e5"
-    ],
-    "serialNumbers": [34234239832, 23993939911, 17],
-    "issuers": [
-      "C=US, O=SuperT LLC, CN=SuperTrustworthy Public CA",
-      "O=LessTrustworthy CA Inc, CN=LessTrustworthy But StillSecure"
-    ],
-    "authorizedFor": ["www.example.com", "example.net"]
+    "certs": ["MIIF7z...bYVQLY"]
   }
 }
 
 ~~~~~~~~~~
 
-In this case the server is challenging the client to prove its control over the private key that corresponds to the public key specified in the jwk object.  The signing algorithm is specified by the alg field.  The nonce value is used by the server to identify this challenge and is also used, also with a client-provided signature nonce, as part of the signature input.
+In response to this challenge, client uses the private key corresponding to one of the acceptable public keys to sign a JWS object including data related to the challenge.  The validation object covered by the signature has the following fields:
+
+type (required, string):
+: The string "proofOfPossession"
+
+identifiers (required, identifier):
+: A list of identifiers for which the holder of the prior key authorizes the new key
+
+accountKey (required, JWK):
+: The client's account public key
 
 ~~~~~~~~~~
-
-      signature-input = signature-nonce || server-nonce
-
+{
+  "type": "proofOfPossession",
+  "identifiers: [{"type": "dns", "value": "example.com"}],
+  "accountKey": { "kty": "RSA", ... }
+}
 ~~~~~~~~~~
+
+This JWS is NOT REQUIRED to have a "nonce" header parameter (as with the JWS objects that carry ACME request objects).  This allows proof-of-possession response objects to be computed off-line.  For example, as part of a domain transfer, the new domain owner might require the old domain owner to sign a proof-of-possession validation object, so that the new domain owner can present that in an ACME transaction later.
+
+The validation JWS MUST contain a "jwk" header parameter indicating the public key under which the server should verify the JWS.
 
 The client's response includes the server-provided nonce, together with a signature over that nonce by one of the private keys requested by the server.
 
 type (required, string):
 : The string "proofOfPossession"
 
-nonce (required, string):
-: The server nonce that the server previously associated with this challenge
-
-signature (required, object):
-: The ACME signature computed over the signature-input using the server-specified algorithm
-
+authorization (required, JWS):
+: The validation JWS
 
 ~~~~~~~~~~
 
 {
   "type": "proofOfPossession",
-  "nonce": "eET5udtV7aoX8Xl8gYiZIA",
-  "signature": {
-    "alg": "RS256",
-    "nonce": "eET5udtV7aoX8Xl8gYiZIA",
-    "sig": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ",
-    "jwk": {
-      "kty": "RSA",
-      "e": "AQAB",
-      "n": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ"
-    }
+  "authorization": {
+    "header": {
+      "alg": "RS256",
+      "jwk": {
+        "kty": "RSA",
+        "e": "AQAB",
+        "n": "AMswMT...3aVtjE"
+      }
+    },
+    "payload": "SfiR1...gSAl7A",
+    "signature": "XcQLfL...cW5beg"
   }
 }
 
 ~~~~~~~~~~
 
-Note that just as in the authorizationRequest message, there are two nonces here, once provided by the client (inside the signature object) and one provided by the server in its challenge (outside the signature object).  The signature covers the concatenation of these two nonces (as specified in the signature-input above).
+To validate a proof-of-possession challenge, the server performs the following steps:
 
-If the server is able to validate the signature and confirm that the jwk and alg objects are unchanged from the original challenge, the server can conclude that the client is in control of the private key that corresponds to the specified public key.  The server can use this evidence in support of its authorization and certificate issuance policies.
+1. Verify that the public key in the "jwk" header of the "authorization" JWS is one of the keys listed in the challenge's "hints" section
+2. Verify the "authorization" JWS using the key indicated in its "jwk" header
+3. Decode the payload of the JWS as UTF-8 encoded JSON
+4. Verify that there are exactly three fields in the decoded object, and that:
+  * The "type" field is set to "proofOfPossession"
+  * The "identifier" field contains the identifier for which authorization is being validated
+  * The "accountKey" field matches the account key for which the challenge was issued
 
+If all of the above verifications succeed, then the validation is successful.  Otherwise, the validation fails.
 
 ## DNS
 

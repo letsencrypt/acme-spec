@@ -2,7 +2,7 @@
 title: "Automatic Certificate Management Environment (ACME)"
 abbrev: ACME
 docname: draft-barnes-acme-03
-date: 2014-09-01
+date: 2015-07-06
 category: std
 ipr: trust200902
 

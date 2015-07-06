@@ -1614,51 +1614,80 @@ certificate is presented.
 type (required, string):
 : The string "dvsni"
 
-nonce (required, string):
+token (required, string):
 : A random 16-byte octet string, hex-encoded
 
 ~~~~~~~~~~
 {
   "type": "dvsni",
-  "nonce": "a82d5ff8ef740d12881f6d3c2277ab2e",
+  "token": "a82d5ff8ef740d12881f6d3c2277ab2e",
 }
 ~~~~~~~~~~
 
-The client must generate a self-signed certificate containing a subjectAltName
-extension with a single dNSName value of "\<nonce\>.acme.invalid".  The client
-will then configure the TLS server at the domain such that when a handshake is
-initiated with the Server Name Indication extension set to
-"\<nonce\>.acme.invalid", the generated test certificate is presented.
-
-The client SHOULD introduce its own entropy into each certificate (e.g. include
-a random serial number).
-
-The client responds with the fingerprint of the certificate.
+In response to the challenge, the client uses its account private key to sign a
+JWS over a JSON object describing the challenge.  The validation object covered
+by the signature MUST have the following fields and no others:
 
 type (required, string):
 : The string "dvsni"
 
-fingerprint (required, string):
+token (required, string):
+: A random 16-byte octet string, hex-encoded
+
+~~~~~~~~~~
+{
+  "type": "dvsni",
+  "token": "a82d5ff8ef740d12881f6d3c2277ab2e",
+}
+~~~~~~~~~~
+
+The client serializes the validation object to UTF-8, then uses its account
+private key to sign a JWS with the serialized JSON object as its payload. This
+JWS is NOT REQUIRED to have the "nonce" header parameter.
+
+The client will generate a self-signed certificate with the subject's
+organizationName field set to the "signature" value from the JWS, i.e., the
+base64-encoded signature value and a subjectAlternativeName extension containing
+a single dNSName of "\<token\>.acme.invalid".  The client will then configure
+the TLS server at the domain such that when a handshake is initiated with the
+Server Name Indication extension set to "\<token\>.acme.invalid", the generated
+test certificate is presented.
+
+The response to the DVSNI challenge provides the validation JWS to the server.
+
+type (required, string):
+: The string "dvsni"
+
+validation (required, string):
 : Base64-encoded SHA-256 hash of the DER-encoded challenge certificate
 
 ~~~~~~~~~~
 {
   "type": "dvsni",
-  "fingerprint": "RX7hhbXBsZSBDZXJ0aWZpY2F0ZSBGaW5nZXJwcmludA"
+  "validation": {
+    "header": { "alg": "HS256" },
+    "payload": "qzu9...6bjn",
+    "signature": "gfj9XqFv07e1wU66hSLYkiFqYakPSjAu8TsyXRg85nM"
+  }
 }
 ~~~~~~~~~~
 
 Given a Challenge/Response pair, the ACME server verifies the client's control
 of the domain by verifying that the TLS server was configured appropriately.
 
-1. Open a TLS connection to the domain name being validated on port 443,
-presenting the value "\<nonce\>.acme.invalid" in the SNI field.
-2. Verify the following properties of the certificate provided by the TLS server:
-  * It is a valid self-signed certificate
-  * The SHA-256 fingerprint of the DER-encoded challenge certificate equals
-    the fingerprint within the client response.
+1. Verify the validation JWS using the account key for which the challenge was
+   issued
+2. Decode the payload of the JWS as UTF-8 encoded JSON
+3. Verfiy that there are exactly two fields in the decoded object, and that:
+  * The "type" field is set to "dvsni"
+  * The "token" field matches the "token" value in the challenge
+4. Open a TLS connection to the domain name being validated on port 443,
+   presenting the value "\<token\>.acme.invalid" in the SNI field.
+5. Verify the following properties of the certificate provided by the TLS server:
+  * The organizationName field in the subject matches the "signature" value in
+    the "validation" JWS
   * The certificate contains a single subjectAltName of the form
-    "\<nonce\>.acme.invalid".
+    "\<token\>.acme.invalid".
 
 It is RECOMMENDED that the ACME server verify the challenge certificate using
 multi-path probing techniques to reduce the risk of DNS hijacking attacks.

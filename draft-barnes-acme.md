@@ -1551,23 +1551,23 @@ Contact-based recovery uses both the ACME channel and the contact channel.  The 
 
 The security of the contact-based recovery process is entirely dependent on the security of the contact channel.  The details of this will depend on the specific out-of-band technique used by the server.  For example:
 
-* If the server requires a user to click a link in a message sent to a contact address, then the contact channel will need to provide confidentiality and authenticity (of the destination) in order to be secure.  Otherwise, a passive attacker could see the link and click it first, or an active attacker could redirect the message.
-* If the server requires a user to respond to a message sent to a contact address, then the contact channel will need to provide source and destination authenticity.  Otherwise an active attacker can spoof a message from the contact address.
+* If the server requires a user to click a link in a message sent to a contact address, then the contact channel will need to ensure that the message is only available to the legitimate owner of the contact address.  Otherwise, a passive attacker could see the link and click it first, or an active attacker could redirect the message.
+* If the server requires a user to respond to a message sent to a contact address, then the contact channel will need to ensure that an attacker cannot spoof messages from the contact address.
 
-Operators of servers should consider these risks in designing contact-based recovery techniques.  Servers should choose recovery techniques that are robust in the face of interference with the contact channel, and should agree to do recovery only for contacts that provide a minimum level of security.
+In practice, many contact channels that can be used to reach many clients do not
+provide strong assurances of the types noted above.  In designing and deploying
+contact-based recovery schemes, ACME servers operators will need to find an
+appropriate balance between using contact channels that can reach many clients
+and using contact-based recovery schemes that acheive an appropriate level of
+risk using those contact channels.
 
 ## Denial-of-Service Considerations
 
 As a protocol run over HTTPS, standard considerations for TCP-based and HTTP-based DoS mitigation also apply to ACME.
 
-At the application layer, ACME requires the server to perform a few potentially expensive operations:
+At the application layer, ACME requires the server to perform a few potentially expensive operations.  Identifier validation transactions require the ACME server to make outbound connections to potentially attacker-controlled servers, and certificate issuance can require interactions with cryptographic hardware.
 
-* Every POST request requires public-key signature verification
-* New-registration requests that ask for a recovery key require an ECDH computation
-* Identifier validation transactions require outbound connections to potentially attacker-controlled servers
-* Certificate issuance can require interactions with cryptographic hardware
-
-An attacker can also cause the ACME server to send validation requests to a domain of its choosing by submitting authorization requests for the victim domain.
+In addition, an attacker can also cause the ACME server to send validation requests to a domain of its choosing by submitting authorization requests for the victim domain.
 
 All of these attacks can be mitigated by the application of appropriate rate limits.  Issues closer to the front end, like POST body validation, can be addressed using HTTP request limiting.  For validation and certificate requests, there are other identifiers on which rate limits can be keyed.  For example, the server might limit the rate at which any individual account key can issue certificates, or the rate at which validation can be requested within a given subtree of the DNS.
 

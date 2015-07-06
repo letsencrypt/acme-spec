@@ -15,7 +15,7 @@ author:
     name: Richard Barnes
     org: Mozilla
     email: rlb@ipv.sx
- - 
+ -
     ins: J. Hoffman-Andrews
     name: Jacob Hoffman-Andrews
     org: EFF
@@ -34,7 +34,6 @@ normative:
   RFC2986:
   RFC3339:
   RFC3986:
-  RFC4366:
   RFC4514:
   RFC4648:
   RFC5226:
@@ -42,6 +41,7 @@ normative:
   RFC5280:
   RFC5753:
   RFC5988:
+  RFC6066:
   RFC6570:
   RFC7159:
   RFC7469:
@@ -1606,10 +1606,11 @@ failed.
 
 The Domain Validation with Server Name Indication (DVSNI) validation method
 proves control over a domain name by requiring the client to configure a TLS
-server to respond to specific connection attempts utilizing the Server Name
-Indication extension {{RFC4366}}. The server verifies the client's challenge by
-accessing the created TLS server and verifying a particular challenge
-certificate is presented.
+server referenced by an A/AAAA record under the domain name to respond to
+specific connection attempts utilizing the Server Name Indication extension
+{{RFC6066}}. The server verifies the client's challenge by accessing the
+reconfigured server and verifying a particular challenge certificate is
+presented.
 
 type (required, string):
 : The string "dvsni"
@@ -1642,16 +1643,16 @@ token (required, string):
 ~~~~~~~~~~
 
 The client serializes the validation object to UTF-8, then uses its account
-private key to sign a JWS with the serialized JSON object as its payload. This
+private key to sign a JWS with the serialized JSON object as its payload.  This
 JWS is NOT REQUIRED to have the "nonce" header parameter.
 
 The client will generate a self-signed certificate with the subject's
 organizationName field set to the "signature" value from the JWS, i.e., the
-base64-encoded signature value and a subjectAlternativeName extension containing
-a single dNSName of "\<token\>.acme.invalid".  The client will then configure
-the TLS server at the domain such that when a handshake is initiated with the
-Server Name Indication extension set to "\<token\>.acme.invalid", the generated
-test certificate is presented.
+base64-encoded signature value, and a subjectAlternativeName extension
+containing a single dNSName of "\<token\>.acme.invalid".  The client will then
+configure the TLS server at the domain such that when a handshake is initiated
+with the Server Name Indication extension set to "\<token\>.acme.invalid", the
+generated test certificate is presented.
 
 The response to the DVSNI challenge provides the validation JWS to the server.
 
@@ -1659,7 +1660,7 @@ type (required, string):
 : The string "dvsni"
 
 validation (required, string):
-: Base64-encoded SHA-256 hash of the DER-encoded challenge certificate
+: The JWS object computed on the validation object
 
 ~~~~~~~~~~
 {
@@ -1689,11 +1690,11 @@ of the domain by verifying that the TLS server was configured appropriately.
   * The certificate contains a single subjectAltName of the form
     "\<token\>.acme.invalid".
 
-It is RECOMMENDED that the ACME server verify the challenge certificate using
-multi-path probing techniques to reduce the risk of DNS hijacking attacks.
+It is RECOMMENDED that the ACME server validation TLS connections from multiple
+vantage points to reduce the risk of DNS hijacking attacks.
 
-If the server presents a certificate matching all of the above criteria, then
-the validation is successful.  Otherwise, the validation fails.
+If all of the above verifications succeed, then the validation is successful.
+Otherwise, the validation fails.
 
 ## Proof of Possession of a Prior Key
 

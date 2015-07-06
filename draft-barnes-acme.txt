@@ -5,10 +5,10 @@
 Network Working Group                                          R. Barnes
 Internet-Draft                                                   Mozilla
 Intended status: Standards Track                      J. Hoffman-Andrews
-Expires: March 5, 2015                                               EFF
+Expires: January 7, 2016                                             EFF
                                                                J. Kasten
                                                   University of Michigan
-                                                      September 01, 2014
+                                                           July 06, 2015
 
 
           Automatic Certificate Management Environment (ACME)
@@ -43,19 +43,19 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on March 5, 2015.
+   This Internet-Draft will expire on January 7, 2016.
 
 Copyright Notice
 
-   Copyright (c) 2014 IETF Trust and the persons identified as the
+   Copyright (c) 2015 IETF Trust and the persons identified as the
    document authors.  All rights reserved.
 
 
 
 
-Barnes, et al.            Expires March 5, 2015                 [Page 1]
+Barnes, et al.           Expires January 7, 2016                [Page 1]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    This document is subject to BCP 78 and the IETF Trust's Legal
@@ -109,9 +109,9 @@ Table of Contents
 
 
 
-Barnes, et al.            Expires March 5, 2015                 [Page 2]
+Barnes, et al.           Expires January 7, 2016                [Page 2]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
      9.5.  CA Policy Considerations  . . . . . . . . . . . . . . . .  53
@@ -165,9 +165,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                 [Page 3]
+Barnes, et al.           Expires January 7, 2016                [Page 3]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    systems because it inhibits mechanization of tasks related to
@@ -221,9 +221,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                 [Page 4]
+Barnes, et al.           Expires January 7, 2016                [Page 4]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
       configuration.)  The ACME client might prompt the operator for
@@ -277,9 +277,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                 [Page 5]
+Barnes, et al.           Expires January 7, 2016                [Page 5]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    Account Key Pair:  A key pair for which the ACME server considers the
@@ -333,9 +333,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                 [Page 6]
+Barnes, et al.           Expires January 7, 2016                [Page 6]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    contact information.  The server acknowledges the registration by
@@ -389,9 +389,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                 [Page 7]
+Barnes, et al.           Expires January 7, 2016                [Page 7]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
          Client                                                  Server
@@ -445,9 +445,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                 [Page 8]
+Barnes, et al.           Expires January 7, 2016                [Page 8]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    Note that while ACME is defined with enough flexibility to handle
@@ -501,9 +501,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                 [Page 9]
+Barnes, et al.           Expires January 7, 2016                [Page 9]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
                 +----------------------+------------------+
@@ -557,9 +557,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 10]
+Barnes, et al.           Expires January 7, 2016               [Page 10]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    authorizations (optional, string):  A URI from which a list of
@@ -613,9 +613,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 11]
+Barnes, et al.           Expires January 7, 2016               [Page 11]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    expires (optional, string):  The date after which the server will
@@ -669,9 +669,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 12]
+Barnes, et al.           Expires January 7, 2016               [Page 12]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
 5.4.  Errors
@@ -725,9 +725,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 13]
+Barnes, et al.           Expires January 7, 2016               [Page 13]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
 5.5.  Replay protection
@@ -781,9 +781,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 14]
+Barnes, et al.           Expires January 7, 2016               [Page 14]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    The Replay-Nonce header field SHOULD NOT be included in HTTP request
@@ -837,9 +837,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 15]
+Barnes, et al.           Expires January 7, 2016               [Page 15]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    In cases where the length of the derived secret is shorter than the
@@ -893,9 +893,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 16]
+Barnes, et al.           Expires January 7, 2016               [Page 16]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    For the "new-X" resources above, the server MUST have exactly one
@@ -949,9 +949,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 17]
+Barnes, et al.           Expires January 7, 2016               [Page 17]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
           +--------------------+----------------+--------------+
@@ -1005,9 +1005,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 18]
+Barnes, et al.           Expires January 7, 2016               [Page 18]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    POST /acme/new-registration HTTP/1.1
@@ -1061,9 +1061,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 19]
+Barnes, et al.           Expires January 7, 2016               [Page 19]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    HTTP/1.1 201 Created
@@ -1117,9 +1117,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 20]
+Barnes, et al.           Expires January 7, 2016               [Page 20]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    In the client's request, this object contains a JWK for a random ECDH
@@ -1173,9 +1173,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 21]
+Barnes, et al.           Expires January 7, 2016               [Page 21]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    HTTP/1.1 201 Created
@@ -1229,9 +1229,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 22]
+Barnes, et al.           Expires January 7, 2016               [Page 22]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    By "recovery", we mean that the information associated with an old
@@ -1285,9 +1285,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 23]
+Barnes, et al.           Expires January 7, 2016               [Page 23]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    POST /acme/recover-reg HTTP/1.1
@@ -1341,9 +1341,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 24]
+Barnes, et al.           Expires January 7, 2016               [Page 24]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    HTTP/1.1 201 Created
@@ -1397,9 +1397,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 25]
+Barnes, et al.           Expires January 7, 2016               [Page 25]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    POST /acme/recover-reg HTTP/1.1
@@ -1453,9 +1453,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 26]
+Barnes, et al.           Expires January 7, 2016               [Page 26]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
 6.5.  Identifier Authorization
@@ -1509,9 +1509,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 27]
+Barnes, et al.           Expires January 7, 2016               [Page 27]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    (Forbidden) error, with a problem document describing the reason for
@@ -1565,9 +1565,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 28]
+Barnes, et al.           Expires January 7, 2016               [Page 28]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    HTTP/1.1 201 Created
@@ -1621,9 +1621,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 29]
+Barnes, et al.           Expires January 7, 2016               [Page 29]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    For example, if the client were to respond to the "simpleHttp"
@@ -1677,9 +1677,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 30]
+Barnes, et al.           Expires January 7, 2016               [Page 30]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    GET /acme/authz/asdf HTTP/1.1
@@ -1733,9 +1733,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 31]
+Barnes, et al.           Expires January 7, 2016               [Page 31]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    POST /acme/new-cert HTTP/1.1
@@ -1789,9 +1789,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 32]
+Barnes, et al.           Expires January 7, 2016               [Page 32]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    GET /acme/cert/asdf HTTP/1.1
@@ -1845,9 +1845,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 33]
+Barnes, et al.           Expires January 7, 2016               [Page 33]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    To avoid unnecessary renewals, the CA may choose not to issue a
@@ -1901,9 +1901,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 34]
+Barnes, et al.           Expires January 7, 2016               [Page 34]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    If the revocation succeeds, the server responds with status code 200
@@ -1957,9 +1957,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 35]
+Barnes, et al.           Expires January 7, 2016               [Page 35]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    o  How the server uses the Challenge and Response to verify control
@@ -2013,9 +2013,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 36]
+Barnes, et al.           Expires January 7, 2016               [Page 36]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    o  Domain with a cert from this CA, lost account key: DV + PoP of
@@ -2069,9 +2069,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 37]
+Barnes, et al.           Expires January 7, 2016               [Page 37]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    request objects), but MUST otherwise meet the guidelines laid out in
@@ -2125,9 +2125,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 38]
+Barnes, et al.           Expires January 7, 2016               [Page 38]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
        *  the domain field is set to the domain name being verified; and
@@ -2181,9 +2181,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 39]
+Barnes, et al.           Expires January 7, 2016               [Page 39]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    client's challenge by accessing the reconfigured server and verifying
@@ -2237,9 +2237,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 40]
+Barnes, et al.           Expires January 7, 2016               [Page 40]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    {
@@ -2293,9 +2293,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 41]
+Barnes, et al.           Expires January 7, 2016               [Page 41]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
 7.3.  Proof of Possession of a Prior Key
@@ -2349,9 +2349,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 42]
+Barnes, et al.           Expires January 7, 2016               [Page 42]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    {
@@ -2405,9 +2405,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 43]
+Barnes, et al.           Expires January 7, 2016               [Page 43]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    {
@@ -2461,9 +2461,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 44]
+Barnes, et al.           Expires January 7, 2016               [Page 44]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    containing a designated value under a specific validation domain
@@ -2517,9 +2517,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 45]
+Barnes, et al.           Expires January 7, 2016               [Page 45]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    validation (required, JWS):  The JWS object computed with the
@@ -2573,9 +2573,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 46]
+Barnes, et al.           Expires January 7, 2016               [Page 46]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    o  Create identifier validation method registry
@@ -2629,9 +2629,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 47]
+Barnes, et al.           Expires January 7, 2016               [Page 47]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    +------------+
@@ -2685,9 +2685,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 48]
+Barnes, et al.           Expires January 7, 2016               [Page 48]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    Validation resposnes need to be bound to an account key pair in order
@@ -2741,9 +2741,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 49]
+Barnes, et al.           Expires January 7, 2016               [Page 49]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    o  Simple HTTP: Provision files under .well-known on a web server for
@@ -2797,9 +2797,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 50]
+Barnes, et al.           Expires January 7, 2016               [Page 50]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    passive attacker on the validation channel can observe the correct
@@ -2853,9 +2853,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 51]
+Barnes, et al.           Expires January 7, 2016               [Page 51]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    and even then, the MitM can only observe the contact information
@@ -2909,9 +2909,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 52]
+Barnes, et al.           Expires January 7, 2016               [Page 52]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    which rate limits can be keyed.  For example, the server might limit
@@ -2965,9 +2965,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 53]
+Barnes, et al.           Expires January 7, 2016               [Page 53]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    o  Martin Thomson, Mozilla
@@ -3021,9 +3021,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 54]
+Barnes, et al.           Expires January 7, 2016               [Page 54]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    [RFC5246]  Dierks, T. and E. Rescorla, "The Transport Layer Security
@@ -3077,9 +3077,9 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 55]
+Barnes, et al.           Expires January 7, 2016               [Page 55]
 
-Internet-Draft                    ACME                    September 2014
+Internet-Draft                    ACME                         July 2015
 
 
    [RFC3552]  Rescorla, E. and B. Korver, "Guidelines for Writing RFC
@@ -3133,4 +3133,4 @@ Authors' Addresses
 
 
 
-Barnes, et al.            Expires March 5, 2015                [Page 56]
+Barnes, et al.           Expires January 7, 2016               [Page 56]

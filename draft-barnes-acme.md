@@ -328,84 +328,18 @@ The use of ACME for other protocols will require further specification, in order
 to describe how these identifiers are encoded in the protocol, and what types of
 validation challenges the server might require.
 
-# Certificate Management
+# Protocol Elements
 
-In this section, we describe the certificate management functions that ACME
-enables:
+In this section, we describe several components that are used by ACME, and
+general rules that apply to ACME transactions.
 
-  * Registration
-  * Key Authorization
-  * Certificate Issuance
-  * Certificate Revocation
+## HTTPS Requests
 
-Each of these functions is accomplished by the client sending a sequence of
+Each ACME function is accomplished by the client sending a sequence of
 HTTPS requests to the server, carrying JSON messages.  Use of HTTPS is REQUIRED.
 Clients SHOULD support HTTP public key pinning {{RFC7469}}, and servers SHOULD
 emit pinning headers.  Each subsection below describes the message formats used
 by the function, and the order in which messages are sent.
-
-## Resources and Requests
-
-ACME is structured as a REST application with a few types of resources:
-
-* Registration resources, representing information about an account
-* Authorization resources, representing an account's authorization to act for an
-  identifier
-* Challenge resources, representing a challenge to prove control of an
-  identifier
-* Certificate resources, representing issued certificates
-* A "directory" resource
-* A "new-registration" resource
-* A "new-authorization" resource
-* A "new-certificate" resource
-* A "revoke-certificate" resource
-
-For the "new-X" resources above, the server MUST have exactly one resource for
-each function.  This resource may be addressed by multiple URIs, but all must
-provide equivalent functionality.
-
-In general, the intent is for authorization and certificate resources to contain
-only public information, so that CAs may publish these resources to document
-what certificates have been issued and how they were authorized.  Non-public
-information, such as contact information, is stored in registration resources.
-
-ACME uses different URIs for different management functions. Each function is
-listed in a directory along with its corresponding URI, so clients only need to
-be configured with the directory URI.
-
-The "up" link relation is used with challenge resources to indicate the
-authorization resource to which a challenge belongs.  It is also used from
-certificate resources to indicate a resource from which the client may fetch a
-chain of CA certificates that could be used to validate the certificate in the
-original resource.
-
-The following diagram illustrates the relations between resources on an ACME
-server.  The solid lines indicate link relations, and the dotted lines
-correspond to relationships expressed in other ways, e.g., the Location header
-in a 201 (Created) response.
-
-~~~~~~~~~~
-                               directory
-                                   .
-                                   .
-       ....................................................
-       .                  .                  .            .
-       .                  .                  .            .
-       V     "next"       V      "next"      V            V
-    new-reg ---+----> new-authz ---+----> new-cert    revoke-cert
-       .       |          .        |         .            ^
-       .       |          .        |         .            | "revoke"
-       V       |          V        |         V            |
-      reg* ----+        authz -----+       cert-----------+
-                         . ^                 |
-                         . | "up"            | "up"
-                         V |                 V
-                       challenge         cert-chain
-~~~~~~~~~~
-
-
-The remainder of this section provides the details of how these resources are
-structured and how the ACME protocol makes use of them.
 
 All ACME requests with a non-empty body MUST encapsulate the body in a JWS
 object, signed using the account key pair.  The server MUST verify the JWS
@@ -585,6 +519,80 @@ the following:
 H( Z || 00000001 || label )
 ~~~~~~~~~~
 
+# Certificate Management
+
+In this section, we describe the certificate management functions that ACME
+enables:
+
+  * Account Key Registration
+  * Account Recovery
+  * Account Key Authorization
+  * Certificate Issuance
+  * Certificate Renewal
+  * Certificate Revocation
+
+## Resources
+
+ACME is structured as a REST application with a few types of resources:
+
+* Registration resources, representing information about an account
+* Authorization resources, representing an account's authorization to act for an
+  identifier
+* Challenge resources, representing a challenge to prove control of an
+  identifier
+* Certificate resources, representing issued certificates
+* A "directory" resource
+* A "new-registration" resource
+* A "new-authorization" resource
+* A "new-certificate" resource
+* A "revoke-certificate" resource
+
+For the "new-X" resources above, the server MUST have exactly one resource for
+each function.  This resource may be addressed by multiple URIs, but all must
+provide equivalent functionality.
+
+In general, the intent is for authorization and certificate resources to contain
+only public information, so that CAs may publish these resources to document
+what certificates have been issued and how they were authorized.  Non-public
+information, such as contact information, is stored in registration resources.
+
+ACME uses different URIs for different management functions. Each function is
+listed in a directory along with its corresponding URI, so clients only need to
+be configured with the directory URI.
+
+The "up" link relation is used with challenge resources to indicate the
+authorization resource to which a challenge belongs.  It is also used from
+certificate resources to indicate a resource from which the client may fetch a
+chain of CA certificates that could be used to validate the certificate in the
+original resource.
+
+The following diagram illustrates the relations between resources on an ACME
+server.  The solid lines indicate link relations, and the dotted lines
+correspond to relationships expressed in other ways, e.g., the Location header
+in a 201 (Created) response.
+
+~~~~~~~~~~
+                               directory
+                                   .
+                                   .
+       ....................................................
+       .                  .                  .            .
+       .                  .                  .            .
+       V     "next"       V      "next"      V            V
+    new-reg ---+----> new-authz ---+----> new-cert    revoke-cert
+       .       |          .        |         .            ^
+       .       |          .        |         .            | "revoke"
+       V       |          V        |         V            |
+      reg* ----+        authz -----+       cert-----------+
+                         . ^                 |
+                         . | "up"            | "up"
+                         V |                 V
+                       challenge         cert-chain
+~~~~~~~~~~
+
+
+The remainder of this section provides the details of how these resources are
+structured and how the ACME protocol makes use of them.
 
 ## Directory
 
@@ -1887,7 +1895,7 @@ To validate a DNS challenge, the server performs the following steps:
 1. Verify the validation JWS using the account key for which this challenge was
    issued
 2. Decode the payload of the JWS as UTF-8 encoded JSON
-3. Verify that the there are exactly two fields in the decoded object, and that:
+3. Verify that there are exactly two fields in the decoded object, and that:
   * The "type" field is set to "dns"
   * The "token" field matches the "token" value in the challenge
 4. Query for TXT records under the validation domain name

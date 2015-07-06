@@ -1255,7 +1255,7 @@ Given a Challenge/Response pair, the ACME server verifies the client's control o
 1. Open a TLS connection to the domain name being validated on port 443, presenting the value "\<nonce\>.acme.invalid" in the SNI field.
 2. Verify the following properties of the certificate provided by the TLS server:
   * It is a valid self-signed certificate
-  * The certificate SHA-256 fingerprint of the DER-encoded challenge certificate equals the one provided by the client.
+  * The SHA-256 fingerprint of the DER-encoded challenge certificate equals the fingerprint within the client response.
   * The certificate contains a single subjectAltName of the form "\<nonce\>.acme.invalid".
 
 It is RECOMMENDED that the ACME server verify the challenge certificate using multi-path probing techniques to reduce the risk of DNS hijacking attacks.

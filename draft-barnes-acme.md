@@ -712,10 +712,10 @@ structured and how the ACME protocol makes use of them.
 
 ## Directory
 
-In order to help clients configure themselves with the right URLs for each ACME
+In order to help clients configure themselves with the right URIs for each ACME
 operation, ACME servers provide a directory object. This should be the root URL
 with which clients are configured. It is a JSON dictionary, whose keys are the
-"resource" values listed in {{resources-and-requests}}, and whos values are the
+"resource" values listed in {{https-requests}}, and whose values are the
 URIs used to accomplish the corresponding function.
 
 Clients access the directory by sending a GET request to the directory URI.
@@ -910,7 +910,7 @@ Host: example.com
 
 Once a client has created an account with an ACME server, it is possible that
 the private key for the account will be lost.  The recovery contacts included in
-the registration allows the client to recover from this situtation, as long as
+the registration allows the client to recover from this situation, as long as
 it still has access to these contacts.
 
 By "recovery", we mean that the information associated with an old account key
@@ -1039,7 +1039,7 @@ Host: example.com
 If the server agrees to attempt contact-based recovery, then it creates a new
 registration resource containing a stub registration object.  The stub
 registration has the client's new account key and anonymized contacts, in order
-to allow the the client to know which contacts to check.  The server returns the
+to allow the client to know which contacts to check.  The server returns the
 stub contact in a 201 (Created) response, along with a Location header field
 indicating the URI for the new registration resource (which will be the
 registration URI if the recovery succeeds).
@@ -2190,7 +2190,7 @@ certificate applicant controls the identifier he claims.  Before issuing a
 certificate, however, there are many other checks that a CA might need to
 perform, for example:
 
-* Has the client agreed to a subcriber agreement?
+* Has the client agreed to a subscriber agreement?
 * Is the claimed identifier syntactically valid?
 * For domain names:
   * If the leftmost label is a '*', then have the appropriate checks been

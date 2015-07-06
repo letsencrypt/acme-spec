@@ -1280,7 +1280,7 @@ If the server presents a certificate matching all of the above criteria, then th
 
 ## Proof of Possession of a Prior Key
 
-The Proof of Possession challenge verifies that a client possesses a private key corresponding to a server-specified public key, as demonstrated by its ability to sign with that key.
+The Proof of Possession challenge verifies that a client possesses a private key corresponding to a server-specified public key, as demonstrated by its ability to sign with that key.  This challenge is meant to be used when the server knows of a public key that is already associated with the identifier being claimed, and wishes for new authorizations to be authorized by the holder of the corresponding private key.  For DNS identifiers, for example, this can help guard against domain hijacking.
 
 This method is useful if a server policy calls for issuing a certificate only to an entity that already possesses the subject private key of a particular prior related certificate (perhaps issued by a different CA).  It may also help enable other kinds of server policy that are related to authenticating a client's identity using digital signatures.
 
@@ -1320,7 +1320,7 @@ hints (required, object):
 
 ~~~~~~~~~~
 
-In response to this challenge, client uses the private key corresponding to one of the acceptable public keys to sign a JWS object including data related to the challenge.  The validation object covered by the signature has the following fields:
+In response to this challenge, the client uses the private key corresponding to one of the acceptable public keys to sign a JWS object including data related to the challenge.  The validation object covered by the signature has the following fields:
 
 type (required, string):
 : The string "proofOfPossession"

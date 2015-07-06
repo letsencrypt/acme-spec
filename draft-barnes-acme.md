@@ -1605,10 +1605,11 @@ failed.
 ## Domain Validation with Server Name Indication (DVSNI)
 
 The Domain Validation with Server Name Indication (DVSNI) validation method
-proves control over a domain name by having the client provision a new server
-that is accessible via TLS Server Name Indication extension {{RFC4366}}. The
-server verifies the client's challenge by accessing the created TLS server and
-verifying a particular challenge certificate is presented.
+proves control over a domain name by requiring the client to configure a TLS
+server to respond to specific connection attempts utilizing the Server Name
+Indication extension {{RFC4366}}. The server verifies the client's challenge by
+accessing the created TLS server and verifying a particular challenge
+certificate is presented.
 
 type (required, string):
 : The string "dvsni"
@@ -1617,12 +1618,10 @@ nonce (required, string):
 : A random 16-byte octet string, hex-encoded
 
 ~~~~~~~~~~
-
 {
   "type": "dvsni",
     "nonce": "a82d5ff8ef740d12881f6d3c2277ab2e",
 }
-
 ~~~~~~~~~~
 
 The client must generate a self-signed certificate containing a subjectAltName
@@ -1631,7 +1630,7 @@ will then configure the TLS server at the domain such that when a handshake is
 initiated with the Server Name Indication extension set to
 "\<nonce\>.acme.invalid", the generated test certificate is presented.
 
-The client SHOULD introduce its own entropy into each certificates (e.g. include
+The client SHOULD introduce its own entropy into each certificate (e.g. include
 a random serial number).
 
 The client responds with the fingerprint of the certificate.
@@ -1642,14 +1641,11 @@ type (required, string):
 fingerprint (required, string):
 : Base64-encoded SHA-256 hash of the DER-encoded challenge certificate
 
-
 ~~~~~~~~~~
-
 {
   "type": "dvsni",
     "fingerprint": "RX7hhbXBsZSBDZXJ0aWZpY2F0ZSBGaW5nZXJwcmludA"
 }
-
 ~~~~~~~~~~
 
 Given a Challenge/Response pair, the ACME server verifies the client's control

@@ -1638,7 +1638,7 @@ Content-Language: en
 <p id="rfc.section.7.2.p.11">It is RECOMMENDED that the ACME server verify the challenge certificate using multi-path probing techniques to reduce the risk of DNS hijacking attacks.</p>
 <p id="rfc.section.7.2.p.12">If the server presents a certificate matching all of the above criteria, then the validation is successful.  Otherwise, the validation fails.</p>
 <h1 id="rfc.section.7.3"><a href="#rfc.section.7.3">7.3.</a> <a href="#proof-of-possession-of-a-prior-key" id="proof-of-possession-of-a-prior-key">Proof of Possession of a Prior Key</a></h1>
-<p id="rfc.section.7.3.p.1">The Proof of Possession challenge verifies that a client possesses a private key corresponding to a server-specified public key, as demonstrated by its ability to correctly sign server-provided data with that key.</p>
+<p id="rfc.section.7.3.p.1">The Proof of Possession challenge verifies that a client possesses a private key corresponding to a server-specified public key, as demonstrated by its ability to sign with that key.  This challenge is meant to be used when the server knows of a public key that is already associated with the identifier being claimed, and wishes for new authorizations to be authorized by the holder of the corresponding private key.  For DNS identifiers, for example, this can help guard against domain hijacking.</p>
 <p id="rfc.section.7.3.p.2">This method is useful if a server policy calls for issuing a certificate only to an entity that already possesses the subject private key of a particular prior related certificate (perhaps issued by a different CA).  It may also help enable other kinds of server policy that are related to authenticating a client&#8217;s identity using digital signatures.</p>
 <p id="rfc.section.7.3.p.3">This challenge proceeds in much the same way as the proof of possession of the authorized key pair in the main ACME flow (challenge + authorizationRequest).  The server provides a nonce and the client signs over the nonce.  The main difference is that rather than signing with the private key of the key pair being authorized, the client signs with a private key specified by the server.  The server can specify which key pair(s) are acceptable directly (by indicating a public key), or by asking for the key corresponding to a certificate.</p>
 <p id="rfc.section.7.3.p.4">The server provides the following fields as part of the challenge:</p>
@@ -1647,91 +1647,82 @@ Content-Language: en
 <dl>
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;proofOfPossession&#8221;</dd>
-  <dt>alg (required, string):</dt>
-  <dd style="margin-left: 8">A token indicating the cryptographic algorithm that should be used by the client to compute the signature <a href="#RFC7518">[RFC7518]</a>.  (MAC algorithms such as &#8220;HS*&#8221; MUST NOT be used.)  The client MUST verify that this algorithm is supported for the indicated key before responding to this challenge.</dd>
-  <dt>nonce (required, string):</dt>
-  <dd style="margin-left: 8">A random 16-byte octet string, Base64-encoded</dd>
+  <dt>identifier (required, identifier):</dt>
+  <dd style="margin-left: 8">The ACME identifier for which authorization is being validated</dd>
   <dt>hints (required, object):</dt>
-  <dd style="margin-left: 8">A JSON object that contains various clues for the client about what the requested key is, such that the client can find it.  Entries in the hints object may include:</dd>
-  <dt>jwk (required, object):</dt>
-  <dd style="margin-left: 8">A JSON Web Key object describing the public key whose corresponding private key should be used to generate the signature <a href="#RFC7517">[RFC7517]</a></dd>
-  <dt>certFingerprints (optional, array):</dt>
-  <dd style="margin-left: 8">An array of certificate fingerprints, hex-encoded SHA1 hashes of DER-encoded certificates that are known to contain this key</dd>
-  <dt>certs (optional, array):</dt>
-  <dd style="margin-left: 8">An array of certificates, in Base64-encoded DER format, that contain acceptable public keys.</dd>
-  <dt>subjectKeyIdentifiers (optional, array):</dt>
-  <dd style="margin-left: 8">An array of hex-encoded Subject Key Identifiers (SKIDs) from certificate(s) that contain the key.  Because of divergences in the way that SKIDs are calculated <a href="#RFC5280">[RFC5280]</a>, there may conceivably be more than one of these.</dd>
-  <dt>serialNumbers (optional, array of numbers):</dt>
-  <dd style="margin-left: 8">An array of serial numbers of certificates that are known to contain the requested key</dd>
-  <dt>issuers (optional, array):</dt>
-  <dd style="margin-left: 8">An array of X.509 Distinguished Names <a href="#RFC5280">[RFC5280]</a> of CAs that have been observed to issue certificates for this key, in text form <a href="#RFC4514">[RFC4514]</a></dd>
-  <dt>authorizedFor (optional, array):</dt>
-  <dd style="margin-left: 8">An array of domain names, if any, for which this server regards the key as an ACME Authorized key.</dd>
+  <dd style="margin-left: 8">A JSON object that contains various clues for the client about what the requested key is, such that the client can find it.  Entries in the hints object may include: <dl><dt>jwks (required, array of JWK):</dt><dd style="margin-left: 8">A JSON Web Key object describing acceptable public keys</dd><dt>certs (optional, array of string):</dt><dd style="margin-left: 8">An array of certificates, in Base64-encoded DER format, that contain acceptable public keys.</dd></dl><p> </p></dd>
 </dl>
 <pre>
 {
   "type": "proofOfPossession",
-  "alg": "RS256",
-  "nonce": "eET5udtV7aoX8Xl8gYiZIA",
-  "hints" : {
+  "hints": {
     "jwk": {
-        "kty": "RSA",
-        "e": "AQAB",
-        "n": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ"
+      "kty": "RSA",
+      "e": "AQAB",
+      "n": "AMswMT...3aVtjE"
     },
-    "certFingerprints": [
-      "93416768eb85e33adc4277f4c9acd63e7418fcfe",
-      "16d95b7b63f1972b980b14c20291f3c0d1855d95",
-      "48b46570d9fc6358108af43ad1649484def0debf"
-    ],
-    "subjectKeyIdentifiers":  [
-      "d0083162dcc4c8a23ecb8aecbd86120e56fd24e5"
-    ],
-    "serialNumbers": [34234239832, 23993939911, 17],
-    "issuers": [
-      "C=US, O=SuperT LLC, CN=SuperTrustworthy Public CA",
-      "O=LessTrustworthy CA Inc, CN=LessTrustworthy But StillSecure"
-    ],
-    "authorizedFor": ["www.example.com", "example.net"]
+    "certs": ["MIIF7z...bYVQLY"]
   }
 }
 
 </pre>
-<p id="rfc.section.7.3.p.6">In this case the server is challenging the client to prove its control over the private key that corresponds to the public key specified in the jwk object.  The signing algorithm is specified by the alg field.  The nonce value is used by the server to identify this challenge and is also used, also with a client-provided signature nonce, as part of the signature input.</p>
-<pre>
-      signature-input = signature-nonce || server-nonce
-
-</pre>
-<p id="rfc.section.7.3.p.7">The client&#8217;s response includes the server-provided nonce, together with a signature over that nonce by one of the private keys requested by the server.</p>
+<p id="rfc.section.7.3.p.6">In response to this challenge, the client uses the private key corresponding to one of the acceptable public keys to sign a JWS object including data related to the challenge.  The validation object covered by the signature has the following fields:</p>
 <p/>
 
 <dl>
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;proofOfPossession&#8221;</dd>
-  <dt>nonce (required, string):</dt>
-  <dd style="margin-left: 8">The server nonce that the server previously associated with this challenge</dd>
-  <dt>signature (required, object):</dt>
-  <dd style="margin-left: 8">The ACME signature computed over the signature-input using the server-specified algorithm</dd>
+  <dt>identifiers (required, identifier):</dt>
+  <dd style="margin-left: 8">A list of identifiers for which the holder of the prior key authorizes the new key</dd>
+  <dt>accountKey (required, JWK):</dt>
+  <dd style="margin-left: 8">The client&#8217;s account public key</dd>
 </dl>
 <pre>
 {
   "type": "proofOfPossession",
-  "nonce": "eET5udtV7aoX8Xl8gYiZIA",
-  "signature": {
-    "alg": "RS256",
-    "nonce": "eET5udtV7aoX8Xl8gYiZIA",
-    "sig": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ",
-    "jwk": {
-      "kty": "RSA",
-      "e": "AQAB",
-      "n": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ"
-    }
+  "identifiers: [{"type": "dns", "value": "example.com"}],
+  "accountKey": { "kty": "RSA", ... }
+}
+</pre>
+<p id="rfc.section.7.3.p.8">This JWS is NOT REQUIRED to have a &#8220;nonce&#8221; header parameter (as with the JWS objects that carry ACME request objects).  This allows proof-of-possession response objects to be computed off-line.  For example, as part of a domain transfer, the new domain owner might require the old domain owner to sign a proof-of-possession validation object, so that the new domain owner can present that in an ACME transaction later.</p>
+<p id="rfc.section.7.3.p.9">The validation JWS MUST contain a &#8220;jwk&#8221; header parameter indicating the public key under which the server should verify the JWS.</p>
+<p id="rfc.section.7.3.p.10">The client&#8217;s response includes the server-provided nonce, together with a signature over that nonce by one of the private keys requested by the server.</p>
+<p/>
+
+<dl>
+  <dt>type (required, string):</dt>
+  <dd style="margin-left: 8">The string &#8220;proofOfPossession&#8221;</dd>
+  <dt>authorization (required, JWS):</dt>
+  <dd style="margin-left: 8">The validation JWS</dd>
+</dl>
+<pre>
+{
+  "type": "proofOfPossession",
+  "authorization": {
+    "header": {
+      "alg": "RS256",
+      "jwk": {
+        "kty": "RSA",
+        "e": "AQAB",
+        "n": "AMswMT...3aVtjE"
+      }
+    },
+    "payload": "SfiR1...gSAl7A",
+    "signature": "XcQLfL...cW5beg"
   }
 }
 
 </pre>
-<p id="rfc.section.7.3.p.9">Note that just as in the authorizationRequest message, there are two nonces here, once provided by the client (inside the signature object) and one provided by the server in its challenge (outside the signature object).  The signature covers the concatenation of these two nonces (as specified in the signature-input above).</p>
-<p id="rfc.section.7.3.p.10">If the server is able to validate the signature and confirm that the jwk and alg objects are unchanged from the original challenge, the server can conclude that the client is in control of the private key that corresponds to the specified public key.  The server can use this evidence in support of its authorization and certificate issuance policies.</p>
+<p id="rfc.section.7.3.p.12">To validate a proof-of-possession challenge, the server performs the following steps:</p>
+<p/>
+
+<ol>
+  <li>Verify that the public key in the &#8220;jwk&#8221; header of the &#8220;authorization&#8221; JWS is one of the keys listed in the challenge&#8217;s &#8220;hints&#8221; section</li>
+  <li>Verify the &#8220;authorization&#8221; JWS using the key indicated in its &#8220;jwk&#8221; header</li>
+  <li>Decode the payload of the JWS as UTF-8 encoded JSON</li>
+  <li>Verify that there are exactly three fields in the decoded object, and that: <ul><li>The &#8220;type&#8221; field is set to &#8220;proofOfPossession&#8221;</li><li>The &#8220;identifier&#8221; field contains the identifier for which authorization is being validated</li><li>The &#8220;accountKey&#8221; field matches the account key for which the challenge was issued</li></ul></li>
+</ol>
+<p id="rfc.section.7.3.p.14">If all of the above verifications succeed, then the validation is successful.  Otherwise, the validation fails.</p>
 <h1 id="rfc.section.7.4"><a href="#rfc.section.7.4">7.4.</a> <a href="#dns" id="dns">DNS</a></h1>
 <p id="rfc.section.7.4.p.1">When the identifier being validated is a domain name, the client can prove control of that domain by provisioning resource records under it.   The DNS challenge requires the client to provision a TXT record containing a designated value under a specific validation domain name.</p>
 <p/>

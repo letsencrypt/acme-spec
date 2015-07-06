@@ -104,8 +104,8 @@ Table of Contents
      7.3.  Proof of Possession of a Prior Key  . . . . . . . . . . .  41
      7.4.  DNS . . . . . . . . . . . . . . . . . . . . . . . . . . .  44
      7.5.  Other possibilities . . . . . . . . . . . . . . . . . . .  46
-   8.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  47
-   9.  Security Considerations . . . . . . . . . . . . . . . . . . .  47
+   8.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  46
+   9.  Security Considerations . . . . . . . . . . . . . . . . . . .  46
 
 
 
@@ -2268,8 +2268,12 @@ Internet-Draft                    ACME                    September 2014
 
    The Proof of Possession challenge verifies that a client possesses a
    private key corresponding to a server-specified public key, as
-   demonstrated by its ability to correctly sign server-provided data
-   with that key.
+   demonstrated by its ability to sign with that key.  This challenge is
+   meant to be used when the server knows of a public key that is
+   already associated with the identifier being claimed, and wishes for
+   new authorizations to be authorized by the holder of the
+   corresponding private key.  For DNS identifiers, for example, this
+   can help guard against domain hijacking.
 
    This method is useful if a server policy calls for issuing a
    certificate only to an entity that already possesses the subject
@@ -2285,10 +2289,6 @@ Internet-Draft                    ACME                    September 2014
    than signing with the private key of the key pair being authorized,
    the client signs with a private key specified by the server.  The
    server can specify which key pair(s) are acceptable directly (by
-   indicating a public key), or by asking for the key corresponding to a
-   certificate.
-
-   The server provides the following fields as part of the challenge:
 
 
 
@@ -2298,50 +2298,50 @@ Barnes, et al.            Expires March 5, 2015                [Page 41]
 Internet-Draft                    ACME                    September 2014
 
 
+   indicating a public key), or by asking for the key corresponding to a
+   certificate.
+
+   The server provides the following fields as part of the challenge:
+
    type (required, string):  The string "proofOfPossession"
 
-   alg (required, string):  A token indicating the cryptographic
-      algorithm that should be used by the client to compute the
-      signature [RFC7518].  (MAC algorithms such as "HS*" MUST NOT be
-      used.)  The client MUST verify that this algorithm is supported
-      for the indicated key before responding to this challenge.
-
-   nonce (required, string):  A random 16-byte octet string,
-      Base64-encoded
+   identifier (required, identifier):  The ACME identifier for which
+      authorization is being validated
 
    hints (required, object):  A JSON object that contains various clues
       for the client about what the requested key is, such that the
       client can find it.  Entries in the hints object may include:
 
-   jwk (required, object):  A JSON Web Key object describing the public
-      key whose corresponding private key should be used to generate the
-      signature [RFC7517]
+      jwks (required, array of JWK):  A JSON Web Key object describing
+         acceptable public keys
 
-   certFingerprints (optional, array):  An array of certificate
-      fingerprints, hex-encoded SHA1 hashes of DER-encoded certificates
-      that are known to contain this key
+      certs (optional, array of string):  An array of certificates, in
+         Base64-encoded DER format, that contain acceptable public keys.
 
-   certs (optional, array):  An array of certificates, in Base64-encoded
-      DER format, that contain acceptable public keys.
-
-   subjectKeyIdentifiers (optional, array):  An array of hex-encoded
-      Subject Key Identifiers (SKIDs) from certificate(s) that contain
-      the key.  Because of divergences in the way that SKIDs are
-      calculated [RFC5280], there may conceivably be more than one of
-      these.
-
-   serialNumbers (optional, array of numbers):  An array of serial
-      numbers of certificates that are known to contain the requested
-      key
-
-   issuers (optional, array):  An array of X.509 Distinguished Names
-      [RFC5280] of CAs that have been observed to issue certificates for
-      this key, in text form [RFC4514]
-
-   authorizedFor (optional, array):  An array of domain names, if any,
-      for which this server regards the key as an ACME Authorized key.
+   {
+     "type": "proofOfPossession",
+     "hints": {
+       "jwk": {
+         "kty": "RSA",
+         "e": "AQAB",
+         "n": "AMswMT...3aVtjE"
+       },
+       "certs": ["MIIF7z...bYVQLY"]
+     }
+   }
 
 
+   In response to this challenge, the client uses the private key
+   corresponding to one of the acceptable public keys to sign a JWS
+   object including data related to the challenge.  The validation
+   object covered by the signature has the following fields:
+
+   type (required, string):  The string "proofOfPossession"
+
+   identifiers (required, identifier):  A list of identifiers for which
+      the holder of the prior key authorizes the new key
+
+   accountKey (required, JWK):  The client's account public key
 
 
 
@@ -2356,41 +2356,20 @@ Internet-Draft                    ACME                    September 2014
 
    {
      "type": "proofOfPossession",
-     "alg": "RS256",
-     "nonce": "eET5udtV7aoX8Xl8gYiZIA",
-     "hints" : {
-       "jwk": {
-           "kty": "RSA",
-           "e": "AQAB",
-           "n": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ"
-       },
-       "certFingerprints": [
-         "93416768eb85e33adc4277f4c9acd63e7418fcfe",
-         "16d95b7b63f1972b980b14c20291f3c0d1855d95",
-         "48b46570d9fc6358108af43ad1649484def0debf"
-       ],
-       "subjectKeyIdentifiers":  [
-         "d0083162dcc4c8a23ecb8aecbd86120e56fd24e5"
-       ],
-       "serialNumbers": [34234239832, 23993939911, 17],
-       "issuers": [
-         "C=US, O=SuperT LLC, CN=SuperTrustworthy Public CA",
-         "O=LessTrustworthy CA Inc, CN=LessTrustworthy But StillSecure"
-       ],
-       "authorizedFor": ["www.example.com", "example.net"]
-     }
+     "identifiers: [{"type": "dns", "value": "example.com"}],
+     "accountKey": { "kty": "RSA", ... }
    }
 
+   This JWS is NOT REQUIRED to have a "nonce" header parameter (as with
+   the JWS objects that carry ACME request objects).  This allows proof-
+   of-possession response objects to be computed off-line.  For example,
+   as part of a domain transfer, the new domain owner might require the
+   old domain owner to sign a proof-of-possession validation object, so
+   that the new domain owner can present that in an ACME transaction
+   later.
 
-   In this case the server is challenging the client to prove its
-   control over the private key that corresponds to the public key
-   specified in the jwk object.  The signing algorithm is specified by
-   the alg field.  The nonce value is used by the server to identify
-   this challenge and is also used, also with a client-provided
-   signature nonce, as part of the signature input.
-
-         signature-input = signature-nonce || server-nonce
-
+   The validation JWS MUST contain a "jwk" header parameter indicating
+   the public key under which the server should verify the JWS.
 
    The client's response includes the server-provided nonce, together
    with a signature over that nonce by one of the private keys requested
@@ -2398,10 +2377,31 @@ Internet-Draft                    ACME                    September 2014
 
    type (required, string):  The string "proofOfPossession"
 
-   nonce (required, string):  The server nonce that the server
-      previously associated with this challenge
+   authorization (required, JWS):  The validation JWS
+
+   {
+     "type": "proofOfPossession",
+     "authorization": {
+       "header": {
+         "alg": "RS256",
+         "jwk": {
+           "kty": "RSA",
+           "e": "AQAB",
+           "n": "AMswMT...3aVtjE"
+         }
+       },
+       "payload": "SfiR1...gSAl7A",
+       "signature": "XcQLfL...cW5beg"
+     }
+   }
 
 
+   To validate a proof-of-possession challenge, the server performs the
+   following steps:
+
+   1.  Verify that the public key in the "jwk" header of the
+       "authorization" JWS is one of the keys listed in the challenge's
+       "hints" section
 
 
 
@@ -2410,37 +2410,24 @@ Barnes, et al.            Expires March 5, 2015                [Page 43]
 Internet-Draft                    ACME                    September 2014
 
 
-   signature (required, object):  The ACME signature computed over the
-      signature-input using the server-specified algorithm
+   2.  Verify the "authorization" JWS using the key indicated in its
+       "jwk" header
 
-   {
-     "type": "proofOfPossession",
-     "nonce": "eET5udtV7aoX8Xl8gYiZIA",
-     "signature": {
-       "alg": "RS256",
-       "nonce": "eET5udtV7aoX8Xl8gYiZIA",
-       "sig": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ",
-       "jwk": {
-         "kty": "RSA",
-         "e": "AQAB",
-         "n": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ"
-       }
-     }
-   }
+   3.  Decode the payload of the JWS as UTF-8 encoded JSON
 
+   4.  Verify that there are exactly three fields in the decoded object,
+       and that:
 
-   Note that just as in the authorizationRequest message, there are two
-   nonces here, once provided by the client (inside the signature
-   object) and one provided by the server in its challenge (outside the
-   signature object).  The signature covers the concatenation of these
-   two nonces (as specified in the signature-input above).
+       *  The "type" field is set to "proofOfPossession"
 
-   If the server is able to validate the signature and confirm that the
-   jwk and alg objects are unchanged from the original challenge, the
-   server can conclude that the client is in control of the private key
-   that corresponds to the specified public key.  The server can use
-   this evidence in support of its authorization and certificate
-   issuance policies.
+       *  The "identifier" field contains the identifier for which
+          authorization is being validated
+
+       *  The "accountKey" field matches the account key for which the
+          challenge was issued
+
+   If all of the above verifications succeed, then the validation is
+   successful.  Otherwise, the validation fails.
 
 7.4.  DNS
 
@@ -2456,16 +2443,6 @@ Internet-Draft                    ACME                    September 2014
       entropy.  It MUST NOT contain any characters outside the URL-safe
       Base64 alphabet.
 
-
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 44]
-
-Internet-Draft                    ACME                    September 2014
-
-
    {
      "type": "dns",
      "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
@@ -2480,6 +2457,14 @@ Internet-Draft                    ACME                    September 2014
    type (required, string):  The string "dns"
 
    token (required, string):  The token value in the challenge
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 44]
+
+Internet-Draft                    ACME                    September 2014
+
 
    {
      "type": "dns",
@@ -2510,18 +2495,6 @@ Internet-Draft                    ACME                    September 2014
    validation (required, JWS):  The JWS object computed with the
       validation object and the derived key
 
-
-
-
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 45]
-
-Internet-Draft                    ACME                    September 2014
-
-
    {
      "type": "dns"
      "clientPublicKey": { "kty": "EC", ... },
@@ -2539,6 +2512,15 @@ Internet-Draft                    ACME                    September 2014
        challenge was issued
 
    2.  Decode the payload of the JWS as UTF-8 encoded JSON
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 45]
+
+Internet-Draft                    ACME                    September 2014
+
 
    3.  Verify that the there are exactly two fields in the decoded
        object, and that:
@@ -2566,18 +2548,6 @@ Internet-Draft                    ACME                    September 2014
 
    o  WHOIS
 
-
-
-
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 46]
-
-Internet-Draft                    ACME                    September 2014
-
-
 8.  IANA Considerations
 
    TODO
@@ -2599,6 +2569,14 @@ Internet-Draft                    ACME                    September 2014
    o  General authorization story
 
    o  PoP nonce entropy
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 46]
+
+Internet-Draft                    ACME                    September 2014
+
 
    o  ToC/ToU; duration of key authorization
 
@@ -2625,15 +2603,6 @@ Internet-Draft                    ACME                    September 2014
               APIs", draft-ietf-appsawg-http-problem-00 (work in
               progress), September 2014.
 
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 47]
-
-Internet-Draft                    ACME                    September 2014
-
-
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119, March 1997.
 
@@ -2654,6 +2623,16 @@ Internet-Draft                    ACME                    September 2014
    [RFC3986]  Berners-Lee, T., Fielding, R., and L. Masinter, "Uniform
               Resource Identifier (URI): Generic Syntax", STD 66, RFC
               3986, January 2005.
+
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 47]
+
+Internet-Draft                    ACME                    September 2014
+
 
    [RFC4514]  Zeilenga, K., "Lightweight Directory Access Protocol
               (LDAP): String Representation of Distinguished Names", RFC
@@ -2683,13 +2662,6 @@ Internet-Draft                    ACME                    September 2014
    [RFC6570]  Gregorio, J., Fielding, R., Hadley, M., Nottingham, M.,
               and D. Orchard, "URI Template", RFC 6570, March 2012.
 
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 48]
-
-Internet-Draft                    ACME                    September 2014
-
-
    [RFC7159]  Bray, T., "The JavaScript Object Notation (JSON) Data
               Interchange Format", RFC 7159, March 2014.
 
@@ -2707,6 +2679,16 @@ Internet-Draft                    ACME                    September 2014
    [SEC1]     Standards for Efficient Cryptography Group, "SEC 1:
               Elliptic Curve Cryptography", May 2009,
               <http://www.secg.org/sec1-v2.pdf>.
+
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 48]
+
+Internet-Draft                    ACME                    September 2014
+
 
 11.2.  Informative References
 
@@ -2735,17 +2717,6 @@ Authors' Addresses
    Email: pde@eff.org
 
 
-
-
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 49]
-
-Internet-Draft                    ACME                    September 2014
-
-
    Seth Schoen
    EFF
 
@@ -2770,31 +2741,4 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 50]
+Barnes, et al.            Expires March 5, 2015                [Page 49]

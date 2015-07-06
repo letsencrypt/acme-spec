@@ -182,17 +182,23 @@ server, or some other server system which requires valid TLS certificates.  The
 ACME server runs at a certificate authority, and responds to client requests,
 performing the requested actions if the client is authorized.
 
-For simplicity, in the HTTPS transactions used by ACME, the ACME client is the
+For simplicity, in all HTTPS transactions used by ACME, the ACME client is the
 HTTPS client and the ACME server is the HTTPS server.
 
 In the discussion below, we will refer to three different types of keys / key
 pairs:
 
-Subject Public Key: : A public key to be included in a certificate.
+Subject Public Key:
+: A public key to be included in a certificate.
 
-Account Key Pair: : A key pair for which the ACME server considers the holder of
-the private key authorized to manage certificates for a given identifier.  The
-same key pair may be authorized for multiple identifiers.
+Account Key Pair:
+: A key pair for which the ACME server considers the holder of the private key
+authorized to manage certificates for a given identifier.  The same key pair may
+be authorized for multiple identifiers.
+
+Recovery Key:
+: A MAC key that can a client can use to demonstrate that it participated in
+a prior registration transaction.
 
 ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON
 is a text-based format, binary fields are Base64-encoded.  For Base64 encoding,
@@ -204,15 +210,13 @@ Some HTTPS bodies in ACME are authenticated and integrity-protected by being
 encapsulated in a JSON Web Signature (JWS) object {{RFC7515}}.  ACME uses a
 profile of JWS, with the following restrictions:
 
-* The JWS MUST use the JSON or Flattened JSON Serialization
+* The JWS MUST use the Flattened JSON Serialization
 * The JWS MUST be encoded using UTF-8
-* If the JWS is in the JSON Serialization, it MUST NOT include more than one
-  signature in the "signatures" array
-* The JWS Header MUST include "alg" and "jwk" fields
+* The JWS Header or Protected Header MUST include "alg" and "jwk" fields
 * The JWS MUST NOT have the value "none" in its "alg" field
 
 Additionally, JWS objects used in ACME MUST include the "nonce" and "acmePath"
-header field, defined below.
+header parameters, defined below.
 
 # Protocol Overview
 
@@ -280,6 +284,8 @@ expected, then the server considers the client authorized for the domain name.
 
                                     <-------       Updated Challenge
 
+                          <~~~~~~~~Validation~~~~~~~~>
+
       Poll                          ------->
 
                                     <-------           Authorization
@@ -299,7 +305,6 @@ client can use to fetch updated versions of the certificate.
       Client                                                 Server
 
       CSR
-      Authorization URI(s)
       Signature                    -------->
 
                                    <--------            Certificate
@@ -318,7 +323,6 @@ succeeded.
                                    <--------                 Result
 ~~~~~~~~~~
 
-
 Note that while ACME is defined with enough flexibility to handle different
 types of identifiers in principle, the primary use case addressed by this
 document is the case where domain names are used as identifiers.  For example,
@@ -330,7 +334,7 @@ validation challenges the server might require.
 
 # Protocol Elements
 
-In this section, we describe several components that are used by ACME, and
+This section describes several components that are used by ACME, and
 general rules that apply to ACME transactions.
 
 ## HTTPS Requests
@@ -338,8 +342,9 @@ general rules that apply to ACME transactions.
 Each ACME function is accomplished by the client sending a sequence of
 HTTPS requests to the server, carrying JSON messages.  Use of HTTPS is REQUIRED.
 Clients SHOULD support HTTP public key pinning {{RFC7469}}, and servers SHOULD
-emit pinning headers.  Each subsection below describes the message formats used
-by the function, and the order in which messages are sent.
+emit pinning headers.  Each subsection of {{certificate-management}} below
+describes the message formats used by the function, and the order in which
+messages are sent.
 
 All ACME requests with a non-empty body MUST encapsulate the body in a JWS
 object, signed using the account key pair.  The server MUST verify the JWS
@@ -352,9 +357,9 @@ NOT respond to GET requests for resources that might be considered sensitive.
 
 An ACME request carries a JSON dictionary that provides the details of the
 client's request to the server.  In order to avoid attacks that might arise from
-sending a request object to an improper URI, each request object MUST have a
-"resource" field that indicates what type of resource the request is addressed
-to, as defined in the below table:
+sending a request object to a resource of the wrong type, each request object
+MUST have a "resource" field that indicates what type of resource the request is
+addressed to, as defined in the below table:
 
 | Resource type        | "resource" value |
 |:---------------------|:-----------------|
@@ -365,29 +370,133 @@ to, as defined in the below table:
 | Revoke certificate   | revoke-cert      |
 | Registration         | reg              |
 | Authorization        | authz            |
-| Certificate          | cert             |
 | Challenge            | challenge        |
+| Certificate          | cert             |
 
 Other fields in ACME request bodies are described below.
-
-The following table illustrates a typical sequence of requests required to
-establish a new account with the server, prove control of an identifier, issue a
-certificate, and fetch an updated certificate some time after issuance.  The
-"->" is a mnemonic for a Location header pointing to a created resource.
-
-| Action             | Request        | Response     |
-|:-------------------|:---------------|:-------------|
-| Register           | POST new-reg   | 201 -> reg   |
-| Request challenges | POST new-authz | 201 -> authz |
-| Answer challenges  | POST challenge | 200          |
-| Poll for status    | GET  authz     | 200          |
-| Request issuance   | POST new-cert  | 201 -> cert  |
-| Check for new cert | GET  cert      | 200          |
 
 ACME servers that are intended to be generally accessible need to use
 Cross-Origin Resource Sharing (CORS) in order to be accessible from
 browser-based clients {{W3C.CR-cors-20130129}}.  Such servers SHOULD set the
 Access-Control-Allow-Origin header field to the value "*".
+
+## Registration Objects
+
+An ACME registration resource represents a set of metadata associated to an
+account key pair.  Registration resources have the following structure:
+
+key (required, dictionary):
+: The public key of the account key pair, encoded as a JSON Web Key object
+{{RFC7517}}.
+
+contact (optional, array of string):
+: An array of URIs that the server can use to contact the client for issues
+related to this authorization. For example, the server may wish to notify the
+client about server-initiated revocation.
+
+agreement (optional, string):
+: A URI referring to a subscriber agreement or terms of service provided by the
+server (see below).  Including this field indicates the client's agreement with
+the referenced terms.
+
+authorizations (optional, string):
+: A URI from which a list of authorizations granted to this account can be
+fetched via a GET request.  The result of the GET request MUST be a JSON object
+whose "authorizations" field is an array of strings, where each string is the
+URI of an authorization belonging to this registration.  The server SHOULD
+include pending authorizations, and SHOULD NOT include authorizations that are
+invalid or expired.
+
+certificates (optional, string):
+: A URI from which a list of certificates issued for this account can be fetched
+via a GET request.  The result of the GET request MUST be a JSON object whose
+"certificates" field is an array of strings, where each string is the URI of a
+certificate.  The server SHOULD NOT include expired certificates.
+
+~~~~~~~~~~
+{
+  "resource": "new-reg",
+  "contact": [
+    "mailto:cert-admin@example.com",
+    "tel:+12025551212"
+  ],
+  "agreement": "https://example.com/acme/terms",
+  "authorizations": "https://example.com/acme/reg/1/authz",
+  "certificates": "https://example.com/acme/reg/1/cert",
+}
+~~~~~~~~~~
+
+## Authorization Objects
+
+An ACME authorization object represents server's authorization for an account to
+represent an identifier.  In addition to the identifier, an authorization
+includes several metadata fields, such as the status of the authorization (e.g.,
+"pending", "valid", or "revoked") and which challenges were used to validate
+possession of the identifier.
+
+The structure of an ACME authorization resource is as follows:
+
+identifier (required, dictionary of string):
+: The identifier that the account is authorized to represent
+
+  type (required, string):
+  : The type of identifier.
+
+  value (required, string):
+  : The identifier itself.
+
+status (optional, string):
+: The status of this authorization.  Possible values are: "unknown", "pending",
+"processing", "valid", "invalid" and "revoked".  If this field is missing, then
+the default value is "pending".
+
+expires (optional, string):
+: The date after which the server will consider this
+authorization invalid, encoded in the format specified in RFC 3339 {{RFC3339}}.
+
+challenges (required, array):
+: The challenges that the client needs to fulfill
+in order to prove possession of the identifier (for pending authorizations).
+For final authorizations, the challenges that were used.  Each array entry is a
+dictionary with parameters required to validate the challenge, as specified in
+{{identifier-validation-challenges}}.
+
+combinations (optional, array of arrays of integers):
+: A collection of sets of
+challenges, each of which would be sufficient to prove possession of the
+identifier. Clients complete a set of challenges that that covers at least one
+set in this array. Challenges are identified by their indices in the challenges
+array.  If no "combinations" element is included in an authorization object, the
+client completes all challenges.
+
+The only type of identifier defined by this specification is a fully-qualified
+domain name (type: "dns").  The value of the identifier MUST be the ASCII
+representation of the domain name.  Wildcard domain names (with "*" as the first
+label) MUST NOT be included in authorization requests.  See
+{{certificate-issuance}} below for more information about wildcard domains.
+
+~~~~~~~~~~
+{
+  "status": "valid",
+  "expires": "2015-03-01",
+
+  "identifier": {
+    "type": "dns",
+    "value": "example.org"
+  },
+
+  "challenges": [
+    {
+      "type": "simpleHttp",
+      "status": "valid",
+      "validated": "2014-12-01T12:05Z",
+      "token": "IlirfxKKXAsHtmzK29Pj8A"
+      "path": "Hf5GrX4Q7EBax9hc2jJnfw"
+    }
+  ],
+}
+~~~~~~~~~~
+
 
 ## Errors
 
@@ -421,52 +530,48 @@ TODO: Flesh out errors and syntax for them
 
 ## Replay protection
 
-In order to protect ACME resources from any possible replay attacks,
-ACME requests have a mandatory anti-replay mechanism.  This mechanism
-is based on the server maintaining a list of nonces that it has issued
-to clients, and requiring any signed request from the client to carry
-such a nonce.
+In order to protect ACME resources from any possible replay attacks, ACME
+requests have a mandatory anti-replay mechanism.  This mechanism is based on the
+server maintaining a list of nonces that it has issued to clients, and requiring
+any signed request from the client to carry such a nonce.
 
-An ACME server MUST include an Replay-Nonce header field in each
-successful response it provides to a client, with contents as specified
-below.  In particular, the ACME server MUST provide a Replay-Nonce header
-field in response to a HEAD request for any valid resource.  (This allows
-clients to easily obtain a fresh nonce.)  It MAY also provide nonces in
-error responses.
+An ACME server MUST include an Replay-Nonce header field in each successful
+response it provides to a client, with contents as specified below.  In
+particular, the ACME server MUST provide a Replay-Nonce header field in response
+to a HEAD request for any valid resource.  (This allows clients to easily obtain
+a fresh nonce.)  It MAY also provide nonces in error responses.
 
-Every JWS sent by an ACME client MUST include, in its protected
-header, the "nonce" and "acmePath" header parameters, with contents
-as defined below. As part of JWS verification, the ACME server MUST verify that
-the "acmePath" header parameter is exactly equal to the path to which the
-request was submitted. The server SHOULD provide HTTP status code 400 (Bad
-Request) if the path does not match.
+Every JWS sent by an ACME client MUST include, in its protected header, the
+"nonce" and "acmePath" header parameters, with contents as defined below. As
+part of JWS verification, the ACME server MUST verify that the "acmePath" header
+parameter is exactly equal to the path to which the request was submitted. The
+server SHOULD provide HTTP status code 400 (Bad Request) if the path does not
+match.
 
-As part of JWS verification, the ACME server MUST verify that the
-value of the "nonce" header is a value that the server previously
-provided in a Replay-Nonce header field. Once a nonce value has
-appeared in an ACME request, the server MUST consider it invalid, in
-the same way as a value it had never issued.
+As part of JWS verification, the ACME server MUST verify that the value of the
+"nonce" header is a value that the server previously provided in a Replay-Nonce
+header field. Once a nonce value has appeared in an ACME request, the server
+MUST consider it invalid, in the same way as a value it had never issued.
 
-When a server rejects a request because its nonce value was unacceptable
-(or not present), it SHOULD provide HTTP status code 400 (Bad Request),
-and indicate the ACME error code "urn:acme:badNonce".
+When a server rejects a request because its nonce value was unacceptable (or not
+present), it SHOULD provide HTTP status code 400 (Bad Request), and indicate the
+ACME error code "urn:acme:badNonce".
 
-The precise method used to generate and track nonces is up to the server.
-For example, the server could generate a random 128-bit value for each
-response, keep a list of issued nonces, and strike nonces from this list as
+The precise method used to generate and track nonces is up to the server.  For
+example, the server could generate a random 128-bit value for each response,
+keep a list of issued nonces, and strike nonces from this list as
 they are used.
 
 ### Replay-Nonce
 
-The "Replay-Nonce" header field includes a server-generated value that
-the server can use to detect unauthorized replay in future client
-requests.  The server should generate the value provided in
-Replay-Nonce in such a way that they are unique to each message, with high
-probability.
+The "Replay-Nonce" header field includes a server-generated value that the
+server can use to detect unauthorized replay in future client requests.  The
+server should generate the value provided in Replay-Nonce in such a way that
+they are unique to each message, with high probability.
 
-The value of the Replay-Nonce field MUST be an octet string encoded
-according to the base64url encoding described in Section 2 of
-{{RFC7515}}.  Clients MUST ignore invalid Replay-Nonce values.
+The value of the Replay-Nonce field MUST be an octet string encoded according to
+the base64url encoding described in Section 2 of {{RFC7515}}.  Clients MUST
+ignore invalid Replay-Nonce values.
 
 ~~~~~
   base64url = [A-Z] / [a-z] / [0-9] / "-" / "_"
@@ -474,20 +579,18 @@ according to the base64url encoding described in Section 2 of
   Replay-Nonce = *base64url
 ~~~~~
 
-The Replay-Nonce header field SHOULD NOT be included in HTTP request
-messages.
+The Replay-Nonce header field SHOULD NOT be included in HTTP request messages.
 
 ### "nonce" (Nonce) JWS header parameter
 
-The "nonce" header parameter provides a unique value that enables the
-verifier of a JWS to recognize when replay has occurred. The "nonce"
-header parameter MUST be carried in the protected header of the JWS.
+The "nonce" header parameter provides a unique value that enables the verifier
+of a JWS to recognize when replay has occurred. The "nonce" header parameter
+MUST be carried in the protected header of the JWS.
 
-The value of the "nonce" header parameter MUST be an octet string,
-encoded according to the base64url encoding described in Section 2
-of {{RFC7515}}.  If the value of a "nonce" header parameter is not
-valid according to this encoding, then the verifier MUST reject the
-JWS as malformed.
+The value of the "nonce" header parameter MUST be an octet string, encoded
+according to the base64url encoding described in Section 2 of {{RFC7515}}.  If
+the value of a "nonce" header parameter is not valid according to this encoding,
+then the verifier MUST reject the JWS as malformed.
 
 ## Key Agreement
 
@@ -590,6 +693,19 @@ in a 201 (Created) response.
                        challenge         cert-chain
 ~~~~~~~~~~
 
+The following table illustrates a typical sequence of requests required to
+establish a new account with the server, prove control of an identifier, issue a
+certificate, and fetch an updated certificate some time after issuance.  The
+"->" is a mnemonic for a Location header pointing to a created resource.
+
+| Action             | Request        | Response     |
+|:-------------------|:---------------|:-------------|
+| Register           | POST new-reg   | 201 -> reg   |
+| Request challenges | POST new-authz | 201 -> authz |
+| Answer challenges  | POST challenge | 200          |
+| Poll for status    | GET  authz     | 200          |
+| Request issuance   | POST new-cert  | 201 -> cert  |
+| Check for new cert | GET  cert      | 200          |
 
 The remainder of this section provides the details of how these resources are
 structured and how the ACME protocol makes use of them.
@@ -619,41 +735,10 @@ Content-Type: application/json
 
 ## Registration
 
-An ACME registration resource represents a set of metadata associated to an
-account key pair.  Registration resources have the following structure:
-
-key (required, dictionary):
-: The public key of the account key pair, encoded as
-a JSON Web Key object {{RFC7517}}.
-
-contact (optional, array of string):
-: An array of URIs that the server can use
-to contact the client for issues related to this authorization. For example, the
-server may wish to notify the client about server-initiated revocation.
-
-agreement (optional, string):
-: A URI referring to a subscriber agreement or
-terms of service provided by the server (see below).  Including this field
-indicates the client's agreement with these terms.
-
-authorizations (optional, string):
-: A URI from which a list of authorizations
-granted to this account can be fetched via a GET request.  The result of the GET
-request MUST be a JSON object whose "authorizations" field is an array of
-strings, where each string is the URI of an authorization belonging to this
-registration.  The server SHOULD include pending authorizations, and SHOULD NOT
-include authorizations that are invalid or expired.
-
-certificates (optional, string):
-: A URI from which a list of certificates
-issued for this account can be fetched via a GET request.  The result of the GET
-request MUST be a JSON object whose "certificates" field is an array of strings,
-where each string is the URI of a certificate.  The server SHOULD NOT include
-expired certificates.
-
 A client creates a new account with the server by sending a POST request to the
-server's new-registration URI.  The body of the request is a registration object
-containing only the "contact" field.
+server's new-registration URI.  The body of the request is a stub registration
+object containing only the "contact" field (along with the required "resource"
+field).
 
 ~~~~~~~~~~
 POST /acme/new-registration HTTP/1.1
@@ -862,7 +947,7 @@ mac (required, string):
 representation of the public key of the new account key pair.
 
 ~~~~~~~~~~
-POST /acme/recover-registration HTTP/1.1
+POST /acme/recover-reg HTTP/1.1
 Host: example.com
 
 {
@@ -910,8 +995,8 @@ Link: <https://example.com/acme/terms>;rel="terms-of-service"
     "tel:+12025551212"
   ],
 
-  "authorizations": [...],
-  "certificate": [...]
+  "authorizations": "...",
+  "certificate": "..."
 }
 ~~~~~~~~~~
 
@@ -940,7 +1025,7 @@ base (required, string):
 : The URI for the registration to be recovered.
 
 ~~~~~~~~~~
-POST /acme/recover-registration HTTP/1.1
+POST /acme/recover-reg HTTP/1.1
 Host: example.com
 
 {
@@ -987,79 +1072,6 @@ response, containing the full registration object (copied from the old
 registration).  The client may now use this in the same way as if he had gotten
 it from a new-registration transaction.
 
-
-## Authorization Resources
-
-An ACME authorization resource represents server's authorization for an account
-to represent an identifier.  In addition to the identifier, an
-authorization includes several metadata fields, such as the status of the
-authorization (e.g., "pending", "valid", or "revoked") and which challenges were
-used to validate possession of the identifier.
-
-The structure of an ACME authorization resource is as follows:
-
-identifier (required, dictionary of string):
-: The identifier that the account is authorized to represent
-
-  type (required, string):
-  : The type of identifier.
-
-  value (required, string):
-  : The identifier itself.
-
-status (optional, string):
-: The status of this authorization.  Possible values are: "unknown", "pending",
-"processing", "valid", "invalid" and "revoked".  If this field is missing, then
-the default value is "pending".
-
-expires (optional, string):
-: The date after which the server will consider this
-authorization invalid, encoded in the format specified in RFC 3339 {{RFC3339}}.
-
-challenges (required, array):
-: The challenges that the client needs to fulfill
-in order to prove possession of the identifier (for pending authorizations).
-For final authorizations, the challenges that were used.  Each array entry is a
-dictionary with parameters required to validate the challenge, as specified in
-{{identifier-validation-challenges}}.
-
-combinations (optional, array of arrays of integers):
-: A collection of sets of
-challenges, each of which would be sufficient to prove possession of the
-identifier. Clients complete a set of challenges that that covers at least one
-set in this array. Challenges are identified by their indices in the challenges
-array.  If no "combinations" element is included in an authorization object, the
-client completes all challenges.
-
-The only type of identifier defined by this specification is a fully-qualified
-domain name (type: "dns").  The value of the identifier MUST be the ASCII
-representation of the domain name.  Wildcard domain names (with "*" as the first
-label) MUST NOT be included in authorization requests.  See
-{{certificate-issuance}} below for more information about wildcard domains.
-
-~~~~~~~~~~
-{
-  "status": "valid",
-  "expires": "2015-03-01",
-
-  "identifier": {
-    "type": "dns",
-    "value": "example.org"
-  },
-
-  "challenges": [
-    {
-      "type": "simpleHttp",
-      "status": "valid",
-      "validated": "2014-12-01T12:05Z",
-      "token": "IlirfxKKXAsHtmzK29Pj8A"
-      "path": "Hf5GrX4Q7EBax9hc2jJnfw"
-    }
-  ],
-}
-~~~~~~~~~~
-
-
 ## Identifier Authorization
 
 The identifier authorization process establishes the authorization of an account
@@ -1073,17 +1085,18 @@ manage certificates).
 
 As illustrated by the figure in the overview section above, the authorization
 process proceeds in two phases.  The client first requests a new authorization,
-and then the server issues challenges that the client responds to.
+and the server issues challenges, then the client responds to those challenges
+and the server validates the client's responses.
 
 To begin the key authorization process, the client sends a POST request to the
 server's new-authorization resource.  The body of the POST request MUST contain
 a JWS object, whose payload is a partial authorization object.  This JWS object
 MUST contain only the "identifier" field, so that the server knows what
-identifier is being authorized.
+identifier is being authorized.  The server MUST ignore any other fields present
+in the client's request object.
 
 The authorization object is implicitly tied to the account key used to sign the
-request. Once created, the authorization may only be updated and referenced by
-that account.
+request. Once created, the authorization may only be updated by that account.
 
 ~~~~~~~~~~
 POST /acme/new-authorization HTTP/1.1
@@ -1110,7 +1123,7 @@ If the server is willing to proceed, it builds a pending authorization object
 from the initial authorization object submitted by the client.
 
 * "identifier" the identifier submitted by the client.
-* "status": SHOULD be "pending" (MAY be omitted)
+* "status": MUST be "pending"
 * "challenges" and "combinations": As selected by the server's policy for this
   identifier
 * The "expires" field MUST be absent.
@@ -1174,7 +1187,8 @@ POST /acme/authz/asdf/0 HTTP/1.1
 Host: example.com
 
 {
-  "resource": "authz",
+  "resource": "challenge",
+  "type": "simpleHttp",
   "path": "Hf5GrX4Q7EBax9hc2jJnfw"
 }
 /* Signed as JWS */
@@ -1193,7 +1207,8 @@ and assigns the authorization a status of "valid" or "invalid", corresponding to
 whether it considers the account authorized for the identifier.  If the final
 state is "valid", the server MUST add an "expires" field to the authorization.
 When finalizing an authorization, the server MAY remove the "combinations" field
-(if present) or remove any unfulfilled challenges.
+(if present) or remove any challenges still pending.  The server SHOULD NOT
+remove challenges with status "invalid".
 
 Usually, the validation process will take some time, so the client will need to
 poll the authorization resource to see when it is finalized.  For challenges
@@ -1203,9 +1218,9 @@ polling until it has seen the validation request from the server.
 
 To check on the status of an authorization, the client sends a GET request to
 the authorization URI, and the server responds with the current  authorization
-object.  To provide some degree of control over polling, the server MAY provide
-a Retry-After header field to indicate how long it expect to take in finalizing
-the response.
+object. In responding to poll requests while the validation is still in
+progress, the server MUST return a 202 (Accepted) response with a Retry-After
+header field.
 
 ~~~~~~~~~~
 GET /acme/authz/asdf HTTP/1.1
@@ -1242,14 +1257,14 @@ that a certificate be issued for that identifier.  The client makes this request
 by sending a POST request to the server's new-certificate resource.  The body of
 the POST is a JWS object whose JSON payload contains a Certificate Signing
 Request (CSR) {{RFC2986}}.  The CSR encodes the parameters of the requested
-certificate; authority to issue is demonstrated by the JWS signature, from which
-the server can look up related authorizations.
+certificate; authority to issue is demonstrated by the JWS signature by an
+account key, from which the server can look up related authorizations.
 
 csr (required, string):
-: A CSR encoding the parameters for the certificate
-being requested.  The CSR is sent in Base64-encoded version of the DER format.
-(Note: This field uses the same modified Base64-encoding rules used elsewhere in
-this document, so it is different from PEM.)
+: A CSR encoding the parameters for the certificate being requested.  The CSR is
+sent in the Base64-encoded version of the DER format.  (Note: This field uses
+the same modified Base64-encoding rules used elsewhere in this document, so it
+is different from PEM.)
 
 ~~~~~~~~~~
 POST /acme/new-cert HTTP/1.1
@@ -1291,12 +1306,13 @@ HTTP/1.1 201 Created
 Location: https://example.com/acme/cert/asdf
 ~~~~~~~~~~
 
-If the CA has not yet issued the certificate, the body of this response will be
-empty.  The client should then send a GET request to the certificate URI to poll
-for the certificate.  As long as the certificate is unavailable, the server MUST
-provide a 202 (Accepted) response and include a Retry-After header to indicate
-when the server believes the certificate will be issued (as in the example
-above).
+If the certificate is available at the time of the response, it is provided in
+the body of the response.  If the CA has not yet issued the certificate, the
+body of this response will be empty.  The client should then send a GET request
+to the certificate URI to poll for the certificate.  As long as the certificate
+is unavailable, the server MUST provide a 202 (Accepted) response and include a
+Retry-After header to indicate when the server believes the certificate will be
+issued (as in the example above).
 
 ~~~~~~~~~~
 GET /acme/cert/asdf HTTP/1.1
@@ -1365,7 +1381,9 @@ the ACME server's revoke-cert URI.  The body of the POST is a JWS object whose
 JSON payload contains the certificate to be revoked:
 
 certificate (required, string):
-: The DER form of the certificate, Base64-encoded using the JOSE Base64 variant.
+: The certificate to be revoked, in the Base64-encoded version of the DER
+format.  (Note: This field uses the same modified Base64-encoding rules used
+elsewhere in this document, so it is different from PEM.)
 
 ~~~~~~~~~~
 POST /acme/revoke-cert HTTP/1.1
@@ -1378,6 +1396,8 @@ Host: example.com
 /* Signed as JWS */
 ~~~~~~~~~~
 
+Revocation requests are different from other ACME request in that they can be
+signed either with an account key pair or the key pair in the certificate.
 Before revoking a certificate, the server MUST verify at least one of these
 conditions applies:
 
@@ -1417,8 +1437,8 @@ certificate with a given identifier actually controls that identifier.
 
 Challenges provide the server with assurance the an account key holder is also
 the entity that controls an identifier.  For each type of challenge, it must be
-the case that in order for an entity to successfully complete it the entity must
-both:
+the case that in order for an entity to successfully complete the challenge the
+entity must both:
 
 * Hold the private key of the account key pair used to respond to the challenge
 * Control the identifier in question
@@ -1441,7 +1461,7 @@ The general structure of Challenge and Response payloads is as follows:
 type (required, string):
 : The type of Challenge or Response encoded in the object.
 
-uri (optional, string):
+uri (required, string):
 : The URI to which a response can be posted.
 
 status (optional, string): : The status of this authorization.  Possible values
@@ -1457,28 +1477,30 @@ problem document {{I-D.ietf-appsawg-http-problem}}.
 
 All additional fields are specified by the Challenge type.  The server MUST
 ignore any values provided in the "uri", "status", "validated", and "error"
-fields of a Response payload.  Additionally, if the server sets a Challenge's
-"status" to "invalid", it SHOULD also include the "error" field to help the
-client diagnose why they failed the challenge.
+fields of a Response payload.  If the server sets a Challenge's "status" to
+"invalid", it SHOULD also include the "error" field to help the client diagnose
+why they failed the challenge.
 
 Different challenges allow the server to obtain proof of different aspects of
 control over an identifier.  In some challenges, like Simple HTTP and DVSNI, the
-client directly proves control of an identifier.  In other challenges, such as
-Proof of Possession, the client proves historical control of the identifier, by
-reference to a prior authorization transaction or certificate.
+client directly proves its ability to do certain things related to the
+identifier.  In the Proof of Possession challenge, the client proves historical
+control of the identifier, by reference to a prior authorization transaction or
+certificate.
 
 The choice of which Challenges to offer to a client under which circumstances is
-a matter of server policy.  A server may choose different sets of challenges
+a matter of server policy.  A CA may choose different sets of challenges
 depending on whether it has interacted with a domain before, and how.  For
 example:
 
-| Domain status                                 | Challenges typically sufficient for (re)Authorization |
-|:----------------------------------------------|:------------------------------------------------------|
-| No known prior certificates or ACME usage     | Domain Validation (DVSNI or Simple HTTP)              |
-| Existing valid certs, first use of ACME       | DV + Proof of Possession of previous CA-signed key    |
-| Ongoing ACME usage                            | PoP of previous Authorized key                        |
-| Ongoing ACME usage, lost Authorized key       | DV + PoP of ACME-certified Subject key                |
-| ACME usage, all keys and recovery tokens lost | Proof of legal identity of the site owner             |
+* New domain with no known certificates: Domain Validation (DVSNI or Simple
+  HTTP)
+* Domain for which known certs exist from other CAs: DV + Proof of Possession of
+  previous CA-signed key
+* Domain with a cert from this CA, lost account key: DV + PoP of ACME-certified
+  Subject key
+* Domain with a cert from this CA, all keys and recovery tokens lost: Out of
+  band proof of authority for the domain
 
 The identifier validation challenges described in this section all relate to
 validation of domain names.  If ACME is extended in the future to support other
@@ -1515,9 +1537,12 @@ contain any non-ASCII characters.
 A client responds to this challenge by signing a JWS object and provisioning it
 as a resource on the HTTP server for the domain in question.  The payload of the
 JWS MUST be a JSON dictionary containing the fields "type", "token", "path", and
-"tls" from the ACME challenge and response, and no other fields.  The JWS MUST
-be signed with the client's account key pair, and MUST meet the guidelines laid
-out in {{terminology}} above.
+"tls" from the ACME challenge and response (see below), and no other fields.  If
+the "tls" field is not included in the response, then validation object MUST
+have its "tls" field set to "true".  The JWS MUST be signed with the client's
+account key pair. This JWS is NOT REQUIRED to have a "nonce" header parameter
+(as with the JWS objects that carry ACME request objects), but MUST otherwise
+meet the guidelines laid out in {{terminology}}.
 
 ~~~~~~~~~~
 {
@@ -1563,8 +1588,8 @@ domain by verifying that the resource was provisioned as expected.
 
 1. Form a URI by populating the URI template {{RFC6570}}
 "{scheme}://{domain}/.well-known/acme-challenge/{path}", where:
-  * the scheme field is set to "http" if the "tls" attribute of the response is
-    set to false, and "https" otherwise;
+  * the scheme field is set to "http" if the "tls" field in the response is
+    present and set to false, and "https" otherwise;
   * the domain field is set to the domain name being verified; and
   * the path field is the path provided in the response.
 2. Verify that the resulting URI is well-formed.
@@ -1591,7 +1616,7 @@ If all of the above verifications succeed, then the validation is successful.
 If the request fails, or the body does not pass these checks, then it has
 failed.
 
-## Domain Validation with Server Name Indication
+## Domain Validation with Server Name Indication (DVSNI)
 
 The Domain Validation with Server Name Indication (DVSNI) validation method aims
 to ensure that the ACME client has administrative access to the web server at
@@ -1913,6 +1938,7 @@ TODO
 * Register .well-known path
 * Register Replay-Nonce HTTP header
 * Register "nonce" JWS header parameter
+* Register "urn:acme" namespace
 * Create identifier validation method registry
 * Registries of syntax tokens, e.g., message types / error types?
 

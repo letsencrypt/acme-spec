@@ -44,6 +44,7 @@ normative:
   RFC2986:
   RFC3339:
   RFC3986:
+  RFC4366:
   RFC4514:
   RFC4648:
   RFC5226:
@@ -1210,76 +1211,52 @@ If all of the above verifications succeed, then the validation is successful.  I
 
 ## Domain Validation with Server Name Indication
 
-The Domain Validation with Server Name Indication (DVSNI) validation method aims to ensure that the ACME client has administrative access to the web server at the domain name being validated, and possession of the private key being authorized.  The ACME server verifies that the operator can reconfigure the web server by having the client create a new self-signed challenge certificate and respond to TLS connections from the ACME server with it.
-
-The challenge proceeds as follows: The ACME server sends the client a random value R, a nonce used to identify the transaction, and an array of acceptable ports for which the challenge may be performed.  The client responds with the desired port and key used within the test certificate.  The server initiates a TLS connection on the client's chosen port to one or more of the IPv4 or IPv6 hosts with the domain name being validated.  In the handshake, the ACME server sets the Server Name Indication extension set to "\<nonce\>.acme.invalid".  The TLS server (i.e., the ACME client) should respond with a valid self-signed certificate containing the domain name "\<R\>[0:32].\<R\>[32:64].acme.invalid".
-
-The ACME server's Challenge provides the following parameters:
+The Domain Validation with Server Name Indication (DVSNI) validation method proves control over a domain name by having the client provision a new server that is accessible via TLS Server Name Indication extension {{RFC4366}}.  The server verifies the client's challenge by accessing the created TLS server and verifying a particular challenge certificate is presented.
 
 type (required, string):
 : The string "dvsni"
-
-r (required, string):
-: A random 32-byte octet, hex-encoded
 
 nonce (required, string):
 : A random 16-byte octet string, hex-encoded (so that it can be used as a DNS label)
 
-ports (required, array):
-: Integers representing acceptable ports to perform the challenge.
-
 ~~~~~~~~~~
 
 {
   "type": "dvsni",
-  "r": "21ee2be8d2c201a08447e3d615f84fd5a1264222ecaefd183d1a8162150e0789",
   "nonce": "a82d5ff8ef740d12881f6d3c2277ab2e",
-  "ports": [443],
 }
 
 ~~~~~~~~~~
 
-The client responds to this Challenge by configuring a TLS server on the chosen port of a server with the domain name being validated:
-
-1. Generate a self-signed certificate with a subjectAltName extension containing the dNSName value "\<R\>[0:32].\<R\>[32:64].acme.invalid"
-2. Compute a nonce domain name by appending the suffix ".acme.invalid" to the nonce provided by the server.
-3. Configure the TLS server such that when a client presents the nonce domain name in the SNI field, the server presents the generated certificate.
+The client must generate a self-signed certificate containing a subjectAltName extension with a single dNSName value of "\<nonce\>.acme.invalid".  The client will then configure the TLS server at the domain such that when a handshake is initiated with the Server Name Indication extension set to "\<nonce\>.acme.invalid", the generated test certificate is presented.
 
 The client SHOULD introduce its own entropy into each certificates (e.g. include a random serial number).
 
-The client's responds with the desired port and key used within the certificate.:
+The client responds with the fingerprint of the certificate.
 
 type (required, string):
 : The string "dvsni"
 
-port (required, int):
-: Desired port to perform the challenge
-
-jwk (required, object):
-: A JSON Web Key object used to generate the signature on the DVSNI certificate. {{RFC7517}}
+fingerprint (required, string):
+: Base64-encoded SHA-256 hash of the DER-encoded challenge certificate
 
 
 ~~~~~~~~~~
 
 {
   "type": "dvsni",
-  "port": 443,
-  "jwk": {
-      "kty": "RSA",
-      "e": "AQAB",
-      "n": "KxITJ0rNlfDMAtfDr8eAw...fSSoehDFNZKQKzTZPtQ"
-  },
+  "fingerprint": "RX7hhbXBsZSBDZXJ0aWZpY2F0ZSBGaW5nZXJwcmludA"
 }
 
 ~~~~~~~~~~
 
-Given a Challenge/Response pair, the ACME server verifies the client's control of the domain by verifying that the TLS server was configured as expected:
+Given a Challenge/Response pair, the ACME server verifies the client's control of the domain by verifying that the TLS server was configured appropriately.
 
-1. Open a TLS connection to the domain name being validated on the chosen port, presenting the value "\<nonce\>.acme.invalid" in the SNI field.
+1. Open a TLS connection to the domain name being validated on port 443, presenting the value "\<nonce\>.acme.invalid" in the SNI field.
 2. Verify the following properties of the certificate provided by the TLS server:
   * It is a valid self-signed certificate
-  * The public key is the same key found in the client's DVSNI response.
-  * It contains a subjectAltName of the form "\<R\>[0:32].\<R\>[32:64].acme.invalid".acme.invalid".
+  * The certificate SHA-256 fingerprint of the DER-encoded challenge certificate equals the one provided by the client.
+  * The certificate contains a single subjectAltName of the form "\<nonce\>.acme.invalid".
 
 It is RECOMMENDED that the ACME server verify the challenge certificate using multi-path probing techniques to reduce the risk of DNS hijacking attacks.
 

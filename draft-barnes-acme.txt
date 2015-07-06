@@ -103,9 +103,9 @@ Table of Contents
      7.2.  Domain Validation with Server Name Indication . . . . . .  39
      7.3.  Proof of Possession of a Prior Key  . . . . . . . . . . .  41
      7.4.  DNS . . . . . . . . . . . . . . . . . . . . . . . . . . .  44
-     7.5.  Other possibilities . . . . . . . . . . . . . . . . . . .  45
-   8.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  45
-   9.  Security Considerations . . . . . . . . . . . . . . . . . . .  46
+     7.5.  Other possibilities . . . . . . . . . . . . . . . . . . .  46
+   8.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  47
+   9.  Security Considerations . . . . . . . . . . . . . . . . . . .  47
 
 
 
@@ -114,11 +114,11 @@ Barnes, et al.            Expires March 5, 2015                 [Page 2]
 Internet-Draft                    ACME                    September 2014
 
 
-   10. Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .  46
-   11. References  . . . . . . . . . . . . . . . . . . . . . . . . .  46
-     11.1.  Normative References . . . . . . . . . . . . . . . . . .  46
-     11.2.  Informative References . . . . . . . . . . . . . . . . .  48
-   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  48
+   10. Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .  47
+   11. References  . . . . . . . . . . . . . . . . . . . . . . . . .  47
+     11.1.  Normative References . . . . . . . . . . . . . . . . . .  47
+     11.2.  Informative References . . . . . . . . . . . . . . . . .  49
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  49
 
 1.  Introduction
 
@@ -2445,17 +2445,17 @@ Internet-Draft                    ACME                    September 2014
 7.4.  DNS
 
    When the identifier being validated is a domain name, the client can
-   prove control of that domain by provisioning records under it.  The
-   DNS challenge requires the client to provision a TXT record
-   containing a validation token under a specific validation domain
+   prove control of that domain by provisioning resource records under
+   it.  The DNS challenge requires the client to provision a TXT record
+   containing a designated value under a specific validation domain
    name.
 
    type (required, string):  The string "dns"
 
-   token (required, string):  An ASCII string that is to be provisioned
-      in the TXT record.  This string SHOULD be randomly generated, with
-      at least 128 bits of entropy (e.g., a hex-encoded random octet
-      string).
+   token (required, string):  A random value with at least 128 bits of
+      entropy.  It MUST NOT contain any characters outside the URL-safe
+      Base64 alphabet.
+
 
 
 
@@ -2468,34 +2468,93 @@ Internet-Draft                    ACME                    September 2014
 
    {
      "type": "dns",
-     "token": "17817c66b60ce2e4012dfad92657527a"
+     "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
    }
 
 
-   In response to this challenge, the client first MUST verify that the
-   token contains only ASCII characters.  If so, the client constructs
-   the validation domain name by appending the label "_acme-challenge"
-   to the domain name being validated.  For example, if the domain name
-   being validated is "example.com", then the client would provision the
-   following DNS record:
-
-  _acme-challenge.example.com. IN TXT "17817c66b60ce2e4012dfad92657527a"
-
-
-   The response to a DNS challenge is simply an acknowledgement that the
-   relevant record has been provisioned.
+   In response to this challenge, the client uses its account private
+   key to sign a JWS over a JSON object describing the challenge.  The
+   validation object covered by the signature MUST have the following
+   fields and no others:
 
    type (required, string):  The string "dns"
 
+   token (required, string):  The token value in the challenge
+
+   {
+     "type": "dns",
+     "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
+   }
+
+   The client serializes the validation object to UTF-8, then uses its
+   account private key to sign a JWS with the serialized JSON object as
+   its payload.  This JWS is NOT REQUIRED to have the "nonce" header
+   parameter.
+
+   The record provisioned to the DNS is the "signature" value from the
+   JWS, i.e., the base64-encoded signature value.  The client constructs
+   the validation domain name by appending the label "_acme-challenge"
+   to the domain name being validated, then provisions a TXT record with
+   the signature value under that name.  For example, if the domain name
+   being validated is "example.com", then the client would provision the
+   following DNS record:
+
+   _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
+
+
+   The response to a DNS challenge provides the validation JWS to the
+   server.
+
+   type (required, string):  The string "dns"
+
+   validation (required, JWS):  The JWS object computed with the
+      validation object and the derived key
+
+
+
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 45]
+
+Internet-Draft                    ACME                    September 2014
+
+
    {
      "type": "dns"
+     "clientPublicKey": { "kty": "EC", ... },
+     "validation": {
+       "header": { "alg": "HS256" },
+       "payload": "qzu9...6bjn",
+       "signature": "gfj9XqFv07e1wU66hSLYkiFqYakPSjAu8TsyXRg85nM"
+     }
    }
 
 
-   To validate a DNS challenge, the server queries for TXT records under
-   the validation domain name.  If it receives a record whose contents
-   match the token in the challenge, then the validation succeeds.
-   Otherwise, the validation fails.
+   To validate a DNS challenge, the server performs the following steps:
+
+   1.  Verify the validation JWS using the account key for which this
+       challenge was issued
+
+   2.  Decode the payload of the JWS as UTF-8 encoded JSON
+
+   3.  Verify that the there are exactly two fields in the decoded
+       object, and that:
+
+       *  The "type" field is set to "dns"
+
+       *  The "token" field matches the "token" value in the challenge
+
+   4.  Query for TXT records under the validation domain name
+
+   5.  Verify that the contents of one of the TXT records match the
+       "signature" value in the "validation" JWS
+
+   If all of the above verifications succeed, then the validation is
+   successful.  If no DNS record is found, or DNS record and response
+   payload do not pass these checks, then the validation fails.
 
 7.5.  Other possibilities
 
@@ -2507,6 +2566,18 @@ Internet-Draft                    ACME                    September 2014
 
    o  WHOIS
 
+
+
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 46]
+
+Internet-Draft                    ACME                    September 2014
+
+
 8.  IANA Considerations
 
    TODO
@@ -2514,13 +2585,6 @@ Internet-Draft                    ACME                    September 2014
    o  Register .well-known path
 
    o  Register Replay-Nonce HTTP header
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 45]
-
-Internet-Draft                    ACME                    September 2014
-
 
    o  Register "nonce" JWS header parameter
 
@@ -2561,6 +2625,15 @@ Internet-Draft                    ACME                    September 2014
               APIs", draft-ietf-appsawg-http-problem-00 (work in
               progress), September 2014.
 
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 47]
+
+Internet-Draft                    ACME                    September 2014
+
+
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119, March 1997.
 
@@ -2570,13 +2643,6 @@ Internet-Draft                    ACME                    September 2014
    [RFC2985]  Nystrom, M. and B. Kaliski, "PKCS #9: Selected Object
               Classes and Attribute Types Version 2.0", RFC 2985,
               November 2000.
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 46]
-
-Internet-Draft                    ACME                    September 2014
-
 
    [RFC2986]  Nystrom, M. and B. Kaliski, "PKCS #10: Certification
               Request Syntax Specification Version 1.7", RFC 2986,
@@ -2617,6 +2683,13 @@ Internet-Draft                    ACME                    September 2014
    [RFC6570]  Gregorio, J., Fielding, R., Hadley, M., Nottingham, M.,
               and D. Orchard, "URI Template", RFC 6570, March 2012.
 
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 48]
+
+Internet-Draft                    ACME                    September 2014
+
+
    [RFC7159]  Bray, T., "The JavaScript Object Notation (JSON) Data
               Interchange Format", RFC 7159, March 2014.
 
@@ -2625,14 +2698,6 @@ Internet-Draft                    ACME                    September 2014
 
    [RFC7515]  Jones, M., Bradley, J., and N. Sakimura, "JSON Web
               Signature (JWS)", RFC 7515, May 2015.
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 47]
-
-Internet-Draft                    ACME                    September 2014
-
 
    [RFC7517]  Jones, M., "JSON Web Key (JWK)", RFC 7517, May 2015.
 
@@ -2670,6 +2735,17 @@ Authors' Addresses
    Email: pde@eff.org
 
 
+
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 49]
+
+Internet-Draft                    ACME                    September 2014
+
+
    Seth Schoen
    EFF
 
@@ -2680,14 +2756,6 @@ Authors' Addresses
    University of Michigan
 
    Email: jhalderm@eecs.umich.edu
-
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 48]
-
-Internet-Draft                    ACME                    September 2014
 
 
    James Kasten
@@ -2729,16 +2797,4 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 49]
+Barnes, et al.            Expires March 5, 2015                [Page 50]

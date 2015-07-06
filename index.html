@@ -1733,41 +1733,75 @@ Content-Language: en
 <p id="rfc.section.7.3.p.9">Note that just as in the authorizationRequest message, there are two nonces here, once provided by the client (inside the signature object) and one provided by the server in its challenge (outside the signature object).  The signature covers the concatenation of these two nonces (as specified in the signature-input above).</p>
 <p id="rfc.section.7.3.p.10">If the server is able to validate the signature and confirm that the jwk and alg objects are unchanged from the original challenge, the server can conclude that the client is in control of the private key that corresponds to the specified public key.  The server can use this evidence in support of its authorization and certificate issuance policies.</p>
 <h1 id="rfc.section.7.4"><a href="#rfc.section.7.4">7.4.</a> <a href="#dns" id="dns">DNS</a></h1>
-<p id="rfc.section.7.4.p.1">When the identifier being validated is a domain name, the client can prove control of that domain by provisioning records under it.   The DNS challenge requires the client to provision a TXT record containing a validation token under a specific validation domain name.</p>
+<p id="rfc.section.7.4.p.1">When the identifier being validated is a domain name, the client can prove control of that domain by provisioning resource records under it.   The DNS challenge requires the client to provision a TXT record containing a designated value under a specific validation domain name.</p>
 <p/>
 
 <dl>
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;dns&#8221;</dd>
   <dt>token (required, string):</dt>
-  <dd style="margin-left: 8">An ASCII string that is to be provisioned in the TXT record.  This string SHOULD be randomly generated, with at least 128 bits of entropy (e.g., a hex-encoded random octet string).</dd>
+  <dd style="margin-left: 8">A random value with at least 128 bits of entropy.  It MUST NOT contain any characters outside the URL-safe Base64 alphabet.</dd>
 </dl>
 <pre>
 {
   "type": "dns",
-  "token": "17817c66b60ce2e4012dfad92657527a"
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
 }
 
 </pre>
-<p id="rfc.section.7.4.p.3">In response to this challenge, the client first MUST verify that the token contains only ASCII characters.  If so, the client constructs the validation domain name by appending the label &#8220;_acme-challenge&#8221; to the domain name being validated.  For example, if the domain name being validated is &#8220;example.com&#8221;, then the client would provision the following DNS record:</p>
-<pre>
-_acme-challenge.example.com. IN TXT "17817c66b60ce2e4012dfad92657527a"
-
-</pre>
-<p id="rfc.section.7.4.p.4">The response to a DNS challenge is simply an acknowledgement that the relevant record has been provisioned.</p>
+<p id="rfc.section.7.4.p.3">In response to this challenge, the client uses its account private key to sign a JWS over a JSON object describing the challenge.  The validation object covered by the signature MUST have the following fields and no others:</p>
 <p/>
 
 <dl>
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;dns&#8221;</dd>
+  <dt>token (required, string):</dt>
+  <dd style="margin-left: 8">The token value in the challenge</dd>
+</dl>
+<pre>
+{
+  "type": "dns",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
+}
+</pre>
+<p id="rfc.section.7.4.p.5">The client serializes the validation object to UTF-8, then uses its account private key to sign a JWS with the serialized JSON object as its payload.  This JWS is NOT REQUIRED to have the &#8220;nonce&#8221; header parameter.</p>
+<p id="rfc.section.7.4.p.6">The record provisioned to the DNS is the &#8220;signature&#8221; value from the JWS, i.e., the base64-encoded signature value.  The client constructs the validation domain name by appending the label &#8220;_acme-challenge&#8221; to the domain name being validated, then provisions a TXT record with the signature value under that name. For example, if the domain name being validated is &#8220;example.com&#8221;, then the client would provision the following DNS record:</p>
+<pre>
+_acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
+
+</pre>
+<p id="rfc.section.7.4.p.7">The response to a DNS challenge provides the validation JWS to the server.</p>
+<p/>
+
+<dl>
+  <dt>type (required, string):</dt>
+  <dd style="margin-left: 8">The string &#8220;dns&#8221;</dd>
+  <dt>validation (required, JWS):</dt>
+  <dd style="margin-left: 8">The JWS object computed with the validation object and the derived key</dd>
 </dl>
 <pre>
 {
   "type": "dns"
+  "clientPublicKey": { "kty": "EC", ... },
+  "validation": {
+    "header": { "alg": "HS256" },
+    "payload": "qzu9...6bjn",
+    "signature": "gfj9XqFv07e1wU66hSLYkiFqYakPSjAu8TsyXRg85nM"
+  }
 }
 
 </pre>
-<p id="rfc.section.7.4.p.6">To validate a DNS challenge, the server queries for TXT records under the validation domain name.  If it receives a record whose contents match the token in the challenge, then the validation succeeds.  Otherwise, the validation fails.</p>
+<p id="rfc.section.7.4.p.9">To validate a DNS challenge, the server performs the following steps:</p>
+<p/>
+
+<ol>
+  <li>Verify the validation JWS using the account key for which this challenge was issued</li>
+  <li>Decode the payload of the JWS as UTF-8 encoded JSON</li>
+  <li>Verify that the there are exactly two fields in the decoded object, and that: <ul><li>The &#8220;type&#8221; field is set to &#8220;dns&#8221;</li><li>The &#8220;token&#8221; field matches the &#8220;token&#8221; value in the challenge</li></ul></li>
+  <li>Query for TXT records under the validation domain name</li>
+  <li>Verify that the contents of one of the TXT records match the &#8220;signature&#8221; value in the &#8220;validation&#8221; JWS</li>
+</ol>
+<p id="rfc.section.7.4.p.11">If all of the above verifications succeed, then the validation is successful.  If no DNS record is found, or DNS record and response payload do not pass these checks, then the validation fails.</p>
 <h1 id="rfc.section.7.5"><a href="#rfc.section.7.5">7.5.</a> <a href="#other-possibilities" id="other-possibilities">Other possibilities</a></h1>
 <p id="rfc.section.7.5.p.1">For future work:</p>
 <p/>

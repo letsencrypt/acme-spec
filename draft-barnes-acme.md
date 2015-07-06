@@ -1399,46 +1399,81 @@ If the server is able to validate the signature and confirm that the jwk and alg
 
 ## DNS
 
-When the identifier being validated is a domain name, the client can prove control of that domain by provisioning records under it.   The DNS challenge requires the client to provision a TXT record containing a validation token under a specific validation domain name.
+When the identifier being validated is a domain name, the client can prove control of that domain by provisioning resource records under it.   The DNS challenge requires the client to provision a TXT record containing a designated value under a specific validation domain name.
 
 type (required, string):
 : The string "dns"
 
 token (required, string):
-: An ASCII string that is to be provisioned in the TXT record.  This string SHOULD be randomly generated, with at least 128 bits of entropy (e.g., a hex-encoded random octet string).
+: A random value with at least 128 bits of entropy.  It MUST NOT contain any characters outside the URL-safe Base64 alphabet.
 
 ~~~~~~~~~~
 
 {
   "type": "dns",
-  "token": "17817c66b60ce2e4012dfad92657527a"
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
 }
 
 ~~~~~~~~~~
 
-In response to this challenge, the client first MUST verify that the token contains only ASCII characters.  If so, the client constructs the validation domain name by appending the label "_acme-challenge" to the domain name being validated.  For example, if the domain name being validated is "example.com", then the client would provision the following DNS record:
-
-~~~~~~~~~~
-
-_acme-challenge.example.com. IN TXT "17817c66b60ce2e4012dfad92657527a"
-
-~~~~~~~~~~
-
-The response to a DNS challenge is simply an acknowledgement that the relevant record has been provisioned.
+In response to this challenge, the client uses its account private key to sign a JWS over a JSON object describing the challenge.  The validation object covered by the signature MUST have the following fields and no others:
 
 type (required, string):
 : The string "dns"
+
+token (required, string):
+: The token value in the challenge
+
+~~~~~~~~~~
+{
+  "type": "dns",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
+}
+~~~~~~~~~~
+
+The client serializes the validation object to UTF-8, then uses its account private key to sign a JWS with the serialized JSON object as its payload.  This JWS is NOT REQUIRED to have the "nonce" header parameter.
+
+The record provisioned to the DNS is the "signature" value from the JWS, i.e., the base64-encoded signature value.  The client constructs the validation domain name by appending the label "_acme-challenge" to the domain name being validated, then provisions a TXT record with the signature value under that name. For example, if the domain name being validated is "example.com", then the client would provision the following DNS record:
+
+~~~~~~~~~~
+
+_acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
+
+~~~~~~~~~~
+
+The response to a DNS challenge provides the validation JWS to the server.
+
+type (required, string):
+: The string "dns"
+
+validation (required, JWS):
+: The JWS object computed with the validation object and the derived key
 
 ~~~~~~~~~~
 
 {
   "type": "dns"
+  "clientPublicKey": { "kty": "EC", ... },
+  "validation": {
+    "header": { "alg": "HS256" },
+    "payload": "qzu9...6bjn",
+    "signature": "gfj9XqFv07e1wU66hSLYkiFqYakPSjAu8TsyXRg85nM"
+  }
 }
 
 ~~~~~~~~~~
 
-To validate a DNS challenge, the server queries for TXT records under the validation domain name.  If it receives a record whose contents match the token in the challenge, then the validation succeeds.  Otherwise, the validation fails.
+To validate a DNS challenge, the server performs the following steps:
 
+1. Verify the validation JWS using the account key for which this challenge was issued
+2. Decode the payload of the JWS as UTF-8 encoded JSON
+3. Verify that the there are exactly two fields in the decoded object, and that:
+  * The "type" field is set to "dns"
+  * The "token" field matches the "token" value in the challenge
+4. Query for TXT records under the validation domain name
+5. Verify that the contents of one of the TXT records match the "signature" value in the "validation" JWS
+
+If all of the above verifications succeed, then the validation is successful.  If no DNS record is found, or DNS record and response payload do not pass these checks, then the validation fails.
 
 ## Other possibilities
 

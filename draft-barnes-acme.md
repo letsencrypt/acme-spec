@@ -15,21 +15,11 @@ author:
     name: Richard Barnes
     org: Mozilla
     email: rlb@ipv.sx
- -
-    ins: P. Eckersley
-    name: Peter Eckersley
+ - 
+    ins: J. Hoffman-Andrews
+    name: Jacob Hoffman-Andrews
     org: EFF
-    email: pde@eff.org
- -
-    ins: S. Schoen
-    name: Seth Schoen
-    org: EFF
-    email: schoen@eff.org
- -
-    ins: A. Halderman
-    name: Alex Halderman
-    org: University of Michigan
-    email: jhalderm@eecs.umich.edu
+    email: jsha@eff.org
  -
     ins: J. Kasten
     name: James Kasten
@@ -2206,6 +2196,17 @@ perform all necessary checks before issuing.
 
 
 # Acknowledgements
+
+In addition to the editors listed on the front page, this document has benefited
+from contributions from a broad set of contributors, all the way back to its
+inception.
+
+* Peter Eckersley, EFF
+* Eric Rescorla, Mozilla
+* Seth Schoen, EFF
+* Alex Halderman, University of Michigan
+* Martin Thomson, Mozilla
+* Jakub Warmuz
 
 This document draws on many concepts established by Eric Rescorla's "Automated
 Certificate Issuance Protocol" draft.  Martin Thomson provided helpful guidance

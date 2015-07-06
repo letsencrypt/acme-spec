@@ -1620,7 +1620,7 @@ nonce (required, string):
 ~~~~~~~~~~
 {
   "type": "dvsni",
-    "nonce": "a82d5ff8ef740d12881f6d3c2277ab2e",
+  "nonce": "a82d5ff8ef740d12881f6d3c2277ab2e",
 }
 ~~~~~~~~~~
 
@@ -1644,7 +1644,7 @@ fingerprint (required, string):
 ~~~~~~~~~~
 {
   "type": "dvsni",
-    "fingerprint": "RX7hhbXBsZSBDZXJ0aWZpY2F0ZSBGaW5nZXJwcmludA"
+  "fingerprint": "RX7hhbXBsZSBDZXJ0aWZpY2F0ZSBGaW5nZXJwcmludA"
 }
 ~~~~~~~~~~
 

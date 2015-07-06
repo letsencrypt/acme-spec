@@ -81,15 +81,15 @@ Table of Contents
    4.  Protocol Overview . . . . . . . . . . . . . . . . . . . . . .   6
    5.  Certificate Management  . . . . . . . . . . . . . . . . . . .   9
      5.1.  Resources and Requests  . . . . . . . . . . . . . . . . .   9
-     5.2.  Errors  . . . . . . . . . . . . . . . . . . . . . . . . .  13
-     5.3.  Replay protection . . . . . . . . . . . . . . . . . . . .  14
+     5.2.  Errors  . . . . . . . . . . . . . . . . . . . . . . . . .  12
+     5.3.  Replay protection . . . . . . . . . . . . . . . . . . . .  13
        5.3.1.  Replay-Nonce  . . . . . . . . . . . . . . . . . . . .  14
-       5.3.2.  "nonce" (Nonce) JWS header parameter  . . . . . . . .  15
+       5.3.2.  "nonce" (Nonce) JWS header parameter  . . . . . . . .  14
      5.4.  Key Agreement . . . . . . . . . . . . . . . . . . . . . .  15
      5.5.  Directory . . . . . . . . . . . . . . . . . . . . . . . .  16
      5.6.  Registration  . . . . . . . . . . . . . . . . . . . . . .  16
-       5.6.1.  Recovery Keys . . . . . . . . . . . . . . . . . . . .  19
-     5.7.  Account Recovery  . . . . . . . . . . . . . . . . . . . .  21
+       5.6.1.  Recovery Keys . . . . . . . . . . . . . . . . . . . .  18
+     5.7.  Account Recovery  . . . . . . . . . . . . . . . . . . . .  20
        5.7.1.  MAC-Based Recovery  . . . . . . . . . . . . . . . . .  21
        5.7.2.  Contact-Based Recovery  . . . . . . . . . . . . . . .  23
      5.8.  Authorization Resources . . . . . . . . . . . . . . . . .  25
@@ -121,7 +121,7 @@ Internet-Draft                    ACME                    September 2014
    9.  Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .  53
    10. References  . . . . . . . . . . . . . . . . . . . . . . . . .  53
      10.1.  Normative References . . . . . . . . . . . . . . . . . .  53
-     10.2.  Informative References . . . . . . . . . . . . . . . . .  55
+     10.2.  Informative References . . . . . . . . . . . . . . . . .  54
    Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  55
 
 1.  Introduction
@@ -272,7 +272,7 @@ Internet-Draft                    ACME                    September 2014
    In the discussion below, we will refer to three different types of
    keys / key pairs:
 
-   Subject Public Key:  A public key to be included in a certificate.
+   Subject Public Key: : A public key to be included in a certificate.
 
 
 
@@ -282,10 +282,10 @@ Barnes, et al.            Expires March 5, 2015                 [Page 5]
 Internet-Draft                    ACME                    September 2014
 
 
-   Account Key Pair:  A key pair for which the ACME server considers the
-      holder of the private key authorized to manage certificates for a
-      given identifier.  The same key pair may be authorized for
-      multiple identifiers.
+   Account Key Pair: : A key pair for which the ACME server considers
+   the holder of the private key authorized to manage certificates for a
+   given identifier.  The same key pair may be authorized for multiple
+   identifiers.
 
    ACME messaging is based on HTTPS [RFC2818] and JSON [RFC7159].  Since
    JSON is a text-based format, binary fields are Base64-encoded.  For
@@ -345,7 +345,6 @@ Internet-Draft                    ACME                    September 2014
 
                                        <-------            Registration
 
-
    Before a client can issue certificates, it must establish an
    authorization with the server for an account key pair to act for the
    identifier(s) that it wishes to include in the certificate.  To do
@@ -389,6 +388,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
+
 Barnes, et al.            Expires March 5, 2015                 [Page 7]
 
 Internet-Draft                    ACME                    September 2014
@@ -410,7 +410,6 @@ Internet-Draft                    ACME                    September 2014
 
                                        <-------           Authorization
 
-
    Once the client has authorized an account key pair for an identifier,
    it can use the key pair to authorize the issuance of certificates for
    the identifier.  To do this, the client sends a PKCS#10 Certificate
@@ -431,15 +430,16 @@ Internet-Draft                    ACME                    September 2014
 
                                       <--------            Certificate
 
-
    To revoke a certificate, the client simply sends a revocation
    request, signed with an authorized key pair, and the server indicates
    whether the request has succeeded.
 
+         Client                                                 Server
 
+         Revocation request
+         Signature                    -------->
 
-
-
+                                      <--------                 Result
 
 
 
@@ -448,14 +448,6 @@ Internet-Draft                    ACME                    September 2014
 Barnes, et al.            Expires March 5, 2015                 [Page 8]
 
 Internet-Draft                    ACME                    September 2014
-
-
-         Client                                                 Server
-
-         Revocation request
-         Signature                    -------->
-
-                                      <--------                 Result
 
 
    Note that while ACME is defined with enough flexibility to handle
@@ -498,14 +490,6 @@ Internet-Draft                    ACME                    September 2014
    o  Authorization resources, representing an account's authorization
       to act for an identifier
 
-
-
-
-Barnes, et al.            Expires March 5, 2015                 [Page 9]
-
-Internet-Draft                    ACME                    September 2014
-
-
    o  Challenge resources, representing a challenge to prove control of
       an identifier
 
@@ -514,6 +498,13 @@ Internet-Draft                    ACME                    September 2014
    o  A "directory" resource
 
    o  A "new-registration" resource
+
+
+
+Barnes, et al.            Expires March 5, 2015                 [Page 9]
+
+Internet-Draft                    ACME                    September 2014
+
 
    o  A "new-authorization" resource
 
@@ -546,22 +537,6 @@ Internet-Draft                    ACME                    September 2014
    dotted lines correspond to relationships expressed in other ways,
    e.g., the Location header in a 201 (Created) response.
 
-
-
-
-
-
-
-
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 10]
-
-Internet-Draft                    ACME                    September 2014
-
-
                                   directory
                                       .
                                       .
@@ -578,6 +553,13 @@ Internet-Draft                    ACME                    September 2014
                             . | "up"            | "up"
                             V |                 V
                           challenge         cert-chain
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 10]
+
+Internet-Draft                    ACME                    September 2014
 
 
    The remainder of this section provides the details of how these
@@ -600,23 +582,6 @@ Internet-Draft                    ACME                    September 2014
    each request object MUST have a "resource" field that indicates what
    type of resource the request is addressed to, as defined in the below
    table:
-
-
-
-
-
-
-
-
-
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 11]
-
-Internet-Draft                    ACME                    September 2014
-
 
                 +----------------------+------------------+
                 | Resource type        | "resource" value |
@@ -645,6 +610,14 @@ Internet-Draft                    ACME                    September 2014
    The following table illustrates a typical sequence of requests
    required to establish a new account with the server, prove control of
    an identifier, issue a certificate, and fetch an updated certificate
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 11]
+
+Internet-Draft                    ACME                    September 2014
+
+
    some time after issuance.  The "->" is a mnemonic for a Location
    header pointing to a created resource.
 
@@ -666,14 +639,6 @@ Internet-Draft                    ACME                    September 2014
 
    ACME servers that are intended to be generally accessible need to use
    Cross-Origin Resource Sharing (CORS) in order to be accessible from
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 12]
-
-Internet-Draft                    ACME                    September 2014
-
-
    browser-based clients [W3C.CR-cors-20130129].  Such servers SHOULD
    set the Access-Control-Allow-Origin header field to the value "*".
 
@@ -691,6 +656,23 @@ Internet-Draft                    ACME                    September 2014
    be populated.  To facilitate automatic response to errors, this
    document defines the following standard tokens for use in the "type"
    field (within the "urn:acme:" namespace):
+
+
+
+
+
+
+
+
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 12]
+
+Internet-Draft                    ACME                    September 2014
+
 
    +----------------+--------------------------------------------------+
    | Code           | Semantic                                         |
@@ -722,14 +704,6 @@ Internet-Draft                    ACME                    September 2014
    information to indicate why the server was unable to validate
    authorization.
 
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 13]
-
-Internet-Draft                    ACME                    September 2014
-
-
    TODO: Flesh out errors and syntax for them
 
 5.3.  Replay protection
@@ -746,6 +720,15 @@ Internet-Draft                    ACME                    September 2014
    Replay-Nonce header field in response to a HEAD request for any valid
    resource.  (This allows clients to easily obtain a fresh nonce.)  It
    MAY also provide nonces in error responses.
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 13]
+
+Internet-Draft                    ACME                    September 2014
+
 
    Every JWS sent by an ACME client MUST include, in its protected
    header, the "nonce" and "acmePath" header parameters, with contents
@@ -777,15 +760,6 @@ Internet-Draft                    ACME                    September 2014
    Replay-Nonce in such a way that they are unique to each message, with
    high probability.
 
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 14]
-
-Internet-Draft                    ACME                    September 2014
-
-
    The value of the Replay-Nonce field MUST be an octet string encoded
    according to the base64url encoding described in Section 2 of
    [RFC7515].  Clients MUST ignore invalid Replay-Nonce values.
@@ -802,6 +776,15 @@ Internet-Draft                    ACME                    September 2014
    The "nonce" header parameter provides a unique value that enables the
    verifier of a JWS to recognize when replay has occurred.  The "nonce"
    header parameter MUST be carried in the protected header of the JWS.
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 14]
+
+Internet-Draft                    ACME                    September 2014
+
 
    The value of the "nonce" header parameter MUST be an octet string,
    encoded according to the base64url encoding described in Section 2 of
@@ -834,14 +817,6 @@ Internet-Draft                    ACME                    September 2014
 
       *  For "P-256", use SHA-256
 
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 15]
-
-Internet-Draft                    ACME                    September 2014
-
-
       *  For "P-384", use SHA-384
 
       *  For "P-521", use SHA-512
@@ -856,6 +831,16 @@ Internet-Draft                    ACME                    September 2014
    the leftmost octets of the following:
 
    H( Z || 00000001 || label )
+
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 15]
+
+Internet-Draft                    ACME                    September 2014
+
 
 5.5.  Directory
 
@@ -889,15 +874,6 @@ Internet-Draft                    ACME                    September 2014
    key (required, dictionary):  The public key of the account key pair,
       encoded as a JSON Web Key object [RFC7517].
 
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 16]
-
-Internet-Draft                    ACME                    September 2014
-
-
    contact (optional, array of string):  An array of URIs that the
       server can use to contact the client for issues related to this
       authorization.  For example, the server may wish to notify the
@@ -913,6 +889,15 @@ Internet-Draft                    ACME                    September 2014
       request.  The result of the GET request MUST be a JSON object
       whose "authorizations" field is an array of strings, where each
       string is the URI of an authorization belonging to this
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 16]
+
+Internet-Draft                    ACME                    September 2014
+
+
       registration.  The server SHOULD include pending authorizations,
       and SHOULD NOT include authorizations that are invalid or expired.
 
@@ -939,20 +924,12 @@ Internet-Draft                    ACME                    September 2014
    }
    /* Signed as JWS */
 
-
    The server MUST ignore any values provided in the "key",
    "authorizations", and "certificates" fields in registration bodies
    sent by the client, as well as any other fields that it does not
    recognize.  If new fields are specified in the future, the
    specification of those fields MUST describe whether they may be
    provided by the client.
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 17]
-
-Internet-Draft                    ACME                    September 2014
-
 
    The server creates a registration object with the included contact
    information.  The "key" element of the registration is set to the
@@ -967,6 +944,15 @@ Internet-Draft                    ACME                    September 2014
    provide the URI of that registration in a Location header field.
    This allows a client that has an account key but not the
    corresponding registration URI to recover the registration URI.
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 17]
+
+Internet-Draft                    ACME                    September 2014
+
 
    If the server wishes to present the client with terms under which the
    ACME service is to be used, it MUST indicate the URI where such terms
@@ -991,7 +977,6 @@ Internet-Draft                    ACME                    September 2014
      ]
    }
 
-
    If the client wishes to update this information in the future, it
    sends a POST request with updated information to the registration
    URI.  The server MUST ignore any updates to the "key",
@@ -1002,14 +987,6 @@ Internet-Draft                    ACME                    September 2014
    Servers SHOULD NOT respond to GET requests for registration resources
    as these requests are not authenticated.  If a client wishes to query
    the server for information about its account (e.g., to examine the
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 18]
-
-Internet-Draft                    ACME                    September 2014
-
-
    "contact" or "certificates" fields), then it SHOULD do so by sending
    a POST request with an empty update.  That is, it should send a JWS
    whose payload is trivial ({"resource":"reg"}).
@@ -1022,6 +999,16 @@ Internet-Draft                    ACME                    September 2014
    registration transaction.  The client and server perform an ECDH
    exchange through the new-registration transaction (using the
    technique in Section 5.4), and the result is the recovery key.
+
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 18]
+
+Internet-Draft                    ACME                    September 2014
+
 
    To request a recovery key, the client includes a "recoveryKey" field
    in its new-registration request.  The value of this field is a JSON
@@ -1057,15 +1044,6 @@ Internet-Draft                    ACME                    September 2014
    }
    /* Signed as JWS */
 
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 19]
-
-Internet-Draft                    ACME                    September 2014
-
-
    The server MUST validate that the elliptic curve ("crv") and length
    value chosen by the client are acceptable, and that is otherwise
    willing to create a recovery key.  If not, then it MUST reject the
@@ -1079,6 +1057,14 @@ Internet-Draft                    ACME                    September 2014
    The server MUST generate a fresh key pair for every transaction.
 
    server (required, JWK):  The server's ECDH public key
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 19]
+
+Internet-Draft                    ACME                    September 2014
+
 
    HTTP/1.1 201 Created
    Content-Type: application/json
@@ -1097,7 +1083,6 @@ Internet-Draft                    ACME                    September 2014
      }
    }
 
-
    On receiving the server's response, the client can compute the
    recovery key by combining the server's public key together with the
    private key corresponding to the public key that it sent to the
@@ -1108,19 +1093,6 @@ Internet-Draft                    ACME                    September 2014
    server agrees to refresh the recovery key, then it responds in the
    same way as to a new registration request that asks for a recovery
    key.
-
-
-
-
-
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 20]
-
-Internet-Draft                    ACME                    September 2014
-
 
    POST /acme/reg/asdf HTTP/1.1
    Host: example.com
@@ -1133,7 +1105,6 @@ Internet-Draft                    ACME                    September 2014
    }
    /* Signed as JWS */
 
-
 5.7.  Account Recovery
 
    Once a client has created an account with an ACME server, it is
@@ -1141,6 +1112,15 @@ Internet-Draft                    ACME                    September 2014
    recovery contacts included in the registration allows the client to
    recover from this situtation, as long as it still has access to these
    contacts.
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 20]
+
+Internet-Draft                    ACME                    September 2014
+
 
    By "recovery", we mean that the information associated with an old
    account key is bound to a new account key.  When a recovery process
@@ -1171,19 +1151,32 @@ Internet-Draft                    ACME                    September 2014
 
    method (required, string):  The string "mac"
 
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 21]
-
-Internet-Draft                    ACME                    September 2014
-
-
    base (required, string):  The URI for the registration to be
       recovered.
 
    mac (required, string):  A JSON-formatted JWS object using an HMAC
       algorithm, whose payload is the JWK representation of the public
       key of the new account key pair.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 21]
+
+Internet-Draft                    ACME                    September 2014
+
 
    POST /acme/recover-registration HTTP/1.1
    Host: example.com
@@ -1199,7 +1192,6 @@ Internet-Draft                    ACME                    September 2014
      }
    }
    /* Signed as JWS, with new account key */
-
 
    On receiving such a request the server MUST verify that:
 
@@ -1220,6 +1212,14 @@ Internet-Draft                    ACME                    September 2014
    (Created) response, together with a Location header indicating a URI
    for the new registration.  If the recovery request is unsuccessful,
    the server returns an error response, such as 403 (Forbidden).
+
+
+
+
+
+
+
+
 
 
 
@@ -1253,7 +1253,6 @@ Internet-Draft                    ACME                    September 2014
      "certificate": [...]
    }
 
-
 5.7.2.  Contact-Based Recovery
 
    In the contact-based recovery process, the client requests that the
@@ -1285,6 +1284,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
+
 Barnes, et al.            Expires March 5, 2015                [Page 23]
 
 Internet-Draft                    ACME                    September 2014
@@ -1299,7 +1299,6 @@ Internet-Draft                    ACME                    September 2014
      "base": "https://example.com/acme/reg/asdf"
    }
    /* Signed as JWS, with new account key */
-
 
    If the server agrees to attempt contact-based recovery, then it
    creates a new registration resource containing a stub registration
@@ -1323,7 +1322,6 @@ Internet-Draft                    ACME                    September 2014
      ]
    }
 
-
    After recovery has been initiated, the server follows its chosen
    recovery process, out-of-band to ACME.  While the recovery process is
    ongoing, the client may poll the registration resource's URI for
@@ -1337,6 +1335,8 @@ Internet-Draft                    ACME                    September 2014
    200 (OK) response, containing the full registration object (copied
    from the old registration).  The client may now use this in the same
    way as if he had gotten it from a new-registration transaction.
+
+
 
 
 
@@ -1422,7 +1422,6 @@ Internet-Draft                    ACME                    September 2014
      ],
    }
 
-
 5.9.  Identifier Authorization
 
    The identifier authorization process establishes the authorization of
@@ -1453,6 +1452,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
+
 Barnes, et al.            Expires March 5, 2015                [Page 26]
 
 Internet-Draft                    ACME                    September 2014
@@ -1469,7 +1469,6 @@ Internet-Draft                    ACME                    September 2014
      }
    }
    /* Signed as JWS */
-
 
    Before processing the authorization further, the server SHOULD
    determine whether it is willing to issue certificates for the
@@ -1496,6 +1495,7 @@ Internet-Draft                    ACME                    September 2014
    The server allocates a new URI for this authorization, and returns a
    201 (Created) response, with the authorization URI in a Location
    header field, and the JSON authorization object in the body.
+
 
 
 
@@ -1546,7 +1546,6 @@ Internet-Draft                    ACME                    September 2014
      ]
    }
 
-
    The client needs to respond with information to complete the
    challenges.  To do this, the client updates the authorization object
    received from the server by filling in any required information in
@@ -1560,6 +1559,7 @@ Internet-Draft                    ACME                    September 2014
    carried in a POST request to the challenge URI (not authorization URI
    or the new-authorization URI).  This allows the client to send
    information only for challenges it is responding to.
+
 
 
 
@@ -1582,7 +1582,6 @@ Internet-Draft                    ACME                    September 2014
      "path": "Hf5GrX4Q7EBax9hc2jJnfw"
    }
    /* Signed as JWS */
-
 
    The server updates the authorization document by updating its
    representation of the challenge with the response fields provided by
@@ -1621,6 +1620,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
+
 Barnes, et al.            Expires March 5, 2015                [Page 29]
 
 Internet-Draft                    ACME                    September 2014
@@ -1651,7 +1651,6 @@ Internet-Draft                    ACME                    September 2014
      ]
    }
 
-
 5.10.  Certificate Issuance
 
    The holder of an authorized key pair for an identifier may use ACME
@@ -1677,6 +1676,7 @@ Internet-Draft                    ACME                    September 2014
 
 
 
+
 Barnes, et al.            Expires March 5, 2015                [Page 30]
 
 Internet-Draft                    ACME                    September 2014
@@ -1691,7 +1691,6 @@ Internet-Draft                    ACME                    September 2014
      "csr": "5jNudRx6Ye4HzKEqT5...FS6aKdZeGsysoCo4H9P",
    }
    /* Signed as JWS */
-
 
    The CSR encodes the client's requests with regard to the content of
    the certificate to be issued.  The CSR MUST indicate the requested
@@ -1722,13 +1721,14 @@ Internet-Draft                    ACME                    September 2014
    HTTP/1.1 201 Created
    Location: https://example.com/acme/cert/asdf
 
-
    If the CA has not yet issued the certificate, the body of this
    response will be empty.  The client should then send a GET request to
    the certificate URI to poll for the certificate.  As long as the
    certificate is unavailable, the server MUST provide a 202 (Accepted)
    response and include a Retry-After header to indicate when the server
    believes the certificate will be issued (as in the example above).
+
+
 
 
 
@@ -1744,7 +1744,6 @@ Internet-Draft                    ACME                    September 2014
 
    HTTP/1.1 202 Accepted
    Retry-After: 120
-
 
    The default format of the certificate is DER (application/pkix-cert).
    The client may request other formats by including an Accept header in
@@ -1771,7 +1770,6 @@ Internet-Draft                    ACME                    September 2014
 
    [DER-encoded certificate]
 
-
 5.11.  Certificate Renewal
 
    Often, a client wishes to request a new certificate with the same
@@ -1785,6 +1783,8 @@ Internet-Draft                    ACME                    September 2014
    query to the certificate URI, which the server should then return in
    a 200 (OK) response.  The server SHOULD provide a URI for each
    specific certificate in the Content-Location header field, as shown
+   above.  Requests to specific certificate URIs MUST always result in
+   the same certificate.
 
 
 
@@ -1793,9 +1793,6 @@ Barnes, et al.            Expires March 5, 2015                [Page 32]
 
 Internet-Draft                    ACME                    September 2014
 
-
-   above.  Requests to specific certificate URIs MUST always result in
-   the same certificate.
 
    To avoid unnecessary renewals, the CA may choose not to issue a
    renewed certificate until it receives such a request.  In such cases,
@@ -1830,7 +1827,6 @@ Internet-Draft                    ACME                    September 2014
    }
    /* Signed as JWS */
 
-
    Before revoking a certificate, the server MUST verify at least one of
    these conditions applies:
 
@@ -1841,6 +1837,10 @@ Internet-Draft                    ACME                    September 2014
       corresponding account is authorized to act for all of the
       identifier(s) in the certificate.
 
+   If the revocation succeeds, the server responds with status code 200
+   (OK).  If the revocation fails, the server returns an error.
+
+
 
 
 
@@ -1849,9 +1849,6 @@ Barnes, et al.            Expires March 5, 2015                [Page 33]
 
 Internet-Draft                    ACME                    September 2014
 
-
-   If the revocation succeeds, the server responds with status code 200
-   (OK).  If the revocation fails, the server returns an error.
 
    HTTP/1.1 200 OK
    Content-Length: 0
@@ -1867,7 +1864,6 @@ Internet-Draft                    ACME                    September 2014
      "detail": "No authorization provided for name example.net"
      "instance": "http://example.com/doc/unauthorized"
    }
-
 
 6.  Identifier Validation Challenges
 
@@ -1899,15 +1895,16 @@ Internet-Draft                    ACME                    September 2014
 
    o  Content of Response payloads (in authorizationRequest messages)
 
+   o  How the server uses the Challenge and Response to verify control
+      of an identifier
+
+
 
 
 Barnes, et al.            Expires March 5, 2015                [Page 34]
 
 Internet-Draft                    ACME                    September 2014
 
-
-   o  How the server uses the Challenge and Response to verify control
-      of an identifier
 
    The general structure of Challenge and Response payloads is as
    follows:
@@ -1917,19 +1914,18 @@ Internet-Draft                    ACME                    September 2014
 
    uri (optional, string):  The URI to which a response can be posted.
 
-   status (optional, string):  The status of this authorization.
-      Possible values are: "unknown", "pending", "processing", "valid",
-      "invalid" and "revoked".  If this field is missing, then the
-      default value is "pending".
+   status (optional, string): : The status of this authorization.
+   Possible values are: "unknown", "pending", "processing", "valid",
+   "invalid" and "revoked".  If this field is missing, then the default
+   value is "pending".
 
-   validated (optional, string):  The time at which this challenge was
-      completed by the server, encoded in the format specified in RFC
-      3339 [RFC3339].
+   validated (optional, string): : The time at which this challenge was
+   completed by the server, encoded in the format specified in RFC 3339
+   [RFC3339].
 
-   error (optional, dictionary of string):  The error that occurred
-      while the server was validating the challenge, if any.  This field
-      is structured as a problem document
-      [I-D.ietf-appsawg-http-problem].
+   error (optional, dictionary of string): : The error that occurred
+   while the server was validating the challenge, if any.  This field is
+   structured as a problem document [I-D.ietf-appsawg-http-problem].
 
    All additional fields are specified by the Challenge type.  The
    server MUST ignore any values provided in the "uri", "status",
@@ -1949,6 +1945,10 @@ Internet-Draft                    ACME                    September 2014
    circumstances is a matter of server policy.  A server may choose
    different sets of challenges depending on whether it has interacted
    with a domain before, and how.  For example:
+
+
+
+
 
 
 
@@ -2023,7 +2023,6 @@ Internet-Draft                    ACME                    September 2014
      "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA"
    }
 
-
    A client responds to this challenge by signing a JWS object and
    provisioning it as a resource on the HTTP server for the domain in
    question.  The payload of the JWS MUST be a JSON dictionary
@@ -2060,11 +2059,12 @@ Internet-Draft                    ACME                    September 2014
       over unencrypted HTTP (on port 80) rather than over HTTPS.
       Otherwise the check will be done over HTTPS, on port 443.
 
-
-
-
-
-
+   {
+     "type": "simpleHttp",
+     "path": "6tbIMBC5Anhl5bOlWT5ZFA",
+     "tls": false
+   }
+   /* Signed as JWS */
 
 
 
@@ -2072,14 +2072,6 @@ Internet-Draft                    ACME                    September 2014
 Barnes, et al.            Expires March 5, 2015                [Page 37]
 
 Internet-Draft                    ACME                    September 2014
-
-
-   {
-     "type": "simpleHttp",
-     "path": "6tbIMBC5Anhl5bOlWT5ZFA",
-     "tls": false
-   }
-   /* Signed as JWS */
 
 
    Given a Challenge/Response pair, the server verifies the client's
@@ -2122,6 +2114,14 @@ Internet-Draft                    ACME                    September 2014
 
        *  Its "path" field is equal to the "path" field in the response
 
+       *  Its "tls" field is equal to the "tls" field in the response,
+          or "true" if the "tls" field was absent
+
+   Comparisons of the "path" and "token" fields MUST be performed in
+   terms of Unicode code points, taking into account the encodings of
+   the stored nonce and the body of the request.
+
+
 
 
 
@@ -2129,13 +2129,6 @@ Barnes, et al.            Expires March 5, 2015                [Page 38]
 
 Internet-Draft                    ACME                    September 2014
 
-
-       *  Its "tls" field is equal to the "tls" field in the response,
-          or "true" if the "tls" field was absent
-
-   Comparisons of the "path" and "token" fields MUST be performed in
-   terms of Unicode code points, taking into account the encodings of
-   the stored nonce and the body of the request.
 
    If all of the above verifications succeed, then the validation is
    successful.  If the request fails, or the body does not pass these
@@ -2178,6 +2171,13 @@ Internet-Draft                    ACME                    September 2014
      "nonce": "a82d5ff8ef740d12881f6d3c2277ab2e"
    }
 
+   The client responds to this Challenge by configuring a TLS server on
+   port 443 of a server with the domain name being validated:
+
+   1.  Decode the server's random value R
+
+   2.  Generate a random 32-byte octet string S
+
 
 
 
@@ -2185,13 +2185,6 @@ Barnes, et al.            Expires March 5, 2015                [Page 39]
 
 Internet-Draft                    ACME                    September 2014
 
-
-   The client responds to this Challenge by configuring a TLS server on
-   port 443 of a server with the domain name being validated:
-
-   1.  Decode the server's random value R
-
-   2.  Generate a random 32-byte octet string S
 
    3.  Compute Z = SHA-256(R || S) (where || denotes concatenation of
        octet strings)
@@ -2223,7 +2216,6 @@ Internet-Draft                    ACME                    September 2014
      "s": "9dbjsl3gTAtOnEtKFEmhS6Mj-ajNjDcOmRkp3Lfzm3c"
    }
 
-
    Given a Challenge/Response pair, the ACME server verifies the
    client's control of the domain by verifying that the TLS server was
    configured as expected:
@@ -2234,14 +2226,6 @@ Internet-Draft                    ACME                    September 2014
        443, presenting the value "<nonce>.acme.invalid" in the SNI
        field.
 
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 40]
-
-Internet-Draft                    ACME                    September 2014
-
-
    3.  Verify the following properties of the certificate provided by
        the TLS server:
 
@@ -2249,6 +2233,14 @@ Internet-Draft                    ACME                    September 2014
 
        *  The public key is the public key for the key pair being
           authorized
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 40]
+
+Internet-Draft                    ACME                    September 2014
+
 
        *  It contains the domain name being validated as a
           subjectAltName
@@ -2289,15 +2281,6 @@ Internet-Draft                    ACME                    September 2014
    than signing with the private key of the key pair being authorized,
    the client signs with a private key specified by the server.  The
    server can specify which key pair(s) are acceptable directly (by
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 41]
-
-Internet-Draft                    ACME                    September 2014
-
-
    indicating a public key), or by asking for the key corresponding to a
    certificate.
 
@@ -2307,6 +2290,13 @@ Internet-Draft                    ACME                    September 2014
 
    identifier (required, identifier):  The ACME identifier for which
       authorization is being validated
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 41]
+
+Internet-Draft                    ACME                    September 2014
+
 
    hints (required, object):  A JSON object that contains various clues
       for the client about what the requested key is, such that the
@@ -2330,7 +2320,6 @@ Internet-Draft                    ACME                    September 2014
      }
    }
 
-
    In response to this challenge, the client uses the private key
    corresponding to one of the acceptable public keys to sign a JWS
    object including data related to the challenge.  The validation
@@ -2342,17 +2331,6 @@ Internet-Draft                    ACME                    September 2014
       the holder of the prior key authorizes the new key
 
    accountKey (required, JWK):  The client's account public key
-
-
-
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 42]
-
-Internet-Draft                    ACME                    September 2014
-
 
    {
      "type": "proofOfPossession",
@@ -2367,6 +2345,14 @@ Internet-Draft                    ACME                    September 2014
    old domain owner to sign a proof-of-possession validation object, so
    that the new domain owner can present that in an ACME transaction
    later.
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 42]
+
+Internet-Draft                    ACME                    September 2014
+
 
    The validation JWS MUST contain a "jwk" header parameter indicating
    the public key under which the server should verify the JWS.
@@ -2395,20 +2381,12 @@ Internet-Draft                    ACME                    September 2014
      }
    }
 
-
    To validate a proof-of-possession challenge, the server performs the
    following steps:
 
    1.  Verify that the public key in the "jwk" header of the
        "authorization" JWS is one of the keys listed in the challenge's
        "hints" section
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 43]
-
-Internet-Draft                    ACME                    September 2014
-
 
    2.  Verify the "authorization" JWS using the key indicated in its
        "jwk" header
@@ -2422,6 +2400,15 @@ Internet-Draft                    ACME                    September 2014
 
        *  The "identifier" field contains the identifier for which
           authorization is being validated
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 43]
+
+Internet-Draft                    ACME                    September 2014
+
 
        *  The "accountKey" field matches the account key for which the
           challenge was issued
@@ -2448,7 +2435,6 @@ Internet-Draft                    ACME                    September 2014
      "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
    }
 
-
    In response to this challenge, the client uses its account private
    key to sign a JWS over a JSON object describing the challenge.  The
    validation object covered by the signature MUST have the following
@@ -2457,14 +2443,6 @@ Internet-Draft                    ACME                    September 2014
    type (required, string):  The string "dns"
 
    token (required, string):  The token value in the challenge
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 44]
-
-Internet-Draft                    ACME                    September 2014
-
 
    {
      "type": "dns",
@@ -2480,12 +2458,19 @@ Internet-Draft                    ACME                    September 2014
    JWS, i.e., the base64-encoded signature value.  The client constructs
    the validation domain name by appending the label "_acme-challenge"
    to the domain name being validated, then provisions a TXT record with
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 44]
+
+Internet-Draft                    ACME                    September 2014
+
+
    the signature value under that name.  For example, if the domain name
    being validated is "example.com", then the client would provision the
    following DNS record:
 
    _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
-
 
    The response to a DNS challenge provides the validation JWS to the
    server.
@@ -2505,22 +2490,12 @@ Internet-Draft                    ACME                    September 2014
      }
    }
 
-
    To validate a DNS challenge, the server performs the following steps:
 
    1.  Verify the validation JWS using the account key for which this
        challenge was issued
 
    2.  Decode the payload of the JWS as UTF-8 encoded JSON
-
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 45]
-
-Internet-Draft                    ACME                    September 2014
-
 
    3.  Verify that the there are exactly two fields in the decoded
        object, and that:
@@ -2537,6 +2512,15 @@ Internet-Draft                    ACME                    September 2014
    If all of the above verifications succeed, then the validation is
    successful.  If no DNS record is found, or DNS record and response
    payload do not pass these checks, then the validation fails.
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 45]
+
+Internet-Draft                    ACME                    September 2014
+
 
 6.5.  Other possibilities
 
@@ -2569,15 +2553,6 @@ Internet-Draft                    ACME                    September 2014
    to ensure the integrity of this process, i.e., to ensure that the
    bindings attested by certificates are correct, and that only
    authorized entities can manage certificates.  ACME identifies clients
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 46]
-
-Internet-Draft                    ACME                    September 2014
-
-
    by their account keys, so this overall goal breaks down into two more
    precise goals:
 
@@ -2591,6 +2566,17 @@ Internet-Draft                    ACME                    September 2014
    the ways that ACME achieves these security goals within that threat
    model.  We also discuss the denial-of-service risks that ACME servers
    face, and a few other miscellaneous considerations.
+
+
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 46]
+
+Internet-Draft                    ACME                    September 2014
+
 
 8.1.  Threat model
 
@@ -2626,14 +2612,6 @@ Internet-Draft                    ACME                    September 2014
    but they are different in most cases.  Each of the three channels,
    for example, uses a different communications pattern: the ACME
    channel will comprise inbound HTTPS connections to the ACME server,
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 47]
-
-Internet-Draft                    ACME                    September 2014
-
-
    the validation channel outbound HTTP or DNS requests, and the contact
    channel will use channels such as email and PSTN.
 
@@ -2648,6 +2626,14 @@ Internet-Draft                    ACME                    September 2014
    application-layer MitM addresses potential attackers such as Content
    Distribution Networks (CDNs) and middleboxes with a TLS MitM
    function.  Preventing abusive use of ACME means ensuring that an
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 47]
+
+Internet-Draft                    ACME                    September 2014
+
+
    attacker with access to the validation or contact channels can't
    obtain illegitimate authorization by acting as an ACME client
    (legitimately, in terms of the protocol).
@@ -2681,15 +2667,6 @@ Internet-Draft                    ACME                    September 2014
 
    o  Legitimate domain holder provisions the validation response
 
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 48]
-
-Internet-Draft                    ACME                    September 2014
-
-
    o  ACME server performs validation query and sees the response
       provisioned by the legitimate domain holder
 
@@ -2705,6 +2682,13 @@ Internet-Draft                    ACME                    September 2014
 
    o  Simple HTTP: The value provided in the validation request is
       signed by the account private key.
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 48]
+
+Internet-Draft                    ACME                    September 2014
+
 
    o  DVSNI: The validation TLS request uses the account key pair as the
       server's key pair.
@@ -2738,14 +2722,6 @@ Internet-Draft                    ACME                    September 2014
 
    The use of hosting providers is a particular risk for ACME
    validation.  If the owner of the domain has outsourced operation of
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 49]
-
-Internet-Draft                    ACME                    September 2014
-
-
    DNS or web services to a hosting provider, there is nothing that can
    be done against tampering by the hosting provider.  As far as the
    outside world is concerned, the zone or web site provided by the
@@ -2760,6 +2736,15 @@ Internet-Draft                    ACME                    September 2014
 
    o  Checking the DNSSEC status of DNS records used in ACME validation
       (for zones that are DNSSEC-enabled)
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 49]
+
+Internet-Draft                    ACME                    September 2014
+
 
    o  Querying the DNS from multiple vantage points to address local
       attackers
@@ -2794,14 +2779,6 @@ Internet-Draft                    ACME                    September 2014
    authorization to be transferred from one account key to another, in
    case the former account key pair's private key is lost.  ACME needs
    to prevent these processes from being exploited by an attacker to
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 50]
-
-Internet-Draft                    ACME                    September 2014
-
-
    hijack the authorizations attached to one key and assign them to a
    key of the attacker's choosing.
 
@@ -2815,6 +2792,15 @@ Internet-Draft                    ACME                    September 2014
    key holder can successfully execute recovery, i.e., that this entity
    is the only one that can choose the new account key that receives the
    capabilities held by the account being recovered.
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 50]
+
+Internet-Draft                    ACME                    September 2014
+
 
    MAC-based recovery can be performed if the attacker knows the account
    key and registration URI for the account being recovered.  Both of
@@ -2850,14 +2836,6 @@ Internet-Draft                    ACME                    September 2014
 
    o  If the server requires a user to respond to a message sent to a
       contact address containing a secret value, then the contact
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 51]
-
-Internet-Draft                    ACME                    September 2014
-
-
       channel will need to ensure that an attacker cannot observe the
       secret value and spoof a message from the contact address.
 
@@ -2868,6 +2846,17 @@ Internet-Draft                    ACME                    September 2014
    using contact channels that can reach many clients and using contact-
    based recovery schemes that acheive an appropriate level of risk
    using those contact channels.
+
+
+
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 51]
+
+Internet-Draft                    ACME                    September 2014
+
 
 8.4.  Denial-of-Service Considerations
 
@@ -2906,14 +2895,6 @@ Internet-Draft                    ACME                    September 2014
 
    o  For domain names:
 
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 52]
-
-Internet-Draft                    ACME                    September 2014
-
-
       *  If the leftmost label is a '*', then have the appropriate
          checks been applied?
 
@@ -2924,6 +2905,14 @@ Internet-Draft                    ACME                    September 2014
       *  Is the name a known phishing domain?
 
    o  Is the key in the CSR sufficiently strong?
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 52]
+
+Internet-Draft                    ACME                    September 2014
+
 
    o  Is the CSR signed with an acceptable algorithm?
 
@@ -2962,14 +2951,6 @@ Internet-Draft                    ACME                    September 2014
    [RFC3339]  Klyne, G., Ed. and C. Newman, "Date and Time on the
               Internet: Timestamps", RFC 3339, July 2002.
 
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 53]
-
-Internet-Draft                    ACME                    September 2014
-
-
    [RFC3986]  Berners-Lee, T., Fielding, R., and L. Masinter, "Uniform
               Resource Identifier (URI): Generic Syntax", STD 66, RFC
               3986, January 2005.
@@ -2980,6 +2961,14 @@ Internet-Draft                    ACME                    September 2014
 
    [RFC4648]  Josefsson, S., "The Base16, Base32, and Base64 Data
               Encodings", RFC 4648, October 2006.
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 53]
+
+Internet-Draft                    ACME                    September 2014
+
 
    [RFC5226]  Narten, T. and H. Alvestrand, "Guidelines for Writing an
               IANA Considerations Section in RFCs", BCP 26, RFC 5226,
@@ -3016,16 +3005,6 @@ Internet-Draft                    ACME                    September 2014
    [RFC7518]  Jones, M., "JSON Web Algorithms (JWA)", RFC 7518, May
               2015.
 
-
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 54]
-
-Internet-Draft                    ACME                    September 2014
-
-
    [SEC1]     Standards for Efficient Cryptography Group, "SEC 1:
               Elliptic Curve Cryptography", May 2009,
               <http://www.secg.org/sec1-v2.pdf>.
@@ -3038,6 +3017,14 @@ Internet-Draft                    ACME                    September 2014
               dns0x20-00 (work in progress), March 2008.
 
    [RFC2818]  Rescorla, E., "HTTP Over TLS", RFC 2818, May 2000.
+
+
+
+
+Barnes, et al.            Expires March 5, 2015                [Page 54]
+
+Internet-Draft                    ACME                    September 2014
+
 
    [RFC3552]  Rescorla, E. and B. Korver, "Guidelines for Writing RFC
               Text on Security Considerations", BCP 72, RFC 3552, July
@@ -3074,14 +3061,6 @@ Authors' Addresses
    Email: jhalderm@eecs.umich.edu
 
 
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 55]
-
-Internet-Draft                    ACME                    September 2014
-
-
    James Kasten
    University of Michigan
 
@@ -3098,39 +3077,4 @@ Internet-Draft                    ACME                    September 2014
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Barnes, et al.            Expires March 5, 2015                [Page 56]
+Barnes, et al.            Expires March 5, 2015                [Page 55]

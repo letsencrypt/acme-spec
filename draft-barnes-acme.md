@@ -1188,7 +1188,7 @@ The server updates the authorization document by updating its representation of
 the challenge with the response fields provided by the client.  The server MUST
 ignore any fields in the response object that are not specified as response
 fields for this type of challenge.  The server provides a 200 (OK) response
-including the updated challenge.
+with the updated challenge object as its body.
 
 Presumably, the client's responses provide the server with enough information to
 validate one or more challenges.  The server is said to "finalize" the

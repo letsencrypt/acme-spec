@@ -1404,7 +1404,7 @@ type (required, string):
 : The string "dns"
 
 token (required, string):
-: A random value unique among challenges issued by this server.  This value MUST have at least 128 bits of entropy.  It MUST NOT contain any characters outside the URL-safe Base64 alphabet.
+: A random value with at least 128 bits of entropy.  It MUST NOT contain any characters outside the URL-safe Base64 alphabet.
 
 ~~~~~~~~~~
 
@@ -1415,7 +1415,7 @@ token (required, string):
 
 ~~~~~~~~~~
 
-In response to this challenge, the client uses its account private key to sign a JWS over a JSON object describing the challenge.  The validation object covered by the MAC has the following fields:
+In response to this challenge, the client uses its account private key to sign a JWS over a JSON object describing the challenge.  The validation object covered by the signature MUST have the following fields and no others:
 
 type (required, string):
 : The string "dns"

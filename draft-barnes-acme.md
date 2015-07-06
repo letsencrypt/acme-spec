@@ -1898,14 +1898,6 @@ If all of the above verifications succeed, then the validation is successful.
 If no DNS record is found, or DNS record and response payload do not pass these
 checks, then the validation fails.
 
-## Other possibilities
-
-For future work:
-
-* Email
-* DNSSEC
-* WHOIS
-
 # IANA Considerations
 
 TODO

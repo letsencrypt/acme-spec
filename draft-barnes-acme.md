@@ -1552,7 +1552,7 @@ Contact-based recovery uses both the ACME channel and the contact channel.  The 
 The security of the contact-based recovery process is entirely dependent on the security of the contact channel.  The details of this will depend on the specific out-of-band technique used by the server.  For example:
 
 * If the server requires a user to click a link in a message sent to a contact address, then the contact channel will need to ensure that the message is only available to the legitimate owner of the contact address.  Otherwise, a passive attacker could see the link and click it first, or an active attacker could redirect the message.
-* If the server requires a user to respond to a message sent to a contact address, then the contact channel will need to ensure that an attacker cannot spoof messages from the contact address.
+* If the server requires a user to respond to a message sent to a contact address containing a secret value, then the contact channel will need to ensure that an attacker cannot observe the secret value and spoof a message from the contact address.
 
 In practice, many contact channels that can be used to reach many clients do not
 provide strong assurances of the types noted above.  In designing and deploying

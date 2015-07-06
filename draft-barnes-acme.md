@@ -205,8 +205,8 @@ profile of JWS, with the following restrictions:
 * The JWS Header or Protected Header MUST include "alg" and "jwk" fields
 * The JWS MUST NOT have the value "none" in its "alg" field
 
-Additionally, JWS objects used in ACME MUST include the "nonce" and "acmePath"
-header parameters, defined below.
+Additionally, JWS objects used in ACME MUST include the "nonce" header
+parameter, defined below.
 
 # Protocol Overview
 
@@ -532,16 +532,11 @@ to a HEAD request for any valid resource.  (This allows clients to easily obtain
 a fresh nonce.)  It MAY also provide nonces in error responses.
 
 Every JWS sent by an ACME client MUST include, in its protected header, the
-"nonce" and "acmePath" header parameters, with contents as defined below. As
-part of JWS verification, the ACME server MUST verify that the "acmePath" header
-parameter is exactly equal to the path to which the request was submitted. The
-server SHOULD provide HTTP status code 400 (Bad Request) if the path does not
-match.
-
-As part of JWS verification, the ACME server MUST verify that the value of the
-"nonce" header is a value that the server previously provided in a Replay-Nonce
-header field. Once a nonce value has appeared in an ACME request, the server
-MUST consider it invalid, in the same way as a value it had never issued.
+"nonce" header parameter, with contents as defined below.  As part of JWS
+verification, the ACME server MUST verify that the value of the "nonce" header
+is a value that the server previously provided in a Replay-Nonce header field.
+Once a nonce value has appeared in an ACME request, the server MUST consider it
+invalid, in the same way as a value it had never issued.
 
 When a server rejects a request because its nonce value was unacceptable (or not
 present), it SHOULD provide HTTP status code 400 (Bad Request), and indicate the

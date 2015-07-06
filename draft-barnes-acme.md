@@ -1886,7 +1886,7 @@ type (required, string):
 : The string "dns"
 
 validation (required, JWS):
-: The JWS object computed with the validation object and the derived key
+: The JWS object computed with the validation object and the account key
 
 ~~~~~~~~~~
 {

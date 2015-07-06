@@ -1554,64 +1554,69 @@ Content-Language: en
 <p id="rfc.section.7.1.p.9">Comparisons of the &#8220;path&#8221; and &#8220;token&#8221; fields MUST be performed in terms of Unicode code points, taking into account the encodings of the stored nonce and the body of the request.</p>
 <p id="rfc.section.7.1.p.10">If all of the above verifications succeed, then the validation is successful.  If the request fails, or the body does not pass these checks, then it has failed.</p>
 <h1 id="rfc.section.7.2"><a href="#rfc.section.7.2">7.2.</a> <a href="#domain-validation-with-server-name-indication-dvsni" id="domain-validation-with-server-name-indication-dvsni">Domain Validation with Server Name Indication (DVSNI)</a></h1>
-<p id="rfc.section.7.2.p.1">The Domain Validation with Server Name Indication (DVSNI) validation method aims to ensure that the ACME client has administrative access to the web server at the domain name being validated, and possession of the private key being authorized.  The ACME server verifies that the operator can reconfigure the web server by having the client create a new self-signed challenge certificate and respond to TLS connections from the ACME server with it.</p>
-<p id="rfc.section.7.2.p.2">The challenge proceeds as follows: The ACME server sends the client a random value R and a nonce used to identify the transaction.  The client responds with another random value S.  The server initiates a TLS connection on port 443 to one or more of the IPv4 or IPv6 hosts with the domain name being validated.  In the handshake, the ACME server sets the Server Name Indication extension set to &#8220;&lt;nonce&gt;.acme.invalid&#8221;.  The TLS server (i.e., the ACME client) should respond with a valid self-signed certificate containing both the domain name being validated and the domain name &#8220;&lt;Z&gt;.acme.invalid&#8221;, where Z = SHA-256(R || S).</p>
-<p id="rfc.section.7.2.p.3">The ACME server&#8217;s Challenge provides its random value R, and a random nonce used to identify the transaction:</p>
+<p id="rfc.section.7.2.p.1">The Domain Validation with Server Name Indication (DVSNI) validation method proves control over a domain name by requiring the client to configure a TLS server referenced by an A/AAAA record under the domain name to respond to specific connection attempts utilizing the Server Name Indication extension <a href="#RFC6066">[RFC6066]</a>. The server verifies the client&#8217;s challenge by accessing the reconfigured server and verifying a particular challenge certificate is presented.</p>
 <p/>
 
 <dl>
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;dvsni&#8221;</dd>
-  <dt>r (required, string):</dt>
-  <dd style="margin-left: 8">A random 32-byte octet, Base64-encoded</dd>
-  <dt>nonce (required, string):</dt>
-  <dd style="margin-left: 8">A random 16-byte octet string, hex-encoded (so that it can be used as a DNS label)</dd>
+  <dt>token (required, string):</dt>
+  <dd style="margin-left: 8">A random 16-byte octet string, hex-encoded</dd>
 </dl>
 <pre>
 {
   "type": "dvsni",
-  "r": "Tyq0La3slT7tqQ0wlOiXnCY2vyez7Zo5blgPJ1xt5xI",
-  "nonce": "a82d5ff8ef740d12881f6d3c2277ab2e"
+  "token": "a82d5ff8ef740d12881f6d3c2277ab2e",
 }
 </pre>
-<p id="rfc.section.7.2.p.5">The client responds to this Challenge by configuring a TLS server on port 443 of a server with the domain name being validated:</p>
-<p/>
-
-<ol>
-  <li>Decode the server&#8217;s random value R</li>
-  <li>Generate a random 32-byte octet string S</li>
-  <li>Compute Z = SHA-256(R || S) (where || denotes concatenation of octet strings)</li>
-  <li>Generate a self-signed certificate with a subjectAltName extension containing two dNSName values:</li>
-  <li>The domain name being validated</li>
-  <li>A name formed by hex-encoding Z and appending the suffix &#8220;.acme.invalid&#8221;</li>
-  <li>Compute a nonce domain name by appending the suffix &#8220;.acme.invalid&#8221; to the nonce provided by the server.</li>
-  <li>Configure the TLS server such that when a client presents the nonce domain name in the SNI field, the server presents the generated certificate.</li>
-</ol>
-<p id="rfc.section.7.2.p.7">The client&#8217;s response provides its random value S:</p>
+<p id="rfc.section.7.2.p.3">In response to the challenge, the client uses its account private key to sign a JWS over a JSON object describing the challenge.  The validation object covered by the signature MUST have the following fields and no others:</p>
 <p/>
 
 <dl>
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;dvsni&#8221;</dd>
-  <dt>s (required, string):</dt>
-  <dd style="margin-left: 8">A random 32-byte secret octet string, Base64-encoded</dd>
+  <dt>token (required, string):</dt>
+  <dd style="margin-left: 8">A random 16-byte octet string, hex-encoded</dd>
 </dl>
 <pre>
 {
   "type": "dvsni",
-  "s": "9dbjsl3gTAtOnEtKFEmhS6Mj-ajNjDcOmRkp3Lfzm3c"
+  "token": "a82d5ff8ef740d12881f6d3c2277ab2e",
 }
 </pre>
-<p id="rfc.section.7.2.p.9">Given a Challenge/Response pair, the ACME server verifies the client&#8217;s control of the domain by verifying that the TLS server was configured as expected:</p>
+<p id="rfc.section.7.2.p.5">The client serializes the validation object to UTF-8, then uses its account private key to sign a JWS with the serialized JSON object as its payload.  This JWS is NOT REQUIRED to have the &#8220;nonce&#8221; header parameter.</p>
+<p id="rfc.section.7.2.p.6">The client will generate a self-signed certificate with the subject&#8217;s organizationName field set to the &#8220;signature&#8221; value from the JWS, i.e., the base64-encoded signature value, and a subjectAlternativeName extension containing a single dNSName of &#8220;&lt;token&gt;.acme.invalid&#8221;.  The client will then configure the TLS server at the domain such that when a handshake is initiated with the Server Name Indication extension set to &#8220;&lt;token&gt;.acme.invalid&#8221;, the generated test certificate is presented.</p>
+<p id="rfc.section.7.2.p.7">The response to the DVSNI challenge provides the validation JWS to the server.</p>
+<p/>
+
+<dl>
+  <dt>type (required, string):</dt>
+  <dd style="margin-left: 8">The string &#8220;dvsni&#8221;</dd>
+  <dt>validation (required, string):</dt>
+  <dd style="margin-left: 8">The JWS object computed on the validation object</dd>
+</dl>
+<pre>
+{
+  "type": "dvsni",
+  "validation": {
+    "header": { "alg": "HS256" },
+    "payload": "qzu9...6bjn",
+    "signature": "gfj9XqFv07e1wU66hSLYkiFqYakPSjAu8TsyXRg85nM"
+  }
+}
+</pre>
+<p id="rfc.section.7.2.p.9">Given a Challenge/Response pair, the ACME server verifies the client&#8217;s control of the domain by verifying that the TLS server was configured appropriately.</p>
 <p/>
 
 <ol>
-  <li>Compute the value Z = SHA-256(R || S)</li>
-  <li>Open a TLS connection to the domain name being validated on port 443, presenting the value &#8220;&lt;nonce&gt;.acme.invalid&#8221; in the SNI field.</li>
-  <li>Verify the following properties of the certificate provided by the TLS server: <ul><li>It is a valid self-signed certificate</li><li>The public key is the public key for the key pair being authorized</li><li>It contains the domain name being validated as a subjectAltName</li><li>It contains a subjectAltName matching the hex-encoding of Z, with the suffix &#8220;.acme.invalid&#8221;</li></ul></li>
+  <li>Verify the validation JWS using the account key for which the challenge was issued</li>
+  <li>Decode the payload of the JWS as UTF-8 encoded JSON</li>
+  <li>Verfiy that there are exactly two fields in the decoded object, and that: <ul><li>The &#8220;type&#8221; field is set to &#8220;dvsni&#8221;</li><li>The &#8220;token&#8221; field matches the &#8220;token&#8221; value in the challenge</li></ul></li>
+  <li>Open a TLS connection to the domain name being validated on port 443, presenting the value &#8220;&lt;token&gt;.acme.invalid&#8221; in the SNI field.</li>
+  <li>Verify the following properties of the certificate provided by the TLS server: <ul><li>The organizationName field in the subject matches the &#8220;signature&#8221; value in the &#8220;validation&#8221; JWS</li><li>The certificate contains a single subjectAltName of the form &#8220;&lt;token&gt;.acme.invalid&#8221;.</li></ul></li>
 </ol>
-<p id="rfc.section.7.2.p.11">It is RECOMMENDED that the ACME server verify the challenge certificate using multi-path probing techniques to reduce the risk of DNS hijacking attacks.</p>
-<p id="rfc.section.7.2.p.12">If the server presents a certificate matching all of the above criteria, then the validation is successful.  Otherwise, the validation fails.</p>
+<p id="rfc.section.7.2.p.11">It is RECOMMENDED that the ACME server validation TLS connections from multiple vantage points to reduce the risk of DNS hijacking attacks.</p>
+<p id="rfc.section.7.2.p.12">If all of the above verifications succeed, then the validation is successful.  Otherwise, the validation fails.</p>
 <h1 id="rfc.section.7.3"><a href="#rfc.section.7.3">7.3.</a> <a href="#proof-of-possession-of-a-prior-key" id="proof-of-possession-of-a-prior-key">Proof of Possession of a Prior Key</a></h1>
 <p id="rfc.section.7.3.p.1">The Proof of Possession challenge verifies that a client possesses a private key corresponding to a server-specified public key, as demonstrated by its ability to sign with that key.  This challenge is meant to be used when the server knows of a public key that is already associated with the identifier being claimed, and wishes for new authorizations to be authorized by the holder of the corresponding private key.  For DNS identifiers, for example, this can help guard against domain hijacking.</p>
 <p id="rfc.section.7.3.p.2">This method is useful if a server policy calls for issuing a certificate only to an entity that already possesses the subject private key of a particular prior related certificate (perhaps issued by a different CA).  It may also help enable other kinds of server policy that are related to authenticating a client&#8217;s identity using digital signatures.</p>
@@ -1989,6 +1994,12 @@ _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
         <b id="RFC5988">[RFC5988]</b>
       </td>
       <td class="top"><a>Nottingham, M.</a>, "<a href="http://tools.ietf.org/html/rfc5988">Web Linking</a>", RFC 5988, October 2010.</td>
+    </tr>
+    <tr>
+      <td class="reference">
+        <b id="RFC6066">[RFC6066]</b>
+      </td>
+      <td class="top"><a>Eastlake, D.</a>, "<a href="http://tools.ietf.org/html/rfc6066">Transport Layer Security (TLS) Extensions: Extension Definitions</a>", RFC 6066, January 2011.</td>
     </tr>
     <tr>
       <td class="reference">

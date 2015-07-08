@@ -1679,16 +1679,17 @@ validation (required, string):
 Given a Challenge/Response pair, the ACME server verifies the client's control
 of the domain by verifying that the TLS server was configured appropriately.
 
-1. Verify the validation JWS uses the account key for which the challenge was
-   issued
+1. Verify that the validation JWS uses the account key for which the challenge
+   was issued
 2. Decode the payload of the JWS as UTF-8 encoded JSON
 3. Verfiy that there are exactly two fields in the decoded object, and that:
   * The "type" field is set to "dvsni"
   * The "token" field matches the "token" value in the challenge
 4. Open a TLS connection to the domain name being validated on port 443,
    presenting the value "\<token\>.acme.invalid" in the SNI field.
-5. Verify the certificate contains a subjectAltName extension with the dNSNames
-   of "\<token\>.acme.invalid" and "\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid".
+5. Verify that the certificate contains a subjectAltName extension with the
+   dNSNames of "\<token\>.acme.invalid" and
+   "\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid".
 
 It is RECOMMENDED that the ACME server validation TLS connections from multiple
 vantage points to reduce the risk of DNS hijacking attacks.

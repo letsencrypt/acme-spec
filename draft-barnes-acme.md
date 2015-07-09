@@ -1616,12 +1616,12 @@ type (required, string):
 : The string "dvsni"
 
 token (required, string):
-: A random 16-byte octet string, hex-encoded
+: A random value with at least 128 bits of entropy, base64-encoded
 
 ~~~~~~~~~~
 {
   "type": "dvsni",
-  "token": "a82d5ff8ef740d12881f6d3c2277ab2e",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJyPCt92wrDoA",
 }
 ~~~~~~~~~~
 
@@ -1633,12 +1633,12 @@ type (required, string):
 : The string "dvsni"
 
 token (required, string):
-: A random 16-byte octet string, hex-encoded
+: A random value with at least 128 bits of entropy, base64-encoded
 
 ~~~~~~~~~~
 {
   "type": "dvsni",
-  "token": "a82d5ff8ef740d12881f6d3c2277ab2e",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJyPCt92wrDoA",
 }
 ~~~~~~~~~~
 
@@ -1646,12 +1646,15 @@ The client serializes the validation object to UTF-8, then uses its account
 private key to sign a JWS with the serialized JSON object as its payload.  This
 JWS is NOT REQUIRED to have the "nonce" header parameter.
 
-The client will generate a self-signed certificate with the subject's
-organizationName field set to the "signature" value from the JWS, i.e., the
-base64-encoded signature value, and a subjectAlternativeName extension
-containing a single dNSName of "\<token\>.acme.invalid".  The client will then
-configure the TLS server at the domain such that when a handshake is initiated
-with the Server Name Indication extension set to "\<token\>.acme.invalid", the
+The client will compute Z, the SHA-256 of the "signature" value from the JWS.
+The hash is calculated over the base64-encoded signature string.  Z is encoded
+in hexidecimal form.
+
+The client will generate a self-signed certificate with the
+subjectAlternativeName extension containing the dNSName
+"\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid".  The client will then configure the TLS
+server at the domain such that when a handshake is initiated with the Server
+Name Indication extension set to "\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid", the
 generated test certificate is presented.
 
 The response to the DVSNI challenge provides the validation JWS to the server.
@@ -1660,13 +1663,13 @@ type (required, string):
 : The string "dvsni"
 
 validation (required, string):
-: The JWS object computed on the validation object
+: The JWS object computed with the validation object and the account key
 
 ~~~~~~~~~~
 {
   "type": "dvsni",
   "validation": {
-    "header": { "alg": "HS256" },
+    "header": { "alg": "RS256" },
     "payload": "qzu9...6bjn",
     "signature": "gfj9XqFv07e1wU66hSLYkiFqYakPSjAu8TsyXRg85nM"
   }
@@ -1676,19 +1679,17 @@ validation (required, string):
 Given a Challenge/Response pair, the ACME server verifies the client's control
 of the domain by verifying that the TLS server was configured appropriately.
 
-1. Verify the validation JWS using the account key for which the challenge was
-   issued
-2. Decode the payload of the JWS as UTF-8 encoded JSON
+1. Verify the validation JWS using the account key for which the challenge
+   was issued.
+2. Decode the payload of the JWS as UTF-8 encoded JSON.
 3. Verfiy that there are exactly two fields in the decoded object, and that:
   * The "type" field is set to "dvsni"
   * The "token" field matches the "token" value in the challenge
 4. Open a TLS connection to the domain name being validated on port 443,
-   presenting the value "\<token\>.acme.invalid" in the SNI field.
-5. Verify the following properties of the certificate provided by the TLS server:
-  * The organizationName field in the subject matches the "signature" value in
-    the "validation" JWS
-  * The certificate contains a single subjectAltName of the form
-    "\<token\>.acme.invalid".
+   presenting the value "\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid" in the SNI
+   field.
+5. Verify that the certificate contains a subjectAltName extension with the
+   dNSName of "\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid".
 
 It is RECOMMENDED that the ACME server validation TLS connections from multiple
 vantage points to reduce the risk of DNS hijacking attacks.

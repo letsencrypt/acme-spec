@@ -1561,12 +1561,12 @@ Content-Language: en
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;dvsni&#8221;</dd>
   <dt>token (required, string):</dt>
-  <dd style="margin-left: 8">A random 16-byte octet string, hex-encoded</dd>
+  <dd style="margin-left: 8">A random value with at least 128 bits of entropy, base64-encoded</dd>
 </dl>
 <pre>
 {
   "type": "dvsni",
-  "token": "a82d5ff8ef740d12881f6d3c2277ab2e",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJyPCt92wrDoA",
 }
 </pre>
 <p id="rfc.section.7.2.p.3">In response to the challenge, the client uses its account private key to sign a JWS over a JSON object describing the challenge.  The validation object covered by the signature MUST have the following fields and no others:</p>
@@ -1576,47 +1576,48 @@ Content-Language: en
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;dvsni&#8221;</dd>
   <dt>token (required, string):</dt>
-  <dd style="margin-left: 8">A random 16-byte octet string, hex-encoded</dd>
+  <dd style="margin-left: 8">A random value with at least 128 bits of entropy, base64-encoded</dd>
 </dl>
 <pre>
 {
   "type": "dvsni",
-  "token": "a82d5ff8ef740d12881f6d3c2277ab2e",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJyPCt92wrDoA",
 }
 </pre>
 <p id="rfc.section.7.2.p.5">The client serializes the validation object to UTF-8, then uses its account private key to sign a JWS with the serialized JSON object as its payload.  This JWS is NOT REQUIRED to have the &#8220;nonce&#8221; header parameter.</p>
-<p id="rfc.section.7.2.p.6">The client will generate a self-signed certificate with the subject&#8217;s organizationName field set to the &#8220;signature&#8221; value from the JWS, i.e., the base64-encoded signature value, and a subjectAlternativeName extension containing a single dNSName of &#8220;&lt;token&gt;.acme.invalid&#8221;.  The client will then configure the TLS server at the domain such that when a handshake is initiated with the Server Name Indication extension set to &#8220;&lt;token&gt;.acme.invalid&#8221;, the generated test certificate is presented.</p>
-<p id="rfc.section.7.2.p.7">The response to the DVSNI challenge provides the validation JWS to the server.</p>
+<p id="rfc.section.7.2.p.6">The client will compute Z, the SHA-256 of the &#8220;signature&#8221; value from the JWS.  The hash is calculated over the base64-encoded signature string.  Z is encoded in hexidecimal form.</p>
+<p id="rfc.section.7.2.p.7">The client will generate a self-signed certificate with the subjectAlternativeName extension containing the dNSName &#8220;&lt;Z[0:32]&gt;.&lt;Z[32:64]&gt;.acme.invalid&#8221;.  The client will then configure the TLS server at the domain such that when a handshake is initiated with the Server Name Indication extension set to &#8220;&lt;Z[0:32]&gt;.&lt;Z[32:64]&gt;.acme.invalid&#8221;, the generated test certificate is presented.</p>
+<p id="rfc.section.7.2.p.8">The response to the DVSNI challenge provides the validation JWS to the server.</p>
 <p/>
 
 <dl>
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;dvsni&#8221;</dd>
   <dt>validation (required, string):</dt>
-  <dd style="margin-left: 8">The JWS object computed on the validation object</dd>
+  <dd style="margin-left: 8">The JWS object computed with the validation object and the account key</dd>
 </dl>
 <pre>
 {
   "type": "dvsni",
   "validation": {
-    "header": { "alg": "HS256" },
+    "header": { "alg": "RS256" },
     "payload": "qzu9...6bjn",
     "signature": "gfj9XqFv07e1wU66hSLYkiFqYakPSjAu8TsyXRg85nM"
   }
 }
 </pre>
-<p id="rfc.section.7.2.p.9">Given a Challenge/Response pair, the ACME server verifies the client&#8217;s control of the domain by verifying that the TLS server was configured appropriately.</p>
+<p id="rfc.section.7.2.p.10">Given a Challenge/Response pair, the ACME server verifies the client&#8217;s control of the domain by verifying that the TLS server was configured appropriately.</p>
 <p/>
 
 <ol>
-  <li>Verify the validation JWS using the account key for which the challenge was issued</li>
-  <li>Decode the payload of the JWS as UTF-8 encoded JSON</li>
+  <li>Verify the validation JWS using the account key for which the challenge was issued.</li>
+  <li>Decode the payload of the JWS as UTF-8 encoded JSON.</li>
   <li>Verfiy that there are exactly two fields in the decoded object, and that: <ul><li>The &#8220;type&#8221; field is set to &#8220;dvsni&#8221;</li><li>The &#8220;token&#8221; field matches the &#8220;token&#8221; value in the challenge</li></ul></li>
-  <li>Open a TLS connection to the domain name being validated on port 443, presenting the value &#8220;&lt;token&gt;.acme.invalid&#8221; in the SNI field.</li>
-  <li>Verify the following properties of the certificate provided by the TLS server: <ul><li>The organizationName field in the subject matches the &#8220;signature&#8221; value in the &#8220;validation&#8221; JWS</li><li>The certificate contains a single subjectAltName of the form &#8220;&lt;token&gt;.acme.invalid&#8221;.</li></ul></li>
+  <li>Open a TLS connection to the domain name being validated on port 443, presenting the value &#8220;&lt;Z[0:32]&gt;.&lt;Z[32:64]&gt;.acme.invalid&#8221; in the SNI field.</li>
+  <li>Verify that the certificate contains a subjectAltName extension with the dNSName of &#8220;&lt;Z[0:32]&gt;.&lt;Z[32:64]&gt;.acme.invalid&#8221;.</li>
 </ol>
-<p id="rfc.section.7.2.p.11">It is RECOMMENDED that the ACME server validation TLS connections from multiple vantage points to reduce the risk of DNS hijacking attacks.</p>
-<p id="rfc.section.7.2.p.12">If all of the above verifications succeed, then the validation is successful.  Otherwise, the validation fails.</p>
+<p id="rfc.section.7.2.p.12">It is RECOMMENDED that the ACME server validation TLS connections from multiple vantage points to reduce the risk of DNS hijacking attacks.</p>
+<p id="rfc.section.7.2.p.13">If all of the above verifications succeed, then the validation is successful.  Otherwise, the validation fails.</p>
 <h1 id="rfc.section.7.3"><a href="#rfc.section.7.3">7.3.</a> <a href="#proof-of-possession-of-a-prior-key" id="proof-of-possession-of-a-prior-key">Proof of Possession of a Prior Key</a></h1>
 <p id="rfc.section.7.3.p.1">The Proof of Possession challenge verifies that a client possesses a private key corresponding to a server-specified public key, as demonstrated by its ability to sign with that key.  This challenge is meant to be used when the server knows of a public key that is already associated with the identifier being claimed, and wishes for new authorizations to be authorized by the holder of the corresponding private key.  For DNS identifiers, for example, this can help guard against domain hijacking.</p>
 <p id="rfc.section.7.3.p.2">This method is useful if a server policy calls for issuing a certificate only to an entity that already possesses the subject private key of a particular prior related certificate (perhaps issued by a different CA).  It may also help enable other kinds of server policy that are related to authenticating a client&#8217;s identity using digital signatures.</p>

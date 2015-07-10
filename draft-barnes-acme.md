@@ -2061,6 +2061,14 @@ provider, there is nothing that can be done against tampering by the hosting
 provider.  As far as the outside world is concerned, the zone or web site
 provided by the hosting provider is the real thing.
 
+More limited forms of delegation can also lead to an unintended party gaining
+the ability to successfully complete a validation transaction.  For example,
+suppose an ACME server follows HTTP redirects in Simple HTTP validation and a
+web site operator provisions a catch-all redirect rule that redirects requests
+for unknown resources to different domain.  Then the target of the redirect
+could use that to get a certificate through Simple HTTP validation, since the
+validation path will not be known to the primary server.
+
 The DNS is a common point of vulnerability for all of these challenges.  An
 entity that can provision false DNS records for a domain can attack the DNS
 challenge directly, and can provision false A/AAAA records to direct the ACME

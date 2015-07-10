@@ -1726,33 +1726,15 @@ The server provides the following fields as part of the challenge:
 type (required, string):
 : The string "proofOfPossession"
 
-identifier (required, identifier):
-: The ACME identifier for which authorization is being validated
-
-hints (required, object):
-: A JSON object that contains various clues for the client about what the
-requested key is, such that the client can find it.  Entries in the hints object
-may include:
-
-  jwks (required, array of JWK):
-  : A JSON Web Key object describing acceptable public keys
-
-  certs (optional, array of string):
-  : An array of certificates, in Base64-encoded DER format, that contain
-  acceptable public keys.
+certs (optional, array of string):
+: An array of certificates, in Base64-encoded DER format, that contain
+acceptable public keys.
 
 
 ~~~~~~~~~~
 {
   "type": "proofOfPossession",
-  "hints": {
-    "jwk": {
-      "kty": "RSA",
-      "e": "AQAB",
-      "n": "AMswMT...3aVtjE"
-    },
-    "certs": ["MIIF7z...bYVQLY"]
-  }
+  "certs": ["MIIF7z...bYVQLY"]
 }
 ~~~~~~~~~~
 
@@ -1818,8 +1800,8 @@ authorization (required, JWS):
 To validate a proof-of-possession challenge, the server performs the following
 steps:
 
-1. Verify that the public key in the "jwk" header of the "authorization" JWS is
-   one of the keys listed in the challenge's "hints" section
+1. Verify that the public key in the "jwk" header of the "authorization" JWS
+   corresponds to one of the certificates in the "certs" field of the challenge
 2. Verify the "authorization" JWS using the key indicated in its "jwk" header
 3. Decode the payload of the JWS as UTF-8 encoded JSON
 4. Verify that there are exactly three fields in the decoded object, and that:

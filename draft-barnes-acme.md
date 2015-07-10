@@ -1540,20 +1540,16 @@ meet the guidelines laid out in {{terminology}}.
 ~~~~~~~~~~
 {
   "type": "simpleHttp",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA",
   "tls": false
 }
 ~~~~~~~~~~
 
-The path at which the resource is provisioned is comprised of a fixed prefix
-".well-known/acme-challenge/", followed by a value computed from the validation
-JWS.  Specifically, the final component of the validation path is the
-Base64-encoded SHA-256 digest of the "signature" value of the validation JWS.
-The input to the digest is the UTF-8 encoding of the "signature" value (which is
-already Base64-encoded).
+The path at which the resource is provisioned is comprised of the fixed prefix
+".well-known/acme-challenge/", followed by the "token" value in the challenge.
 
 ~~~~~~~~~~
-.well-known/acme-challenge/c0QGfY_3MCES92eWs3PWFXB1iHRrl3y4a9KI660Xsgg
+.well-known/acme-challenge/evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA
 ~~~~~~~~~~
 
 The client's response to this challenge indicates whether it would prefer for
@@ -1570,7 +1566,7 @@ Otherwise the check will be done over HTTPS, on port 443.
 ~~~~~~~~~~
 {
   "type": "simpleHttp",
-  "path": "6tbIMBC5Anhl5bOlWT5ZFA",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA",
   "tls": false
 }
 /* Signed as JWS */
@@ -1580,11 +1576,11 @@ Given a Challenge/Response pair, the server verifies the client's control of the
 domain by verifying that the resource was provisioned as expected.
 
 1. Form a URI by populating the URI template {{RFC6570}}
-"{scheme}://{domain}/.well-known/acme-challenge/{path}", where:
+"{scheme}://{domain}/.well-known/acme-challenge/{token}", where:
   * the scheme field is set to "http" if the "tls" field in the response is
     present and set to false, and "https" otherwise;
   * the domain field is set to the domain name being verified; and
-  * the path field is the path computed from the validation JWS (see above).
+  * the token field is the token provided in the challenge.
 2. Verify that the resulting URI is well-formed.
 3. Dereference the URI using an HTTP or HTTPS GET request.  If using HTTPS, the
 ACME server MUST ignore the certificate provided by the HTTPS server.

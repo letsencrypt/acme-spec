@@ -1536,26 +1536,26 @@ meet the guidelines laid out in {{terminology}}.
 {
   "type": "simpleHttp",
   "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
-  "path": "6tbIMBC5Anhl5bOlWT5ZFA",
-  "tls": false,
+  "tls": false
 }
 ~~~~~~~~~~
 
-The path at which the resource is provisioned is determined by the client, but
-MUST begin with ".well-known/acme-challenge/".  The content type of the
-resource, if provided, MUST be "application/jose+json".  In addition to
-expressing the path in the JWS as described above, the client returns the part
-of the path coming after that prefix in its Response message.
+The path at which the resource is provisioned is comprised of a fixed prefix
+".well-known/acme-challenge/", followed by a value computed from the validation
+JWS.  Specifically, the final component of the validation path is the
+Base64-encoded SHA-256 digest of the "signature" value of the validation JWS.
+The input to the digest is the UTF-8 encoding of the "signature" value (which is
+already Base64-encoded).
+
+~~~~~~~~~~
+.well-known/acme-challenge/c0QGfY_3MCES92eWs3PWFXB1iHRrl3y4a9KI660Xsgg
+~~~~~~~~~~
+
+The client's response to this challenge indicates whether it would prefer for
+the validation request to be sent over TLS:
 
 type (required, string):
 : The string "simpleHttp"
-
-path (required, string):
-: The string to be appended to the standard prefix ".well-known/acme-challenge/"
-in order to form the path at which the nonce resource is provisioned.  The value
-MUST be comprised entirely of characters from the URL-safe alphabet for Base64
-encoding {{RFC4648}}, and MUST NOT be longer than 25 characters (sufficient for
-128 bits of base64-encoded data).
 
 tls (optional, boolean, default true):
 : If this attribute is present and set to "false", the server will perform its
@@ -1579,7 +1579,7 @@ domain by verifying that the resource was provisioned as expected.
   * the scheme field is set to "http" if the "tls" field in the response is
     present and set to false, and "https" otherwise;
   * the domain field is set to the domain name being verified; and
-  * the path field is the path provided in the response.
+  * the path field is the path computed from the validation JWS (see above).
 2. Verify that the resulting URI is well-formed.
 3. Dereference the URI using an HTTP or HTTPS GET request.  If using HTTPS, the
 ACME server MUST ignore the certificate provided by the HTTPS server.

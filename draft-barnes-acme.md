@@ -60,6 +60,7 @@ informative:
   RFC2818:
   RFC3552:
   W3C.CR-cors-20130129:
+  W3C.WD-capability-urls-20140218:
   I-D.vixie-dnsext-dns0x20:
 
 
@@ -1317,9 +1318,11 @@ client may request other formats by including an Accept header in its request.
 The server provides metadata about the certificate in HTTP headers.  In
 particular, the server MUST include a Link relation header field {{RFC5988}}
 with relation "up" to provide a certificate under which this certificate was
-issued.  The server MAY also include an Expires header as a hint to the client
-about when to renew the certificate.  (Of course, the real expiration of the
-certificate is controlled by the notAfter time in the certificate itself.)
+issued, and one with relation "author" to indicate the registration under which
+this certicate was issued.  The server MAY also include an Expires header as a
+hint to the client about when to renew the certificate.  (Of course, the real
+expiration of the certificate is controlled by the notAfter time in the
+certificate itself.)
 
 ~~~~~~~~~~
 GET /acme/cert/asdf HTTP/1.1
@@ -1330,32 +1333,34 @@ HTTP/1.1 200 OK
 Content-Type: application/pkix-cert
 Link: <https://example.com/acme/ca-cert>;rel="up";title="issuer"
 Link: <https://example.com/acme/revoke-cert>;rel="revoke"
+Link: <https://example.com/acme/reg/asdf>;rel="author"
 Location: https://example.com/acme/cert/asdf
 Content-Location: https://example.com/acme/cert-seq/12345
 
 [DER-encoded certificate]
 ~~~~~~~~~~
 
-## Certificate Renewal
+A certificate resource always represents the most recent certificate issued for
+the name/key binding expressed in the CSR.  If the CA allows a certificate to be
+renewed, then it publishes renewed versions of the certificate through the same
+certificate URI.
 
-Often, a client wishes to request a new certificate with the same contents as
-another certificates, but with updated notBefore and notAfter dates.  This
-operation is referred to as "renewal" of the certificate.
-
-If the CA allows a certificate to be renewed, then it publishes renewed versions
-of the certificate through the same certificate URI.  Clients retrieve renewed
-versions of the certificate using a GET query to the certificate URI, which the
-server should then return in a 200 (OK) response.  The server SHOULD provide a
-URI for each specific certificate in the Content-Location header field, as shown
-above.  Requests to specific certificate URIs MUST always result in the same
-certificate.
+Clients retrieve renewed versions of the certificate using a GET query to the
+certificate URI, which the server should then return in a 200 (OK) response.
+The server SHOULD provide a stable URI for each specific certificate in the
+Content-Location header field, as shown above.  Requests to stable certificate
+URIs MUST always result in the same certificate.
 
 To avoid unnecessary renewals, the CA may choose not to issue a renewed
-certificate until it receives such a request.  In such cases, if the CA requires
-some time to generate the new certificate, the CA MUST return a 202 (Accepted)
-response, with a Retry-After header field that indicates when the new
-certificate will be available.  The CA MAY include the current (non-renewed)
-certificate as the body of the response.
+certificate until it receives such a request (if it even allows renewal at all).
+In such cases, if the CA requires some time to generate the new certificate, the
+CA MUST return a 202 (Accepted) response, with a Retry-After header field that
+indicates when the new certificate will be available.  The CA MAY include the
+current (non-renewed) certificate as the body of the response.
+
+Likewise, in order to prevent unnecessary renewal due to queries by parties
+other than the account key holder, certificate URIs should be structured as
+capability URLs {{W3C.WD-capability-urls-20140218}}.
 
 From the client's perspective, there is no difference between a certificate URI
 that allows renewal and one that does not.  If the client wishes to obtain a

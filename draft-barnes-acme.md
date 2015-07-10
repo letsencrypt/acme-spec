@@ -1017,18 +1017,21 @@ Host: example.com
 {
   "resource": "recover-reg",
   "method": "contact",
-  "base": "https://example.com/acme/reg/asdf"
+  "base": "https://example.com/acme/reg/asdf",
+  "contact": [
+    "mailto:forgetful@example.net"
+  ]
 }
 /* Signed as JWS, with new account key */
 ~~~~~~~~~~
 
 If the server agrees to attempt contact-based recovery, then it creates a new
 registration resource containing a stub registration object.  The stub
-registration has the client's new account key and anonymized contacts, in order
-to allow the client to know which contacts to check.  The server returns the
-stub contact in a 201 (Created) response, along with a Location header field
-indicating the URI for the new registration resource (which will be the
-registration URI if the recovery succeeds).
+registration has the client's new account key and contacts, but no
+authorizations or certificates associated.  The server returns the stub contact
+in a 201 (Created) response, along with a Location header field indicating the
+URI for the new registration resource (which will be the registration URI if the
+recovery succeeds).
 
 ~~~~~~~~~~
 HTTP/1.1 201 Created
@@ -1039,8 +1042,7 @@ Location: https://example.com/acme/reg/qwer
   "key": { /* new account key from JWS header */ },
 
   "contact": [
-    "mailto:c********n@example.com",
-    "tel:+1********12"
+    "mailto:forgetful@example.net"
   ]
 }
 ~~~~~~~~~~
@@ -1054,9 +1056,9 @@ field. If the recovery process has failed, the server sends an error code (e.g.,
 404), and SHOULD delete the stub registration resource.
 
 If the recovery process has succeeded, then the server will send a 200 (OK)
-response, containing the full registration object (copied from the old
-registration).  The client may now use this in the same way as if he had gotten
-it from a new-registration transaction.
+response, containing the full registration object, with any necessary
+information copied from the old registration).  The client may now use this in
+the same way as if he had gotten it from a new-registration transaction.
 
 ## Identifier Authorization
 

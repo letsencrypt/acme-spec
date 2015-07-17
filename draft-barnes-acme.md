@@ -188,7 +188,7 @@ authorized to manage certificates for a given identifier.  The same key pair may
 be authorized for multiple identifiers.
 
 Recovery Key:
-: A MAC key that can a client can use to demonstrate that it participated in
+: A MAC key that a client can use to demonstrate that it participated in
 a prior registration transaction.
 
 ACME messaging is based on HTTPS {{RFC2818}} and JSON {{RFC7159}}.  Since JSON
@@ -526,7 +526,7 @@ requests have a mandatory anti-replay mechanism.  This mechanism is based on the
 server maintaining a list of nonces that it has issued to clients, and requiring
 any signed request from the client to carry such a nonce.
 
-An ACME server MUST include an Replay-Nonce header field in each successful
+An ACME server MUST include a Replay-Nonce header field in each successful
 response it provides to a client, with contents as specified below.  In
 particular, the ACME server MUST provide a Replay-Nonce header field in response
 to a HEAD request for any valid resource.  (This allows clients to easily obtain
@@ -1648,7 +1648,7 @@ JWS is NOT REQUIRED to have the "nonce" header parameter.
 
 The client will compute Z, the SHA-256 of the "signature" value from the JWS.
 The hash is calculated over the base64-encoded signature string.  Z is encoded
-in hexidecimal form.
+in hexadecimal form.
 
 The client will generate a self-signed certificate with the
 subjectAlternativeName extension containing the dNSName
@@ -1682,7 +1682,7 @@ of the domain by verifying that the TLS server was configured appropriately.
 1. Verify the validation JWS using the account key for which the challenge
    was issued.
 2. Decode the payload of the JWS as UTF-8 encoded JSON.
-3. Verfiy that there are exactly two fields in the decoded object, and that:
+3. Verify that there are exactly two fields in the decoded object, and that:
   * The "type" field is set to "dvsni"
   * The "token" field matches the "token" value in the challenge
 4. Open a TLS connection to the domain name being validated on port 443,
@@ -2007,7 +2007,7 @@ challenges to ensure that the challenge can only be completed by someone who
 both (1) holds the private key of the account key pair, and (2) controls the
 identifier in question.
 
-Validation resposnes need to be bound to an account key pair in order to avoid
+Validation responses need to be bound to an account key pair in order to avoid
 situations where an ACME MitM can switch out a legitimate domain holder's
 account key for one of his choosing, e.g.:
 
@@ -2023,7 +2023,7 @@ account key for one of his choosing, e.g.:
 * ACME server performs validation query and sees the response provisioned by the
   legitimate domain holder
 * Because the challenges were issued in response to a message signed account key
-  B, the ACME server grants authoriztion to account key B (the MitM) instead of
+  B, the ACME server grants authorization to account key B (the MitM) instead of
   account key A (the legitimate domain holder)
 
 All of the challenges above that require an out-of-band query by the server have
@@ -2035,7 +2035,7 @@ holder can successfully respond to the validation query:
 * DVSNI: The validation TLS request uses the account key pair as the server's
   key pair.
 * DNS: The MAC covers the account key, and the MAC key is derived from an ECDH
-  public key signed with the accont private key.
+  public key signed with the account private key.
 * Proof of possession of a prior key: The signature by the prior key covers the
   account public key.
 
@@ -2113,10 +2113,10 @@ key that receives the capabilities held by the account being recovered.
 
 MAC-based recovery can be performed if the attacker knows the account key and
 registration URI for the account being recovered.  Both of these are difficult
-to obtain for a network attacker, because ACME usess HTTPS), though if the
-recovery key and registration URI are sufficiently preductable, the attacker
+to obtain for a network attacker, because ACME uses HTTPS, though if the
+recovery key and registration URI are sufficiently predictable, the attacker
 might be able to guess them.  An ACME MitM can see the registration URI, but
-still has to guess the recovery key, since neitherthe ECDH in the provisioning
+still has to guess the recovery key, since neither the ECDH in the provisioning
 phase nor HMAC in the recovery phase will reveal it to him.
 
 ACME clients can thus mitigate problems with MAC-based recovery by using long
@@ -2147,7 +2147,7 @@ In practice, many contact channels that can be used to reach many clients do not
 provide strong assurances of the types noted above.  In designing and deploying
 contact-based recovery schemes, ACME servers operators will need to find an
 appropriate balance between using contact channels that can reach many clients
-and using contact-based recovery schemes that acheive an appropriate level of
+and using contact-based recovery schemes that achieve an appropriate level of
 risk using those contact channels.
 
 ## Denial-of-Service Considerations

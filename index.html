@@ -658,7 +658,7 @@ ul.toc a:first-child {
   <dt>Account Key Pair:</dt>
   <dd style="margin-left: 8">A key pair for which the ACME server considers the holder of the private key authorized to manage certificates for a given identifier.  The same key pair may be authorized for multiple identifiers.</dd>
   <dt>Recovery Key:</dt>
-  <dd style="margin-left: 8">A MAC key that can a client can use to demonstrate that it participated in a prior registration transaction.</dd>
+  <dd style="margin-left: 8">A MAC key that a client can use to demonstrate that it participated in a prior registration transaction.</dd>
 </dl>
 <p id="rfc.section.3.p.6">ACME messaging is based on HTTPS <a href="#RFC2818">[RFC2818]</a> and JSON <a href="#RFC7159">[RFC7159]</a>.  Since JSON is a text-based format, binary fields are Base64-encoded.  For Base64 encoding, we use the variant defined in <a href="#RFC7515">[RFC7515]</a>.  The important features of this encoding are (1) that it uses the URL-safe character set, and (2) that &#8220;=&#8221; padding characters are stripped.</p>
 <p id="rfc.section.3.p.7">Some HTTPS bodies in ACME are authenticated and integrity-protected by being encapsulated in a JSON Web Signature (JWS) object <a href="#RFC7515">[RFC7515]</a>.  ACME uses a profile of JWS, with the following restrictions:</p>
@@ -901,7 +901,7 @@ ul.toc a:first-child {
 <p id="rfc.section.5.4.p.4">TODO: Flesh out errors and syntax for them</p>
 <h1 id="rfc.section.5.5"><a href="#rfc.section.5.5">5.5.</a> <a href="#replay-protection" id="replay-protection">Replay protection</a></h1>
 <p id="rfc.section.5.5.p.1">In order to protect ACME resources from any possible replay attacks, ACME requests have a mandatory anti-replay mechanism.  This mechanism is based on the server maintaining a list of nonces that it has issued to clients, and requiring any signed request from the client to carry such a nonce.</p>
-<p id="rfc.section.5.5.p.2">An ACME server MUST include an Replay-Nonce header field in each successful response it provides to a client, with contents as specified below.  In particular, the ACME server MUST provide a Replay-Nonce header field in response to a HEAD request for any valid resource.  (This allows clients to easily obtain a fresh nonce.)  It MAY also provide nonces in error responses.</p>
+<p id="rfc.section.5.5.p.2">An ACME server MUST include a Replay-Nonce header field in each successful response it provides to a client, with contents as specified below.  In particular, the ACME server MUST provide a Replay-Nonce header field in response to a HEAD request for any valid resource.  (This allows clients to easily obtain a fresh nonce.)  It MAY also provide nonces in error responses.</p>
 <p id="rfc.section.5.5.p.3">Every JWS sent by an ACME client MUST include, in its protected header, the &#8220;nonce&#8221; header parameter, with contents as defined below.  As part of JWS verification, the ACME server MUST verify that the value of the &#8220;nonce&#8221; header is a value that the server previously provided in a Replay-Nonce header field.  Once a nonce value has appeared in an ACME request, the server MUST consider it invalid, in the same way as a value it had never issued.</p>
 <p id="rfc.section.5.5.p.4">When a server rejects a request because its nonce value was unacceptable (or not present), it SHOULD provide HTTP status code 400 (Bad Request), and indicate the ACME error code &#8220;urn:acme:badNonce&#8221;.</p>
 <p id="rfc.section.5.5.p.5">The precise method used to generate and track nonces is up to the server.  For example, the server could generate a random 128-bit value for each response, keep a list of issued nonces, and strike nonces from this list as they are used.</p>
@@ -1585,7 +1585,7 @@ Content-Language: en
 }
 </pre>
 <p id="rfc.section.7.2.p.5">The client serializes the validation object to UTF-8, then uses its account private key to sign a JWS with the serialized JSON object as its payload.  This JWS is NOT REQUIRED to have the &#8220;nonce&#8221; header parameter.</p>
-<p id="rfc.section.7.2.p.6">The client will compute Z, the SHA-256 of the &#8220;signature&#8221; value from the JWS.  The hash is calculated over the base64-encoded signature string.  Z is encoded in hexidecimal form.</p>
+<p id="rfc.section.7.2.p.6">The client will compute Z, the SHA-256 of the &#8220;signature&#8221; value from the JWS.  The hash is calculated over the base64-encoded signature string.  Z is encoded in hexadecimal form.</p>
 <p id="rfc.section.7.2.p.7">The client will generate a self-signed certificate with the subjectAlternativeName extension containing the dNSName &#8220;&lt;Z[0:32]&gt;.&lt;Z[32:64]&gt;.acme.invalid&#8221;.  The client will then configure the TLS server at the domain such that when a handshake is initiated with the Server Name Indication extension set to &#8220;&lt;Z[0:32]&gt;.&lt;Z[32:64]&gt;.acme.invalid&#8221;, the generated test certificate is presented.</p>
 <p id="rfc.section.7.2.p.8">The response to the DVSNI challenge provides the validation JWS to the server.</p>
 <p/>
@@ -1612,7 +1612,7 @@ Content-Language: en
 <ol>
   <li>Verify the validation JWS using the account key for which the challenge was issued.</li>
   <li>Decode the payload of the JWS as UTF-8 encoded JSON.</li>
-  <li>Verfiy that there are exactly two fields in the decoded object, and that: <ul><li>The &#8220;type&#8221; field is set to &#8220;dvsni&#8221;</li><li>The &#8220;token&#8221; field matches the &#8220;token&#8221; value in the challenge</li></ul></li>
+  <li>Verify that there are exactly two fields in the decoded object, and that: <ul><li>The &#8220;type&#8221; field is set to &#8220;dvsni&#8221;</li><li>The &#8220;token&#8221; field matches the &#8220;token&#8221; value in the challenge</li></ul></li>
   <li>Open a TLS connection to the domain name being validated on port 443, presenting the value &#8220;&lt;Z[0:32]&gt;.&lt;Z[32:64]&gt;.acme.invalid&#8221; in the SNI field.</li>
   <li>Verify that the certificate contains a subjectAltName extension with the dNSName of &#8220;&lt;Z[0:32]&gt;.&lt;Z[32:64]&gt;.acme.invalid&#8221;.</li>
 </ol>
@@ -1819,7 +1819,7 @@ _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
 <p id="rfc.section.9.1.p.5">On the ACME channel, in addition to network-layer attackers, we also need to account for application-layer man in the middle attacks, and for abusive use of the protocol itself.  Protection against application-layer MitM addresses potential attackers such as Content Distribution Networks (CDNs) and middleboxes with a TLS MitM function.  Preventing abusive use of ACME means ensuring that an attacker with access to the validation or contact channels can&#8217;t obtain illegitimate authorization by acting as an ACME client (legitimately, in terms of the protocol).</p>
 <h1 id="rfc.section.9.2"><a href="#rfc.section.9.2">9.2.</a> <a href="#integrity-of-authorizations" id="integrity-of-authorizations">Integrity of Authorizations</a></h1>
 <p id="rfc.section.9.2.p.1">ACME allows anyone to request challenges for an identifier by registering an account key and sending a new-authorization request under that account key.  The integrity of the authorization process thus depends on the identifier validation challenges to ensure that the challenge can only be completed by someone who both (1) holds the private key of the account key pair, and (2) controls the identifier in question.</p>
-<p id="rfc.section.9.2.p.2">Validation resposnes need to be bound to an account key pair in order to avoid situations where an ACME MitM can switch out a legitimate domain holder&#8217;s account key for one of his choosing, e.g.:</p>
+<p id="rfc.section.9.2.p.2">Validation responses need to be bound to an account key pair in order to avoid situations where an ACME MitM can switch out a legitimate domain holder&#8217;s account key for one of his choosing, e.g.:</p>
 <p/>
 
 <ul>
@@ -1830,7 +1830,7 @@ _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
   <li>ACME server issues challenges and MitM forwards them to the legitimate domain holder</li>
   <li>Legitimate domain holder provisions the validation response</li>
   <li>ACME server performs validation query and sees the response provisioned by the legitimate domain holder</li>
-  <li>Because the challenges were issued in response to a message signed account key B, the ACME server grants authoriztion to account key B (the MitM) instead of account key A (the legitimate domain holder)</li>
+  <li>Because the challenges were issued in response to a message signed account key B, the ACME server grants authorization to account key B (the MitM) instead of account key A (the legitimate domain holder)</li>
 </ul>
 <p id="rfc.section.9.2.p.4">All of the challenges above that require an out-of-band query by the server have a binding to the account private key, such that the only the account private key holder can successfully respond to the validation query:</p>
 <p/>
@@ -1838,7 +1838,7 @@ _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
 <ul>
   <li>Simple HTTP: The value provided in the validation request is signed by the account private key.</li>
   <li>DVSNI: The validation TLS request uses the account key pair as the server&#8217;s key pair.</li>
-  <li>DNS: The MAC covers the account key, and the MAC key is derived from an ECDH public key signed with the accont private key.</li>
+  <li>DNS: The MAC covers the account key, and the MAC key is derived from an ECDH public key signed with the account private key.</li>
   <li>Proof of possession of a prior key: The signature by the prior key covers the account public key.</li>
 </ul>
 <p id="rfc.section.9.2.p.6">The association of challenges to identifiers is typically done by requiring the client to perform some action that only someone who effectively controls the identifier can perform.  For the challenges in this document, the actions are:</p>
@@ -1867,7 +1867,7 @@ _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
 <p id="rfc.section.9.3.p.1">The account recovery processes described in <a href="#account-recovery">Section 6.4</a> allow authorization to be transferred from one account key to another, in case the former account key pair&#8217;s private key is lost.  ACME needs to prevent these processes from being exploited by an attacker to hijack the authorizations attached to one key and assign them to a key of the attacker&#8217;s choosing.</p>
 <p id="rfc.section.9.3.p.2">Recovery takes place in two steps: 1. Provisioning recovery information (contact or recovery key) 2. Using recovery information to recover an account</p>
 <p id="rfc.section.9.3.p.3">The provisioning process needs to ensure that only the account key holder ends up with information that is useful for recovery.  The recovery process needs to assure that only the (now former) account key holder can successfully execute recovery, i.e., that this entity is the only one that can choose the new account key that receives the capabilities held by the account being recovered.</p>
-<p id="rfc.section.9.3.p.4">MAC-based recovery can be performed if the attacker knows the account key and registration URI for the account being recovered.  Both of these are difficult to obtain for a network attacker, because ACME usess HTTPS), though if the recovery key and registration URI are sufficiently preductable, the attacker might be able to guess them.  An ACME MitM can see the registration URI, but still has to guess the recovery key, since neitherthe ECDH in the provisioning phase nor HMAC in the recovery phase will reveal it to him.</p>
+<p id="rfc.section.9.3.p.4">MAC-based recovery can be performed if the attacker knows the account key and registration URI for the account being recovered.  Both of these are difficult to obtain for a network attacker, because ACME uses HTTPS, though if the recovery key and registration URI are sufficiently predictable, the attacker might be able to guess them.  An ACME MitM can see the registration URI, but still has to guess the recovery key, since neither the ECDH in the provisioning phase nor HMAC in the recovery phase will reveal it to him.</p>
 <p id="rfc.section.9.3.p.5">ACME clients can thus mitigate problems with MAC-based recovery by using long recovery keys.  ACME servers should enforce a minimum recovery key length, and impose rate limits on recovery to limit an attacker&#8217;s ability to test different guesses about the recovery key.</p>
 <p id="rfc.section.9.3.p.6">Contact-based recovery uses both the ACME channel and the contact channel.  The provisioning process is only visible to an ACME MitM, and even then, the MitM can only observe the contact information provided.  If the ACME attacker does not also have access to the contact channel, there is no risk.</p>
 <p id="rfc.section.9.3.p.7">The security of the contact-based recovery process is entirely dependent on the security of the contact channel.  The details of this will depend on the specific out-of-band technique used by the server.  For example:</p>
@@ -1877,7 +1877,7 @@ _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
   <li>If the server requires a user to click a link in a message sent to a contact address, then the contact channel will need to ensure that the message is only available to the legitimate owner of the contact address.  Otherwise, a passive attacker could see the link and click it first, or an active attacker could redirect the message.</li>
   <li>If the server requires a user to respond to a message sent to a contact address containing a secret value, then the contact channel will need to ensure that an attacker cannot observe the secret value and spoof a message from the contact address.</li>
 </ul>
-<p id="rfc.section.9.3.p.9">In practice, many contact channels that can be used to reach many clients do not provide strong assurances of the types noted above.  In designing and deploying contact-based recovery schemes, ACME servers operators will need to find an appropriate balance between using contact channels that can reach many clients and using contact-based recovery schemes that acheive an appropriate level of risk using those contact channels.</p>
+<p id="rfc.section.9.3.p.9">In practice, many contact channels that can be used to reach many clients do not provide strong assurances of the types noted above.  In designing and deploying contact-based recovery schemes, ACME servers operators will need to find an appropriate balance between using contact channels that can reach many clients and using contact-based recovery schemes that achieve an appropriate level of risk using those contact channels.</p>
 <h1 id="rfc.section.9.4"><a href="#rfc.section.9.4">9.4.</a> <a href="#denial-of-service-considerations" id="denial-of-service-considerations">Denial-of-Service Considerations</a></h1>
 <p id="rfc.section.9.4.p.1">As a protocol run over HTTPS, standard considerations for TCP-based and HTTP-based DoS mitigation also apply to ACME.</p>
 <p id="rfc.section.9.4.p.2">At the application layer, ACME requires the server to perform a few potentially expensive operations.  Identifier validation transactions require the ACME server to make outbound connections to potentially attacker-controlled servers, and certificate issuance can require interactions with cryptographic hardware.</p>

@@ -287,8 +287,8 @@ Internet-Draft                    ACME                         July 2015
       given identifier.  The same key pair may be authorized for
       multiple identifiers.
 
-   Recovery Key:  A MAC key that can a client can use to demonstrate
-      that it participated in a prior registration transaction.
+   Recovery Key:  A MAC key that a client can use to demonstrate that it
+      participated in a prior registration transaction.
 
    ACME messaging is based on HTTPS [RFC2818] and JSON [RFC7159].  Since
    JSON is a text-based format, binary fields are Base64-encoded.  For
@@ -738,7 +738,7 @@ Internet-Draft                    ACME                         July 2015
    issued to clients, and requiring any signed request from the client
    to carry such a nonce.
 
-   An ACME server MUST include an Replay-Nonce header field in each
+   An ACME server MUST include a Replay-Nonce header field in each
    successful response it provides to a client, with contents as
    specified below.  In particular, the ACME server MUST provide a
    Replay-Nonce header field in response to a HEAD request for any valid
@@ -2221,7 +2221,7 @@ Internet-Draft                    ACME                         July 2015
 
    The client will compute Z, the SHA-256 of the "signature" value from
    the JWS.  The hash is calculated over the base64-encoded signature
-   string.  Z is encoded in hexidecimal form.
+   string.  Z is encoded in hexadecimal form.
 
    The client will generate a self-signed certificate with the
    subjectAlternativeName extension containing the dNSName
@@ -2265,7 +2265,7 @@ Internet-Draft                    ACME                         July 2015
 
    2.  Decode the payload of the JWS as UTF-8 encoded JSON.
 
-   3.  Verfiy that there are exactly two fields in the decoded object,
+   3.  Verify that there are exactly two fields in the decoded object,
        and that:
 
        *  The "type" field is set to "dvsni"
@@ -2690,7 +2690,7 @@ Barnes, et al.           Expires January 7, 2016               [Page 48]
 Internet-Draft                    ACME                         July 2015
 
 
-   Validation resposnes need to be bound to an account key pair in order
+   Validation responses need to be bound to an account key pair in order
    to avoid situations where an ACME MitM can switch out a legitimate
    domain holder's account key for one of his choosing, e.g.:
 
@@ -2713,7 +2713,7 @@ Internet-Draft                    ACME                         July 2015
       provisioned by the legitimate domain holder
 
    o  Because the challenges were issued in response to a message signed
-      account key B, the ACME server grants authoriztion to account key
+      account key B, the ACME server grants authorization to account key
       B (the MitM) instead of account key A (the legitimate domain
       holder)
 
@@ -2729,7 +2729,7 @@ Internet-Draft                    ACME                         July 2015
       server's key pair.
 
    o  DNS: The MAC covers the account key, and the MAC key is derived
-      from an ECDH public key signed with the accont private key.
+      from an ECDH public key signed with the account private key.
 
    o  Proof of possession of a prior key: The signature by the prior key
       covers the account public key.
@@ -2837,10 +2837,10 @@ Internet-Draft                    ACME                         July 2015
    MAC-based recovery can be performed if the attacker knows the account
    key and registration URI for the account being recovered.  Both of
    these are difficult to obtain for a network attacker, because ACME
-   usess HTTPS), though if the recovery key and registration URI are
-   sufficiently preductable, the attacker might be able to guess them.
+   uses HTTPS, though if the recovery key and registration URI are
+   sufficiently predictable, the attacker might be able to guess them.
    An ACME MitM can see the registration URI, but still has to guess the
-   recovery key, since neitherthe ECDH in the provisioning phase nor
+   recovery key, since neither the ECDH in the provisioning phase nor
    HMAC in the recovery phase will reveal it to him.
 
    ACME clients can thus mitigate problems with MAC-based recovery by
@@ -2884,7 +2884,7 @@ Internet-Draft                    ACME                         July 2015
    In designing and deploying contact-based recovery schemes, ACME
    servers operators will need to find an appropriate balance between
    using contact channels that can reach many clients and using contact-
-   based recovery schemes that acheive an appropriate level of risk
+   based recovery schemes that achieve an appropriate level of risk
    using those contact channels.
 
 9.4.  Denial-of-Service Considerations

@@ -60,6 +60,7 @@ informative:
   RFC2818:
   RFC3552:
   W3C.CR-cors-20130129:
+  W3C.WD-capability-urls-20140218:
   I-D.vixie-dnsext-dns0x20:
 
 
@@ -1017,18 +1018,21 @@ Host: example.com
 {
   "resource": "recover-reg",
   "method": "contact",
-  "base": "https://example.com/acme/reg/asdf"
+  "base": "https://example.com/acme/reg/asdf",
+  "contact": [
+    "mailto:forgetful@example.net"
+  ]
 }
 /* Signed as JWS, with new account key */
 ~~~~~~~~~~
 
 If the server agrees to attempt contact-based recovery, then it creates a new
 registration resource containing a stub registration object.  The stub
-registration has the client's new account key and anonymized contacts, in order
-to allow the client to know which contacts to check.  The server returns the
-stub contact in a 201 (Created) response, along with a Location header field
-indicating the URI for the new registration resource (which will be the
-registration URI if the recovery succeeds).
+registration has the client's new account key and contacts, but no
+authorizations or certificates associated.  The server returns the stub contact
+in a 201 (Created) response, along with a Location header field indicating the
+URI for the new registration resource (which will be the registration URI if the
+recovery succeeds).
 
 ~~~~~~~~~~
 HTTP/1.1 201 Created
@@ -1039,8 +1043,7 @@ Location: https://example.com/acme/reg/qwer
   "key": { /* new account key from JWS header */ },
 
   "contact": [
-    "mailto:c********n@example.com",
-    "tel:+1********12"
+    "mailto:forgetful@example.net"
   ]
 }
 ~~~~~~~~~~
@@ -1054,9 +1057,9 @@ field. If the recovery process has failed, the server sends an error code (e.g.,
 404), and SHOULD delete the stub registration resource.
 
 If the recovery process has succeeded, then the server will send a 200 (OK)
-response, containing the full registration object (copied from the old
-registration).  The client may now use this in the same way as if he had gotten
-it from a new-registration transaction.
+response, containing the full registration object, with any necessary
+information copied from the old registration).  The client may now use this in
+the same way as if he had gotten it from a new-registration transaction.
 
 ## Identifier Authorization
 
@@ -1315,9 +1318,11 @@ client may request other formats by including an Accept header in its request.
 The server provides metadata about the certificate in HTTP headers.  In
 particular, the server MUST include a Link relation header field {{RFC5988}}
 with relation "up" to provide a certificate under which this certificate was
-issued.  The server MAY also include an Expires header as a hint to the client
-about when to renew the certificate.  (Of course, the real expiration of the
-certificate is controlled by the notAfter time in the certificate itself.)
+issued, and one with relation "author" to indicate the registration under which
+this certicate was issued.  The server MAY also include an Expires header as a
+hint to the client about when to renew the certificate.  (Of course, the real
+expiration of the certificate is controlled by the notAfter time in the
+certificate itself.)
 
 ~~~~~~~~~~
 GET /acme/cert/asdf HTTP/1.1
@@ -1328,32 +1333,34 @@ HTTP/1.1 200 OK
 Content-Type: application/pkix-cert
 Link: <https://example.com/acme/ca-cert>;rel="up";title="issuer"
 Link: <https://example.com/acme/revoke-cert>;rel="revoke"
+Link: <https://example.com/acme/reg/asdf>;rel="author"
 Location: https://example.com/acme/cert/asdf
 Content-Location: https://example.com/acme/cert-seq/12345
 
 [DER-encoded certificate]
 ~~~~~~~~~~
 
-## Certificate Renewal
+A certificate resource always represents the most recent certificate issued for
+the name/key binding expressed in the CSR.  If the CA allows a certificate to be
+renewed, then it publishes renewed versions of the certificate through the same
+certificate URI.
 
-Often, a client wishes to request a new certificate with the same contents as
-another certificates, but with updated notBefore and notAfter dates.  This
-operation is referred to as "renewal" of the certificate.
-
-If the CA allows a certificate to be renewed, then it publishes renewed versions
-of the certificate through the same certificate URI.  Clients retrieve renewed
-versions of the certificate using a GET query to the certificate URI, which the
-server should then return in a 200 (OK) response.  The server SHOULD provide a
-URI for each specific certificate in the Content-Location header field, as shown
-above.  Requests to specific certificate URIs MUST always result in the same
-certificate.
+Clients retrieve renewed versions of the certificate using a GET query to the
+certificate URI, which the server should then return in a 200 (OK) response.
+The server SHOULD provide a stable URI for each specific certificate in the
+Content-Location header field, as shown above.  Requests to stable certificate
+URIs MUST always result in the same certificate.
 
 To avoid unnecessary renewals, the CA may choose not to issue a renewed
-certificate until it receives such a request.  In such cases, if the CA requires
-some time to generate the new certificate, the CA MUST return a 202 (Accepted)
-response, with a Retry-After header field that indicates when the new
-certificate will be available.  The CA MAY include the current (non-renewed)
-certificate as the body of the response.
+certificate until it receives such a request (if it even allows renewal at all).
+In such cases, if the CA requires some time to generate the new certificate, the
+CA MUST return a 202 (Accepted) response, with a Retry-After header field that
+indicates when the new certificate will be available.  The CA MAY include the
+current (non-renewed) certificate as the body of the response.
+
+Likewise, in order to prevent unnecessary renewal due to queries by parties
+other than the account key holder, certificate URIs should be structured as
+capability URLs {{W3C.WD-capability-urls-20140218}}.
 
 From the client's perspective, there is no difference between a certificate URI
 that allows renewal and one that does not.  If the client wishes to obtain a
@@ -1533,27 +1540,23 @@ meet the guidelines laid out in {{terminology}}.
 ~~~~~~~~~~
 {
   "type": "simpleHttp",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
-  "path": "6tbIMBC5Anhl5bOlWT5ZFA",
-  "tls": false,
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA",
+  "tls": false
 }
 ~~~~~~~~~~
 
-The path at which the resource is provisioned is determined by the client, but
-MUST begin with ".well-known/acme-challenge/".  The content type of the
-resource, if provided, MUST be "application/jose+json".  In addition to
-expressing the path in the JWS as described above, the client returns the part
-of the path coming after that prefix in its Response message.
+The path at which the resource is provisioned is comprised of the fixed prefix
+".well-known/acme-challenge/", followed by the "token" value in the challenge.
+
+~~~~~~~~~~
+.well-known/acme-challenge/evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA
+~~~~~~~~~~
+
+The client's response to this challenge indicates whether it would prefer for
+the validation request to be sent over TLS:
 
 type (required, string):
 : The string "simpleHttp"
-
-path (required, string):
-: The string to be appended to the standard prefix ".well-known/acme-challenge/"
-in order to form the path at which the nonce resource is provisioned.  The value
-MUST be comprised entirely of characters from the URL-safe alphabet for Base64
-encoding {{RFC4648}}, and MUST NOT be longer than 25 characters (sufficient for
-128 bits of base64-encoded data).
 
 tls (optional, boolean, default true):
 : If this attribute is present and set to "false", the server will perform its
@@ -1563,7 +1566,7 @@ Otherwise the check will be done over HTTPS, on port 443.
 ~~~~~~~~~~
 {
   "type": "simpleHttp",
-  "path": "6tbIMBC5Anhl5bOlWT5ZFA",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA",
   "tls": false
 }
 /* Signed as JWS */
@@ -1573,11 +1576,11 @@ Given a Challenge/Response pair, the server verifies the client's control of the
 domain by verifying that the resource was provisioned as expected.
 
 1. Form a URI by populating the URI template {{RFC6570}}
-"{scheme}://{domain}/.well-known/acme-challenge/{path}", where:
+"{scheme}://{domain}/.well-known/acme-challenge/{token}", where:
   * the scheme field is set to "http" if the "tls" field in the response is
     present and set to false, and "https" otherwise;
   * the domain field is set to the domain name being verified; and
-  * the path field is the path provided in the response.
+  * the token field is the token provided in the challenge.
 2. Verify that the resulting URI is well-formed.
 3. Dereference the URI using an HTTP or HTTPS GET request.  If using HTTPS, the
 ACME server MUST ignore the certificate provided by the HTTPS server.
@@ -1726,33 +1729,15 @@ The server provides the following fields as part of the challenge:
 type (required, string):
 : The string "proofOfPossession"
 
-identifier (required, identifier):
-: The ACME identifier for which authorization is being validated
-
-hints (required, object):
-: A JSON object that contains various clues for the client about what the
-requested key is, such that the client can find it.  Entries in the hints object
-may include:
-
-  jwks (required, array of JWK):
-  : A JSON Web Key object describing acceptable public keys
-
-  certs (optional, array of string):
-  : An array of certificates, in Base64-encoded DER format, that contain
-  acceptable public keys.
+certs (optional, array of string):
+: An array of certificates, in Base64-encoded DER format, that contain
+acceptable public keys.
 
 
 ~~~~~~~~~~
 {
   "type": "proofOfPossession",
-  "hints": {
-    "jwk": {
-      "kty": "RSA",
-      "e": "AQAB",
-      "n": "AMswMT...3aVtjE"
-    },
-    "certs": ["MIIF7z...bYVQLY"]
-  }
+  "certs": ["MIIF7z...bYVQLY"]
 }
 ~~~~~~~~~~
 
@@ -1818,8 +1803,8 @@ authorization (required, JWS):
 To validate a proof-of-possession challenge, the server performs the following
 steps:
 
-1. Verify that the public key in the "jwk" header of the "authorization" JWS is
-   one of the keys listed in the challenge's "hints" section
+1. Verify that the public key in the "jwk" header of the "authorization" JWS
+   corresponds to one of the certificates in the "certs" field of the challenge
 2. Verify the "authorization" JWS using the key indicated in its "jwk" header
 3. Decode the payload of the JWS as UTF-8 encoded JSON
 4. Verify that there are exactly three fields in the decoded object, and that:
@@ -2060,6 +2045,14 @@ owner of the domain has outsourced operation of DNS or web services to a hosting
 provider, there is nothing that can be done against tampering by the hosting
 provider.  As far as the outside world is concerned, the zone or web site
 provided by the hosting provider is the real thing.
+
+More limited forms of delegation can also lead to an unintended party gaining
+the ability to successfully complete a validation transaction.  For example,
+suppose an ACME server follows HTTP redirects in Simple HTTP validation and a
+web site operator provisions a catch-all redirect rule that redirects requests
+for unknown resources to different domain.  Then the target of the redirect
+could use that to get a certificate through Simple HTTP validation, since the
+validation path will not be known to the primary server.
 
 The DNS is a common point of vulnerability for all of these challenges.  An
 entity that can provision false DNS records for a domain can attack the DNS

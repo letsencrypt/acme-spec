@@ -475,8 +475,7 @@ ul.toc a:first-child {
 <link href="#rfc.section.6.4.2" rel="Chapter" title="6.4.2 Contact-Based Recovery"/>
 <link href="#rfc.section.6.5" rel="Chapter" title="6.5 Identifier Authorization"/>
 <link href="#rfc.section.6.6" rel="Chapter" title="6.6 Certificate Issuance"/>
-<link href="#rfc.section.6.7" rel="Chapter" title="6.7 Certificate Renewal"/>
-<link href="#rfc.section.6.8" rel="Chapter" title="6.8 Certificate Revocation"/>
+<link href="#rfc.section.6.7" rel="Chapter" title="6.7 Certificate Revocation"/>
 <link href="#rfc.section.7" rel="Chapter" title="7 Identifier Validation Challenges"/>
 <link href="#rfc.section.7.1" rel="Chapter" title="7.1 Simple HTTP"/>
 <link href="#rfc.section.7.2" rel="Chapter" title="7.2 Domain Validation with Server Name Indication (DVSNI)"/>
@@ -593,8 +592,7 @@ ul.toc a:first-child {
 <li>6.4.2.   <a href="#rfc.section.6.4.2">Contact-Based Recovery</a></li>
 </ul><li>6.5.   <a href="#rfc.section.6.5">Identifier Authorization</a></li>
 <li>6.6.   <a href="#rfc.section.6.6">Certificate Issuance</a></li>
-<li>6.7.   <a href="#rfc.section.6.7">Certificate Renewal</a></li>
-<li>6.8.   <a href="#rfc.section.6.8">Certificate Revocation</a></li>
+<li>6.7.   <a href="#rfc.section.6.7">Certificate Revocation</a></li>
 </ul><li>7.   <a href="#rfc.section.7">Identifier Validation Challenges</a></li>
 <ul><li>7.1.   <a href="#rfc.section.7.1">Simple HTTP</a></li>
 <li>7.2.   <a href="#rfc.section.7.2">Domain Validation with Server Name Indication (DVSNI)</a></li>
@@ -1227,11 +1225,14 @@ Host: example.com
 {
   "resource": "recover-reg",
   "method": "contact",
-  "base": "https://example.com/acme/reg/asdf"
+  "base": "https://example.com/acme/reg/asdf",
+  "contact": [
+    "mailto:forgetful@example.net"
+  ]
 }
 /* Signed as JWS, with new account key */
 </pre>
-<p id="rfc.section.6.4.2.p.5">If the server agrees to attempt contact-based recovery, then it creates a new registration resource containing a stub registration object.  The stub registration has the client&#8217;s new account key and anonymized contacts, in order to allow the client to know which contacts to check.  The server returns the stub contact in a 201 (Created) response, along with a Location header field indicating the URI for the new registration resource (which will be the registration URI if the recovery succeeds).</p>
+<p id="rfc.section.6.4.2.p.5">If the server agrees to attempt contact-based recovery, then it creates a new registration resource containing a stub registration object.  The stub registration has the client&#8217;s new account key and contacts, but no authorizations or certificates associated.  The server returns the stub contact in a 201 (Created) response, along with a Location header field indicating the URI for the new registration resource (which will be the registration URI if the recovery succeeds).</p>
 <pre>
 HTTP/1.1 201 Created
 Content-Type: application/json
@@ -1241,13 +1242,12 @@ Location: https://example.com/acme/reg/qwer
   "key": { /* new account key from JWS header */ },
 
   "contact": [
-    "mailto:c********n@example.com",
-    "tel:+1********12"
+    "mailto:forgetful@example.net"
   ]
 }
 </pre>
 <p id="rfc.section.6.4.2.p.6">After recovery has been initiated, the server follows its chosen recovery process, out-of-band to ACME.  While the recovery process is ongoing, the client may poll the registration resource&#8217;s URI for status, by sending a POST request with a trivial body ({&#8220;resource&#8221;:&#8221;reg&#8221;}).  If the recovery process is still pending, the server sends a 202 (Accepted) status code, and a Retry-After header field. If the recovery process has failed, the server sends an error code (e.g., 404), and SHOULD delete the stub registration resource.</p>
-<p id="rfc.section.6.4.2.p.7">If the recovery process has succeeded, then the server will send a 200 (OK) response, containing the full registration object (copied from the old registration).  The client may now use this in the same way as if he had gotten it from a new-registration transaction.</p>
+<p id="rfc.section.6.4.2.p.7">If the recovery process has succeeded, then the server will send a 200 (OK) response, containing the full registration object, with any necessary information copied from the old registration).  The client may now use this in the same way as if he had gotten it from a new-registration transaction.</p>
 <h1 id="rfc.section.6.5"><a href="#rfc.section.6.5">6.5.</a> <a href="#identifier-authorization" id="identifier-authorization">Identifier Authorization</a></h1>
 <p id="rfc.section.6.5.p.1">The identifier authorization process establishes the authorization of an account to manage certificates for a given identifier.  This process must assure the server of two things: First, that the client controls the private key of the account key pair, and second, that the client holds the identifier in question.  This process may be repeated to associate multiple identifiers to a key pair (e.g., to request certificates with multiple identifiers), or to associate multiple accounts with an identifier (e.g., to allow multiple entities to manage certificates).</p>
 <p id="rfc.section.6.5.p.2">As illustrated by the figure in the overview section above, the authorization process proceeds in two phases.  The client first requests a new authorization, and the server issues challenges, then the client responds to those challenges and the server validates the client&#8217;s responses.</p>
@@ -1391,7 +1391,7 @@ HTTP/1.1 202 Accepted
 Retry-After: 120
 </pre>
 <p id="rfc.section.6.6.p.8">The default format of the certificate is DER (application/pkix-cert).  The client may request other formats by including an Accept header in its request.</p>
-<p id="rfc.section.6.6.p.9">The server provides metadata about the certificate in HTTP headers.  In particular, the server MUST include a Link relation header field <a href="#RFC5988">[RFC5988]</a> with relation &#8220;up&#8221; to provide a certificate under which this certificate was issued.  The server MAY also include an Expires header as a hint to the client about when to renew the certificate.  (Of course, the real expiration of the certificate is controlled by the notAfter time in the certificate itself.)</p>
+<p id="rfc.section.6.6.p.9">The server provides metadata about the certificate in HTTP headers.  In particular, the server MUST include a Link relation header field <a href="#RFC5988">[RFC5988]</a> with relation &#8220;up&#8221; to provide a certificate under which this certificate was issued, and one with relation &#8220;author&#8221; to indicate the registration under which this certicate was issued.  The server MAY also include an Expires header as a hint to the client about when to renew the certificate.  (Of course, the real expiration of the certificate is controlled by the notAfter time in the certificate itself.)</p>
 <pre>
 GET /acme/cert/asdf HTTP/1.1
 Host: example.com
@@ -1401,18 +1401,19 @@ HTTP/1.1 200 OK
 Content-Type: application/pkix-cert
 Link: &lt;https://example.com/acme/ca-cert&gt;;rel="up";title="issuer"
 Link: &lt;https://example.com/acme/revoke-cert&gt;;rel="revoke"
+Link: &lt;https://example.com/acme/reg/asdf&gt;;rel="author"
 Location: https://example.com/acme/cert/asdf
 Content-Location: https://example.com/acme/cert-seq/12345
 
 [DER-encoded certificate]
 </pre>
-<h1 id="rfc.section.6.7"><a href="#rfc.section.6.7">6.7.</a> <a href="#certificate-renewal" id="certificate-renewal">Certificate Renewal</a></h1>
-<p id="rfc.section.6.7.p.1">Often, a client wishes to request a new certificate with the same contents as another certificates, but with updated notBefore and notAfter dates.  This operation is referred to as &#8220;renewal&#8221; of the certificate.</p>
-<p id="rfc.section.6.7.p.2">If the CA allows a certificate to be renewed, then it publishes renewed versions of the certificate through the same certificate URI.  Clients retrieve renewed versions of the certificate using a GET query to the certificate URI, which the server should then return in a 200 (OK) response.  The server SHOULD provide a URI for each specific certificate in the Content-Location header field, as shown above.  Requests to specific certificate URIs MUST always result in the same certificate.</p>
-<p id="rfc.section.6.7.p.3">To avoid unnecessary renewals, the CA may choose not to issue a renewed certificate until it receives such a request.  In such cases, if the CA requires some time to generate the new certificate, the CA MUST return a 202 (Accepted) response, with a Retry-After header field that indicates when the new certificate will be available.  The CA MAY include the current (non-renewed) certificate as the body of the response.</p>
-<p id="rfc.section.6.7.p.4">From the client&#8217;s perspective, there is no difference between a certificate URI that allows renewal and one that does not.  If the client wishes to obtain a renewed certificate, and a GET request to the certificate URI does not yield one, then the client may initiate a new-certificate transaction to request one.</p>
-<h1 id="rfc.section.6.8"><a href="#rfc.section.6.8">6.8.</a> <a href="#certificate-revocation" id="certificate-revocation">Certificate Revocation</a></h1>
-<p id="rfc.section.6.8.p.1">To request that a certificate be revoked, the client sends a POST request to the ACME server&#8217;s revoke-cert URI.  The body of the POST is a JWS object whose JSON payload contains the certificate to be revoked:</p>
+<p id="rfc.section.6.6.p.10">A certificate resource always represents the most recent certificate issued for the name/key binding expressed in the CSR.  If the CA allows a certificate to be renewed, then it publishes renewed versions of the certificate through the same certificate URI.</p>
+<p id="rfc.section.6.6.p.11">Clients retrieve renewed versions of the certificate using a GET query to the certificate URI, which the server should then return in a 200 (OK) response.  The server SHOULD provide a stable URI for each specific certificate in the Content-Location header field, as shown above.  Requests to stable certificate URIs MUST always result in the same certificate.</p>
+<p id="rfc.section.6.6.p.12">To avoid unnecessary renewals, the CA may choose not to issue a renewed certificate until it receives such a request (if it even allows renewal at all).  In such cases, if the CA requires some time to generate the new certificate, the CA MUST return a 202 (Accepted) response, with a Retry-After header field that indicates when the new certificate will be available.  The CA MAY include the current (non-renewed) certificate as the body of the response.</p>
+<p id="rfc.section.6.6.p.13">Likewise, in order to prevent unnecessary renewal due to queries by parties other than the account key holder, certificate URIs should be structured as capability URLs <a href="#W3C.WD-capability-urls-20140218">[W3C.WD-capability-urls-20140218]</a>.</p>
+<p id="rfc.section.6.6.p.14">From the client&#8217;s perspective, there is no difference between a certificate URI that allows renewal and one that does not.  If the client wishes to obtain a renewed certificate, and a GET request to the certificate URI does not yield one, then the client may initiate a new-certificate transaction to request one.</p>
+<h1 id="rfc.section.6.7"><a href="#rfc.section.6.7">6.7.</a> <a href="#certificate-revocation" id="certificate-revocation">Certificate Revocation</a></h1>
+<p id="rfc.section.6.7.p.1">To request that a certificate be revoked, the client sends a POST request to the ACME server&#8217;s revoke-cert URI.  The body of the POST is a JWS object whose JSON payload contains the certificate to be revoked:</p>
 <p/>
 
 <dl>
@@ -1429,14 +1430,14 @@ Host: example.com
 }
 /* Signed as JWS */
 </pre>
-<p id="rfc.section.6.8.p.3">Revocation requests are different from other ACME request in that they can be signed either with an account key pair or the key pair in the certificate.  Before revoking a certificate, the server MUST verify at least one of these conditions applies:</p>
+<p id="rfc.section.6.7.p.3">Revocation requests are different from other ACME request in that they can be signed either with an account key pair or the key pair in the certificate.  Before revoking a certificate, the server MUST verify at least one of these conditions applies:</p>
 <p/>
 
 <ul>
   <li>the public key of the key pair signing the request matches the public key in the certificate.</li>
   <li>the key pair signing the request is an account key, and the corresponding account is authorized to act for all of the identifier(s) in the certificate.</li>
 </ul>
-<p id="rfc.section.6.8.p.5">If the revocation succeeds, the server responds with status code 200 (OK).  If the revocation fails, the server returns an error.</p>
+<p id="rfc.section.6.7.p.5">If the revocation succeeds, the server responds with status code 200 (OK).  If the revocation fails, the server returns an error.</p>
 <pre>
 HTTP/1.1 200 OK
 Content-Length: 0
@@ -1516,43 +1517,44 @@ Content-Language: en
 <pre>
 {
   "type": "simpleHttp",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
-  "path": "6tbIMBC5Anhl5bOlWT5ZFA",
-  "tls": false,
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA",
+  "tls": false
 }
 </pre>
-<p id="rfc.section.7.1.p.5">The path at which the resource is provisioned is determined by the client, but MUST begin with &#8220;.well-known/acme-challenge/&#8221;.  The content type of the resource, if provided, MUST be &#8220;application/jose+json&#8221;.  In addition to expressing the path in the JWS as described above, the client returns the part of the path coming after that prefix in its Response message.</p>
+<p id="rfc.section.7.1.p.5">The path at which the resource is provisioned is comprised of the fixed prefix &#8220;.well-known/acme-challenge/&#8221;, followed by the &#8220;token&#8221; value in the challenge.</p>
+<pre>
+.well-known/acme-challenge/evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA
+</pre>
+<p id="rfc.section.7.1.p.6">The client&#8217;s response to this challenge indicates whether it would prefer for the validation request to be sent over TLS:</p>
 <p/>
 
 <dl>
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;simpleHttp&#8221;</dd>
-  <dt>path (required, string):</dt>
-  <dd style="margin-left: 8">The string to be appended to the standard prefix &#8220;.well-known/acme-challenge/&#8221; in order to form the path at which the nonce resource is provisioned.  The value MUST be comprised entirely of characters from the URL-safe alphabet for Base64 encoding <a href="#RFC4648">[RFC4648]</a>, and MUST NOT be longer than 25 characters (sufficient for 128 bits of base64-encoded data).</dd>
   <dt>tls (optional, boolean, default true):</dt>
   <dd style="margin-left: 8">If this attribute is present and set to &#8220;false&#8221;, the server will perform its validation check over unencrypted HTTP (on port 80) rather than over HTTPS.  Otherwise the check will be done over HTTPS, on port 443.</dd>
 </dl>
 <pre>
 {
   "type": "simpleHttp",
-  "path": "6tbIMBC5Anhl5bOlWT5ZFA",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA",
   "tls": false
 }
 /* Signed as JWS */
 </pre>
-<p id="rfc.section.7.1.p.7">Given a Challenge/Response pair, the server verifies the client&#8217;s control of the domain by verifying that the resource was provisioned as expected.</p>
+<p id="rfc.section.7.1.p.8">Given a Challenge/Response pair, the server verifies the client&#8217;s control of the domain by verifying that the resource was provisioned as expected.</p>
 <p/>
 
 <ol>
-  <li>Form a URI by populating the URI template <a href="#RFC6570">[RFC6570]</a> &#8220;{scheme}://{domain}/.well-known/acme-challenge/{path}&#8221;, where: <ul><li>the scheme field is set to &#8220;http&#8221; if the &#8220;tls&#8221; field in the response is present and set to false, and &#8220;https&#8221; otherwise;</li><li>the domain field is set to the domain name being verified; and</li><li>the path field is the path provided in the response.</li></ul></li>
+  <li>Form a URI by populating the URI template <a href="#RFC6570">[RFC6570]</a> &#8220;{scheme}://{domain}/.well-known/acme-challenge/{token}&#8221;, where: <ul><li>the scheme field is set to &#8220;http&#8221; if the &#8220;tls&#8221; field in the response is present and set to false, and &#8220;https&#8221; otherwise;</li><li>the domain field is set to the domain name being verified; and</li><li>the token field is the token provided in the challenge.</li></ul></li>
   <li>Verify that the resulting URI is well-formed.</li>
   <li>Dereference the URI using an HTTP or HTTPS GET request.  If using HTTPS, the ACME server MUST ignore the certificate provided by the HTTPS server.</li>
   <li>Verify that the Content-Type header of the response is either absent, or has the value &#8220;application/jose+json&#8221;</li>
   <li>Verify that the body of the response is a valid JWS of the type indicated by the Content-Type header (if present), signed with the client&#8217;s account key</li>
   <li>Verify that the payload of the JWS meets the following criteria: <ul><li>It is a valid JSON dictionary</li><li>It has exactly four fields</li><li>Its &#8220;type&#8221; field is set to &#8220;simpleHttp&#8221;</li><li>Its &#8220;token&#8221; field is equal to the &#8220;token&#8221; field in the challenge</li><li>Its &#8220;path&#8221; field is equal to the &#8220;path&#8221; field in the response</li><li>Its &#8220;tls&#8221; field is equal to the &#8220;tls&#8221; field in the response, or &#8220;true&#8221; if the &#8220;tls&#8221; field was absent</li></ul></li>
 </ol>
-<p id="rfc.section.7.1.p.9">Comparisons of the &#8220;path&#8221; and &#8220;token&#8221; fields MUST be performed in terms of Unicode code points, taking into account the encodings of the stored nonce and the body of the request.</p>
-<p id="rfc.section.7.1.p.10">If all of the above verifications succeed, then the validation is successful.  If the request fails, or the body does not pass these checks, then it has failed.</p>
+<p id="rfc.section.7.1.p.10">Comparisons of the &#8220;path&#8221; and &#8220;token&#8221; fields MUST be performed in terms of Unicode code points, taking into account the encodings of the stored nonce and the body of the request.</p>
+<p id="rfc.section.7.1.p.11">If all of the above verifications succeed, then the validation is successful.  If the request fails, or the body does not pass these checks, then it has failed.</p>
 <h1 id="rfc.section.7.2"><a href="#rfc.section.7.2">7.2.</a> <a href="#domain-validation-with-server-name-indication-dvsni" id="domain-validation-with-server-name-indication-dvsni">Domain Validation with Server Name Indication (DVSNI)</a></h1>
 <p id="rfc.section.7.2.p.1">The Domain Validation with Server Name Indication (DVSNI) validation method proves control over a domain name by requiring the client to configure a TLS server referenced by an A/AAAA record under the domain name to respond to specific connection attempts utilizing the Server Name Indication extension <a href="#RFC6066">[RFC6066]</a>. The server verifies the client&#8217;s challenge by accessing the reconfigured server and verifying a particular challenge certificate is presented.</p>
 <p/>
@@ -1628,22 +1630,13 @@ Content-Language: en
 <dl>
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;proofOfPossession&#8221;</dd>
-  <dt>identifier (required, identifier):</dt>
-  <dd style="margin-left: 8">The ACME identifier for which authorization is being validated</dd>
-  <dt>hints (required, object):</dt>
-  <dd style="margin-left: 8">A JSON object that contains various clues for the client about what the requested key is, such that the client can find it.  Entries in the hints object may include: <dl><dt>jwks (required, array of JWK):</dt><dd style="margin-left: 8">A JSON Web Key object describing acceptable public keys</dd><dt>certs (optional, array of string):</dt><dd style="margin-left: 8">An array of certificates, in Base64-encoded DER format, that contain acceptable public keys.</dd></dl><p> </p></dd>
+  <dt>certs (optional, array of string):</dt>
+  <dd style="margin-left: 8">An array of certificates, in Base64-encoded DER format, that contain acceptable public keys.</dd>
 </dl>
 <pre>
 {
   "type": "proofOfPossession",
-  "hints": {
-    "jwk": {
-      "kty": "RSA",
-      "e": "AQAB",
-      "n": "AMswMT...3aVtjE"
-    },
-    "certs": ["MIIF7z...bYVQLY"]
-  }
+  "certs": ["MIIF7z...bYVQLY"]
 }
 </pre>
 <p id="rfc.section.7.3.p.6">In response to this challenge, the client uses the private key corresponding to one of the acceptable public keys to sign a JWS object including data related to the challenge.  The validation object covered by the signature has the following fields:</p>
@@ -1696,7 +1689,7 @@ Content-Language: en
 <p/>
 
 <ol>
-  <li>Verify that the public key in the &#8220;jwk&#8221; header of the &#8220;authorization&#8221; JWS is one of the keys listed in the challenge&#8217;s &#8220;hints&#8221; section</li>
+  <li>Verify that the public key in the &#8220;jwk&#8221; header of the &#8220;authorization&#8221; JWS corresponds to one of the certificates in the &#8220;certs&#8221; field of the challenge</li>
   <li>Verify the &#8220;authorization&#8221; JWS using the key indicated in its &#8220;jwk&#8221; header</li>
   <li>Decode the payload of the JWS as UTF-8 encoded JSON</li>
   <li>Verify that there are exactly three fields in the decoded object, and that: <ul><li>The &#8220;type&#8221; field is set to &#8220;proofOfPossession&#8221;</li><li>The &#8220;identifier&#8221; field contains the identifier for which authorization is being validated</li><li>The &#8220;accountKey&#8221; field matches the account key for which the challenge was issued</li></ul></li>
@@ -1852,7 +1845,8 @@ _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
 </ul>
 <p id="rfc.section.9.2.p.8">There are several ways that these assumptions can be violated, both by misconfiguration and by attack.  For example, on a web server that allows non-administrative users to write to .well-known, any user can claim to own the server&#8217;s hostname by responding to a Simple HTTP challenge, and likewise for TLS configuration and DVSNI.</p>
 <p id="rfc.section.9.2.p.9">The use of hosting providers is a particular risk for ACME validation.  If the owner of the domain has outsourced operation of DNS or web services to a hosting provider, there is nothing that can be done against tampering by the hosting provider.  As far as the outside world is concerned, the zone or web site provided by the hosting provider is the real thing.</p>
-<p id="rfc.section.9.2.p.10">The DNS is a common point of vulnerability for all of these challenges.  An entity that can provision false DNS records for a domain can attack the DNS challenge directly, and can provision false A/AAAA records to direct the ACME server to send its DVSNI or Simple HTTP validation query to a server of the attacker&#8217;s choosing.  There are a few different mitigations that ACME servers can apply:</p>
+<p id="rfc.section.9.2.p.10">More limited forms of delegation can also lead to an unintended party gaining the ability to successfully complete a validation transaction.  For example, suppose an ACME server follows HTTP redirects in Simple HTTP validation and a web site operator provisions a catch-all redirect rule that redirects requests for unknown resources to different domain.  Then the target of the redirect could use that to get a certificate through Simple HTTP validation, since the validation path will not be known to the primary server.</p>
+<p id="rfc.section.9.2.p.11">The DNS is a common point of vulnerability for all of these challenges.  An entity that can provision false DNS records for a domain can attack the DNS challenge directly, and can provision false A/AAAA records to direct the ACME server to send its DVSNI or Simple HTTP validation query to a server of the attacker&#8217;s choosing.  There are a few different mitigations that ACME servers can apply:</p>
 <p/>
 
 <ul>
@@ -1860,9 +1854,9 @@ _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
   <li>Querying the DNS from multiple vantage points to address local attackers</li>
   <li>Applying mitigations against DNS off-path attackers, e.g., adding entropy to requests <a href="#I-D.vixie-dnsext-dns0x20">[I-D.vixie-dnsext-dns0x20]</a> or only using TCP</li>
 </ul>
-<p id="rfc.section.9.2.p.12">Given these considerations, the ACME validation process makes it impossible for any attacker on the ACME channel, or a passive attacker on the validation channel to hijack the authorization process to authorize a key of the attacker&#8217;s choice.</p>
-<p id="rfc.section.9.2.p.13">An attacker that can only see the ACME channel would need to convince the validation server to provide a response that would authorize the attacker&#8217;s account key, but this is prevented by binding the validation response to the account key used to request challenges.  A passive attacker on the validation channel can observe the correct validation response and even replay it, but that response can only be used with the account key for which it was generated.</p>
-<p id="rfc.section.9.2.p.14">An active attacker on the validation channel can subvert the ACME process, by performing normal ACME transactions and providing a validation response for his own account key.  The risks due to hosting providers noted above are a particular case.  For identifiers where the server already has some credential associated with the domain this attack can be prevented by requiring the client to complete a proof-of-possession challenge.</p>
+<p id="rfc.section.9.2.p.13">Given these considerations, the ACME validation process makes it impossible for any attacker on the ACME channel, or a passive attacker on the validation channel to hijack the authorization process to authorize a key of the attacker&#8217;s choice.</p>
+<p id="rfc.section.9.2.p.14">An attacker that can only see the ACME channel would need to convince the validation server to provide a response that would authorize the attacker&#8217;s account key, but this is prevented by binding the validation response to the account key used to request challenges.  A passive attacker on the validation channel can observe the correct validation response and even replay it, but that response can only be used with the account key for which it was generated.</p>
+<p id="rfc.section.9.2.p.15">An active attacker on the validation channel can subvert the ACME process, by performing normal ACME transactions and providing a validation response for his own account key.  The risks due to hosting providers noted above are a particular case.  For identifiers where the server already has some credential associated with the domain this attack can be prevented by requiring the client to complete a proof-of-possession challenge.</p>
 <h1 id="rfc.section.9.3"><a href="#rfc.section.9.3">9.3.</a> <a href="#preventing-authorization-hijacking" id="preventing-authorization-hijacking">Preventing Authorization Hijacking</a></h1>
 <p id="rfc.section.9.3.p.1">The account recovery processes described in <a href="#account-recovery">Section 6.4</a> allow authorization to be transferred from one account key to another, in case the former account key pair&#8217;s private key is lost.  ACME needs to prevent these processes from being exploited by an attacker to hijack the authorizations attached to one key and assign them to a key of the attacker&#8217;s choosing.</p>
 <p id="rfc.section.9.3.p.2">Recovery takes place in two steps: 1. Provisioning recovery information (contact or recovery key) 2. Using recovery information to recover an account</p>
@@ -2072,6 +2066,12 @@ _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
         <b id="W3C.CR-cors-20130129">[W3C.CR-cors-20130129]</b>
       </td>
       <td class="top"><a>Kesteren, A.</a>, "<a href="http://www.w3.org/TR/2013/CR-cors-20130129">Cross-Origin Resource Sharing</a>", World Wide Web Consortium CR CR-cors-20130129, January 2013.</td>
+    </tr>
+    <tr>
+      <td class="reference">
+        <b id="W3C.WD-capability-urls-20140218">[W3C.WD-capability-urls-20140218]</b>
+      </td>
+      <td class="top"><a>Tennison, J.</a>, "<a href="http://www.w3.org/TR/2014/WD-capability-urls-20140218">Good Practices for Capability URLs</a>", World Wide Web Consortium WD WD-capability-urls-20140218, February 2014.</td>
     </tr>
   </tbody>
 </table>

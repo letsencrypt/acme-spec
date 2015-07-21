@@ -5,14 +5,14 @@
 Network Working Group                                          R. Barnes
 Internet-Draft                                                   Mozilla
 Intended status: Standards Track                      J. Hoffman-Andrews
-Expires: January 7, 2016                                             EFF
+Expires: January 22, 2016                                            EFF
                                                                J. Kasten
                                                   University of Michigan
-                                                           July 06, 2015
+                                                           July 21, 2015
 
 
           Automatic Certificate Management Environment (ACME)
-                          draft-barnes-acme-03
+                          draft-barnes-acme-04
 
 Abstract
 
@@ -43,7 +43,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on January 7, 2016.
+   This Internet-Draft will expire on January 22, 2016.
 
 Copyright Notice
 
@@ -53,7 +53,7 @@ Copyright Notice
 
 
 
-Barnes, et al.           Expires January 7, 2016                [Page 1]
+Barnes, et al.          Expires January 22, 2016                [Page 1]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -109,7 +109,7 @@ Table of Contents
 
 
 
-Barnes, et al.           Expires January 7, 2016                [Page 2]
+Barnes, et al.          Expires January 22, 2016                [Page 2]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -165,7 +165,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016                [Page 3]
+Barnes, et al.          Expires January 22, 2016                [Page 3]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -221,7 +221,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016                [Page 4]
+Barnes, et al.          Expires January 22, 2016                [Page 4]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -277,7 +277,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016                [Page 5]
+Barnes, et al.          Expires January 22, 2016                [Page 5]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -333,7 +333,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016                [Page 6]
+Barnes, et al.          Expires January 22, 2016                [Page 6]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -389,7 +389,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016                [Page 7]
+Barnes, et al.          Expires January 22, 2016                [Page 7]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -445,7 +445,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016                [Page 8]
+Barnes, et al.          Expires January 22, 2016                [Page 8]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -501,7 +501,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016                [Page 9]
+Barnes, et al.          Expires January 22, 2016                [Page 9]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -557,7 +557,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 10]
+Barnes, et al.          Expires January 22, 2016               [Page 10]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -613,7 +613,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 11]
+Barnes, et al.          Expires January 22, 2016               [Page 11]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -669,7 +669,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 12]
+Barnes, et al.          Expires January 22, 2016               [Page 12]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -725,7 +725,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 13]
+Barnes, et al.          Expires January 22, 2016               [Page 13]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -781,7 +781,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 14]
+Barnes, et al.          Expires January 22, 2016               [Page 14]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -837,7 +837,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 15]
+Barnes, et al.          Expires January 22, 2016               [Page 15]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -893,7 +893,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 16]
+Barnes, et al.          Expires January 22, 2016               [Page 16]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -949,7 +949,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 17]
+Barnes, et al.          Expires January 22, 2016               [Page 17]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1005,7 +1005,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 18]
+Barnes, et al.          Expires January 22, 2016               [Page 18]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1061,7 +1061,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 19]
+Barnes, et al.          Expires January 22, 2016               [Page 19]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1117,7 +1117,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 20]
+Barnes, et al.          Expires January 22, 2016               [Page 20]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1173,7 +1173,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 21]
+Barnes, et al.          Expires January 22, 2016               [Page 21]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1229,7 +1229,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 22]
+Barnes, et al.          Expires January 22, 2016               [Page 22]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1285,7 +1285,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 23]
+Barnes, et al.          Expires January 22, 2016               [Page 23]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1341,7 +1341,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 24]
+Barnes, et al.          Expires January 22, 2016               [Page 24]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1397,7 +1397,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 25]
+Barnes, et al.          Expires January 22, 2016               [Page 25]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1453,7 +1453,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 26]
+Barnes, et al.          Expires January 22, 2016               [Page 26]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1509,7 +1509,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 27]
+Barnes, et al.          Expires January 22, 2016               [Page 27]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1565,7 +1565,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 28]
+Barnes, et al.          Expires January 22, 2016               [Page 28]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1621,7 +1621,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 29]
+Barnes, et al.          Expires January 22, 2016               [Page 29]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1677,7 +1677,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 30]
+Barnes, et al.          Expires January 22, 2016               [Page 30]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1733,7 +1733,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 31]
+Barnes, et al.          Expires January 22, 2016               [Page 31]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1789,7 +1789,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 32]
+Barnes, et al.          Expires January 22, 2016               [Page 32]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1845,7 +1845,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 33]
+Barnes, et al.          Expires January 22, 2016               [Page 33]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1901,7 +1901,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 34]
+Barnes, et al.          Expires January 22, 2016               [Page 34]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -1957,7 +1957,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 35]
+Barnes, et al.          Expires January 22, 2016               [Page 35]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2013,7 +2013,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 36]
+Barnes, et al.          Expires January 22, 2016               [Page 36]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2069,7 +2069,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 37]
+Barnes, et al.          Expires January 22, 2016               [Page 37]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2125,7 +2125,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 38]
+Barnes, et al.          Expires January 22, 2016               [Page 38]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2181,7 +2181,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 39]
+Barnes, et al.          Expires January 22, 2016               [Page 39]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2237,7 +2237,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 40]
+Barnes, et al.          Expires January 22, 2016               [Page 40]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2293,7 +2293,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 41]
+Barnes, et al.          Expires January 22, 2016               [Page 41]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2349,7 +2349,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 42]
+Barnes, et al.          Expires January 22, 2016               [Page 42]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2405,7 +2405,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 43]
+Barnes, et al.          Expires January 22, 2016               [Page 43]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2461,7 +2461,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 44]
+Barnes, et al.          Expires January 22, 2016               [Page 44]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2517,7 +2517,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 45]
+Barnes, et al.          Expires January 22, 2016               [Page 45]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2573,7 +2573,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 46]
+Barnes, et al.          Expires January 22, 2016               [Page 46]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2629,7 +2629,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 47]
+Barnes, et al.          Expires January 22, 2016               [Page 47]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2685,7 +2685,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 48]
+Barnes, et al.          Expires January 22, 2016               [Page 48]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2741,7 +2741,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 49]
+Barnes, et al.          Expires January 22, 2016               [Page 49]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2797,7 +2797,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 50]
+Barnes, et al.          Expires January 22, 2016               [Page 50]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2853,7 +2853,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 51]
+Barnes, et al.          Expires January 22, 2016               [Page 51]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2909,7 +2909,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 52]
+Barnes, et al.          Expires January 22, 2016               [Page 52]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -2965,7 +2965,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 53]
+Barnes, et al.          Expires January 22, 2016               [Page 53]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -3021,7 +3021,7 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 54]
+Barnes, et al.          Expires January 22, 2016               [Page 54]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -3077,7 +3077,7 @@ Authors' Addresses
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 55]
+Barnes, et al.          Expires January 22, 2016               [Page 55]
 
 Internet-Draft                    ACME                         July 2015
 
@@ -3133,4 +3133,4 @@ Internet-Draft                    ACME                         July 2015
 
 
 
-Barnes, et al.           Expires January 7, 2016               [Page 56]
+Barnes, et al.          Expires January 22, 2016               [Page 56]

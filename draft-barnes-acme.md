@@ -795,6 +795,9 @@ requests are not authenticated.  If a client wishes to query the server for
 information about its account (e.g., to examine the "contact" or "certificates"
 fields), then it SHOULD do so by sending a POST request with an empty update.
 That is, it should send a JWS whose payload is trivial ({"resource":"reg"}).
+In this case the server reply MUST contain the same link headers sent for a
+new registration, to allow a client to retreive the "new-authorization" and
+"terms-of-service" URI
 
 ### Recovery Keys
 

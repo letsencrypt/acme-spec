@@ -841,7 +841,6 @@ ul.toc a:first-child {
       "status": "valid",
       "validated": "2014-12-01T12:05Z",
       "token": "IlirfxKKXAsHtmzK29Pj8A"
-      "path": "Hf5GrX4Q7EBax9hc2jJnfw"
     }
   ],
 }
@@ -1310,7 +1309,7 @@ Link: &lt;https://example.com/acme/new-cert&gt;;rel="next"
   ]
 }
 </pre>
-<p id="rfc.section.6.5.p.9">The client needs to respond with information to complete the challenges.  To do this, the client updates the authorization object received from the server by filling in any required information in the elements of the &#8220;challenges&#8221; dictionary.  For example, if the client wishes to complete the &#8220;simpleHttp&#8221; challenge, it needs to provide the &#8220;path&#8221; component.  (This is also the stage where the client should perform any actions required by the challenge.)</p>
+<p id="rfc.section.6.5.p.9">The client needs to respond with information to complete the challenges.  To do this, the client updates the authorization object received from the server by filling in any required information in the elements of the &#8220;challenges&#8221; dictionary.  (This is also the stage where the client should perform any actions required by the challenge.)</p>
 <p id="rfc.section.6.5.p.10">The client sends these updates back to the server in the form of a JSON object with the response fields required by the challenge type, carried in a POST request to the challenge URI (not authorization URI or the new-authorization URI).  This allows the client to send information only for challenges it is responding to.</p>
 <p id="rfc.section.6.5.p.11">For example, if the client were to respond to the &#8220;simpleHttp&#8221; challenge in the above authorization, it would send the following request:</p>
 <pre>
@@ -1320,7 +1319,7 @@ Host: example.com
 {
   "resource": "challenge",
   "type": "simpleHttp",
-  "path": "Hf5GrX4Q7EBax9hc2jJnfw"
+  "tls": false
 }
 /* Signed as JWS */
 </pre>
@@ -1349,7 +1348,6 @@ HTTP/1.1 200 OK
       "status": "valid",
       "validated": "2014-12-01T12:05Z",
       "token": "IlirfxKKXAsHtmzK29Pj8A"
-      "path": "Hf5GrX4Q7EBax9hc2jJnfw"
     }
   ]
 }
@@ -1497,7 +1495,7 @@ Content-Language: en
 </ul>
 <p id="rfc.section.7.p.16">The identifier validation challenges described in this section all relate to validation of domain names.  If ACME is extended in the future to support other types of identifier, there will need to be new Challenge types, and they will need to specify which types of identifier they apply to.</p>
 <h1 id="rfc.section.7.1"><a href="#rfc.section.7.1">7.1.</a> <a href="#simple-http" id="simple-http">Simple HTTP</a></h1>
-<p id="rfc.section.7.1.p.1">With Simple HTTP validation, the client in an ACME transaction proves its control over a domain name by proving that it can provision resources on an HTTP server that responds for that domain name.  The ACME server challenges the client to provision a file with a specific string as its contents.</p>
+<p id="rfc.section.7.1.p.1">With Simple HTTP validation, the client in an ACME transaction proves its control over a domain name by proving that it can provision resources on an HTTP server that responds for that domain name.  The ACME server challenges the client to provision a file with a specific JWS as its contents.</p>
 <p id="rfc.section.7.1.p.2">As a domain may resolve to multiple IPv4 and IPv6 addresses, the server will connect to at least one of the hosts found in A and AAAA records, at its discretion.  The HTTP server may be made available over either HTTPS or unencrypted HTTP; the client tells the server in its response which to check.</p>
 <p/>
 
@@ -1505,7 +1503,7 @@ Content-Language: en
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;simpleHttp&#8221;</dd>
   <dt>token (required, string):</dt>
-  <dd style="margin-left: 8">The value to be provisioned in the file.  This value MUST have at least 128 bits of entropy, in order to prevent an attacker from guessing it.  It MUST NOT contain any non-ASCII characters.</dd>
+  <dd style="margin-left: 8">The value to be used in generation of validation JWS.  This value MUST have at least 128 bits of entropy, in order to prevent an attacker from guessing it.  It MUST NOT contain any non-ASCII characters.</dd>
 </dl>
 <pre>
 {
@@ -1513,7 +1511,7 @@ Content-Language: en
   "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA"
 }
 </pre>
-<p id="rfc.section.7.1.p.4">A client responds to this challenge by signing a JWS object and provisioning it as a resource on the HTTP server for the domain in question.  The payload of the JWS MUST be a JSON dictionary containing the fields &#8220;type&#8221;, &#8220;token&#8221;, &#8220;path&#8221;, and &#8220;tls&#8221; from the ACME challenge and response (see below), and no other fields.  If the &#8220;tls&#8221; field is not included in the response, then validation object MUST have its &#8220;tls&#8221; field set to &#8220;true&#8221;.  The JWS MUST be signed with the client&#8217;s account key pair. This JWS is NOT REQUIRED to have a &#8220;nonce&#8221; header parameter (as with the JWS objects that carry ACME request objects), but MUST otherwise meet the guidelines laid out in <a href="#terminology">Section 3</a>.</p>
+<p id="rfc.section.7.1.p.4">A client responds to this challenge by signing a JWS object and provisioning it as a resource on the HTTP server for the domain in question.  The payload of the JWS MUST be a JSON dictionary containing the fields &#8220;type&#8221;, &#8220;token&#8221;, and &#8220;tls&#8221; from the ACME challenge and response (see below), and no other fields.  If the &#8220;tls&#8221; field is not included in the response, then validation object MUST have its &#8220;tls&#8221; field set to &#8220;true&#8221;.  The JWS MUST be signed with the client&#8217;s account key pair. This JWS is NOT REQUIRED to have a &#8220;nonce&#8221; header parameter (as with the JWS objects that carry ACME request objects), but MUST otherwise meet the guidelines laid out in <a href="#terminology">Section 3</a>.</p>
 <pre>
 {
   "type": "simpleHttp",
@@ -1537,7 +1535,6 @@ Content-Language: en
 <pre>
 {
   "type": "simpleHttp",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA",
   "tls": false
 }
 /* Signed as JWS */
@@ -1549,11 +1546,11 @@ Content-Language: en
   <li>Form a URI by populating the URI template <a href="#RFC6570">[RFC6570]</a> &#8220;{scheme}://{domain}/.well-known/acme-challenge/{token}&#8221;, where: <ul><li>the scheme field is set to &#8220;http&#8221; if the &#8220;tls&#8221; field in the response is present and set to false, and &#8220;https&#8221; otherwise;</li><li>the domain field is set to the domain name being verified; and</li><li>the token field is the token provided in the challenge.</li></ul></li>
   <li>Verify that the resulting URI is well-formed.</li>
   <li>Dereference the URI using an HTTP or HTTPS GET request.  If using HTTPS, the ACME server MUST ignore the certificate provided by the HTTPS server.</li>
-  <li>Verify that the Content-Type header of the response is either absent, or has the value &#8220;application/jose+json&#8221;</li>
-  <li>Verify that the body of the response is a valid JWS of the type indicated by the Content-Type header (if present), signed with the client&#8217;s account key</li>
-  <li>Verify that the payload of the JWS meets the following criteria: <ul><li>It is a valid JSON dictionary</li><li>It has exactly four fields</li><li>Its &#8220;type&#8221; field is set to &#8220;simpleHttp&#8221;</li><li>Its &#8220;token&#8221; field is equal to the &#8220;token&#8221; field in the challenge</li><li>Its &#8220;path&#8221; field is equal to the &#8220;path&#8221; field in the response</li><li>Its &#8220;tls&#8221; field is equal to the &#8220;tls&#8221; field in the response, or &#8220;true&#8221; if the &#8220;tls&#8221; field was absent</li></ul></li>
+  <li>Verify that the Content-Type header of the response is either absent, or has the value &#8220;application/jose+json&#8221;.</li>
+  <li>Verify that the body of the response is a valid JWS, signed with the client&#8217;s account key.</li>
+  <li>Verify that the payload of the JWS meets the following criteria: <ul><li>it is a valid JSON dictionary;</li><li>it has exactly three fields;</li><li>its &#8220;type&#8221; field is set to &#8220;simpleHttp&#8221;;</li><li>its &#8220;token&#8221; field is equal to the &#8220;token&#8221; field in the challenge;</li><li>its &#8220;tls&#8221; field is equal to the &#8220;tls&#8221; field in the response, or &#8220;true&#8221; if the &#8220;tls&#8221; field was absent.</li></ul></li>
 </ol>
-<p id="rfc.section.7.1.p.10">Comparisons of the &#8220;path&#8221; and &#8220;token&#8221; fields MUST be performed in terms of Unicode code points, taking into account the encodings of the stored nonce and the body of the request.</p>
+<p id="rfc.section.7.1.p.10">Comparisons of the &#8220;token&#8221; field MUST be performed in terms of Unicode code points, taking into account the encodings of the stored nonce and the body of the request.</p>
 <p id="rfc.section.7.1.p.11">If all of the above verifications succeed, then the validation is successful.  If the request fails, or the body does not pass these checks, then it has failed.</p>
 <h1 id="rfc.section.7.2"><a href="#rfc.section.7.2">7.2.</a> <a href="#domain-validation-with-server-name-indication-dvsni" id="domain-validation-with-server-name-indication-dvsni">Domain Validation with Server Name Indication (DVSNI)</a></h1>
 <p id="rfc.section.7.2.p.1">The Domain Validation with Server Name Indication (DVSNI) validation method proves control over a domain name by requiring the client to configure a TLS server referenced by an A/AAAA record under the domain name to respond to specific connection attempts utilizing the Server Name Indication extension <a href="#RFC6066">[RFC6066]</a>. The server verifies the client&#8217;s challenge by accessing the reconfigured server and verifying a particular challenge certificate is presented.</p>

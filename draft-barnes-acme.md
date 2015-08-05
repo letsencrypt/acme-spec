@@ -1592,8 +1592,8 @@ account key.
   * it has exactly three fields;
   * its "type" field is set to "simpleHttp";
   * its "token" field is equal to the "token" field in the challenge;
-  * its "tls" field is equal to the "tls" field in the response, or "true"
-    otherwise.
+  * its "tls" field is equal to the "tls" field in the response, or "true" if
+    the "tls" field was absent.
 
 Comparisons of the "token" field MUST be performed in terms of
 Unicode code points, taking into account the encodings of the stored nonce and

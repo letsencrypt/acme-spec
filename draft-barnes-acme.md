@@ -1160,9 +1160,8 @@ Link: <https://example.com/acme/new-cert>;rel="next"
 The client needs to respond with information to complete the challenges.  To do
 this, the client updates the authorization object received from the server by
 filling in any required information in the elements of the "challenges"
-dictionary.  For example, if the client wishes to complete the "simpleHttp"
-challenge, it needs to provide the "tls" component.  (This is also the stage
-where the client should perform any actions required by the challenge.)
+dictionary.  (This is also the stage where the client should perform any
+actions required by the challenge.)
 
 The client sends these updates back to the server in the form of a JSON object
 with the response fields required by the challenge type, carried in a POST

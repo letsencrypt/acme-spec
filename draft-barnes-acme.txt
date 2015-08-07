@@ -103,7 +103,7 @@ Table of Contents
    9.  Security Considerations . . . . . . . . . . . . . . . . . . .  46
      9.1.  Threat model  . . . . . . . . . . . . . . . . . . . . . .  47
      9.2.  Integrity of Authorizations . . . . . . . . . . . . . . .  48
-     9.3.  Preventing Authorization Hijacking  . . . . . . . . . . .  50
+     9.3.  Preventing Authorization Hijacking  . . . . . . . . . . .  51
      9.4.  Denial-of-Service Considerations  . . . . . . . . . . . .  52
      9.5.  CA Policy Considerations  . . . . . . . . . . . . . . . .  52
 
@@ -115,10 +115,10 @@ Internet-Draft                    ACME                         July 2015
 
 
    10. Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .  53
-   11. References  . . . . . . . . . . . . . . . . . . . . . . . . .  53
-     11.1.  Normative References . . . . . . . . . . . . . . . . . .  53
+   11. References  . . . . . . . . . . . . . . . . . . . . . . . . .  54
+     11.1.  Normative References . . . . . . . . . . . . . . . . . .  54
      11.2.  Informative References . . . . . . . . . . . . . . . . .  55
-   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  55
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  56
 
 1.  Introduction
 
@@ -2055,17 +2055,17 @@ Internet-Draft                    ACME                         July 2015
    token (required, string):  The value to be used in generation of
       validation JWS.  This value MUST have at least 128 bits of
       entropy, in order to prevent an attacker from guessing it.  It
-      MUST NOT contain any non-ASCII characters.
+      MUST NOT contain any characters outside the URL-safe Base64
+      alphabet.
 
    {
      "type": "simpleHttp",
-     "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA"
+     "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
    }
 
    A client responds to this challenge by signing a JWS object and
    provisioning it as a resource on the HTTP server for the domain in
    question.  The payload of the JWS MUST be a JSON dictionary
-   containing the fields "type", "token", and "tls" from the ACME
 
 
 
@@ -2074,6 +2074,7 @@ Barnes, et al.          Expires January 22, 2016               [Page 37]
 Internet-Draft                    ACME                         July 2015
 
 
+   containing the fields "type", "token", and "tls" from the ACME
    challenge and response (see below), and no other fields.  If the
    "tls" field is not included in the response, then validation object
    MUST have its "tls" field set to "true".  The JWS MUST be signed with
@@ -2121,7 +2122,6 @@ Internet-Draft                    ACME                         July 2015
           response is present and set to false, and "https" otherwise;
 
        *  the domain field is set to the domain name being verified; and
-
 
 
 
@@ -2186,12 +2186,15 @@ Barnes, et al.          Expires January 22, 2016               [Page 39]
 Internet-Draft                    ACME                         July 2015
 
 
-   token (required, string):  A random value with at least 128 bits of
-      entropy, base64-encoded
+   token (required, string):  The value to be used in generation of
+      validation certificate.  This value MUST have at least 128 bits of
+      entropy, in order to prevent an attacker from guessing it.  It
+      MUST NOT contain any characters outside the URL-safe Base64
+      alphabet.
 
    {
      "type": "dvsni",
-     "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJyPCt92wrDoA",
+     "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
    }
 
    In response to the challenge, the client uses its account private key
@@ -2201,12 +2204,12 @@ Internet-Draft                    ACME                         July 2015
 
    type (required, string):  The string "dvsni"
 
-   token (required, string):  A random value with at least 128 bits of
-      entropy, base64-encoded
+   token (required, string):  The token value from the server-provided
+      challenge object
 
    {
      "type": "dvsni",
-     "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJyPCt92wrDoA",
+     "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
    }
 
    The client serializes the validation object to UTF-8, then uses its
@@ -2231,9 +2234,6 @@ Internet-Draft                    ACME                         July 2015
 
    type (required, string):  The string "dvsni"
 
-   validation (required, string):  The JWS object computed with the
-      validation object and the account key
-
 
 
 
@@ -2241,6 +2241,9 @@ Barnes, et al.          Expires January 22, 2016               [Page 40]
 
 Internet-Draft                    ACME                         July 2015
 
+
+   validation (required, string):  The JWS object computed with the
+      validation object and the account key
 
    {
      "type": "dvsni",
@@ -2287,9 +2290,6 @@ Internet-Draft                    ACME                         July 2015
    private key corresponding to a server-specified public key, as
    demonstrated by its ability to sign with that key.  This challenge is
    meant to be used when the server knows of a public key that is
-   already associated with the identifier being claimed, and wishes for
-   new authorizations to be authorized by the holder of the
-
 
 
 
@@ -2298,6 +2298,8 @@ Barnes, et al.          Expires January 22, 2016               [Page 41]
 Internet-Draft                    ACME                         July 2015
 
 
+   already associated with the identifier being claimed, and wishes for
+   new authorizations to be authorized by the holder of the
    corresponding private key.  For DNS identifiers, for example, this
    can help guard against domain hijacking.
 
@@ -2341,8 +2343,6 @@ Internet-Draft                    ACME                         July 2015
       the holder of the prior key authorizes the new key
 
    accountKey (required, JWK):  The client's account public key
-
-
 
 
 
@@ -2439,13 +2439,15 @@ Internet-Draft                    ACME                         July 2015
 
    type (required, string):  The string "dns"
 
-   token (required, string):  A random value with at least 128 bits of
-      entropy.  It MUST NOT contain any characters outside the URL-safe
-      Base64 alphabet.
+   token (required, string):  The value to be used in generation of
+      validation record to be provisioned in DNS.  This value MUST have
+      at least 128 bits of entropy, in order to prevent an attacker from
+      guessing it.  It MUST NOT contain any characters outside the URL-
+      safe Base64 alphabet.
 
    {
      "type": "dns",
-     "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
+     "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
    }
 
    In response to this challenge, the client uses its account private
@@ -2454,8 +2456,6 @@ Internet-Draft                    ACME                         July 2015
    fields and no others:
 
    type (required, string):  The string "dns"
-
-   token (required, string):  The token value in the challenge
 
 
 
@@ -2466,9 +2466,12 @@ Barnes, et al.          Expires January 22, 2016               [Page 44]
 Internet-Draft                    ACME                         July 2015
 
 
+   token (required, string):  The token value from the server-provided
+      challenge object
+
    {
      "type": "dns",
-     "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
+     "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
    }
 
    The client serializes the validation object to UTF-8, then uses its
@@ -2511,9 +2514,6 @@ Internet-Draft                    ACME                         July 2015
 
    2.  Decode the payload of the JWS as UTF-8 encoded JSON
 
-   3.  Verify that there are exactly two fields in the decoded object,
-       and that:
-
 
 
 
@@ -2521,6 +2521,9 @@ Barnes, et al.          Expires January 22, 2016               [Page 45]
 
 Internet-Draft                    ACME                         July 2015
 
+
+   3.  Verify that there are exactly two fields in the decoded object,
+       and that:
 
        *  The "type" field is set to "dns"
 
@@ -2567,9 +2570,6 @@ Internet-Draft                    ACME                         July 2015
    2.  Once authorized, an account key's authorizations cannot be
        improperly transferred to another account key
 
-   In this section, we discuss the threat model that underlies ACME and
-   the ways that ACME achieves these security goals within that threat
-
 
 
 
@@ -2578,6 +2578,8 @@ Barnes, et al.          Expires January 22, 2016               [Page 46]
 Internet-Draft                    ACME                         July 2015
 
 
+   In this section, we discuss the threat model that underlies ACME and
+   the ways that ACME achieves these security goals within that threat
    model.  We also discuss the denial-of-service risks that ACME servers
    face, and a few other miscellaneous considerations.
 
@@ -2623,9 +2625,7 @@ Internet-Draft                    ACME                         July 2015
    (noted below), when an attacker can exploit both the ACME channel and
    one of the others.
 
-   On the ACME channel, in addition to network-layer attackers, we also
-   need to account for application-layer man in the middle attacks, and
-   for abusive use of the protocol itself.  Protection against
+
 
 
 
@@ -2634,6 +2634,9 @@ Barnes, et al.          Expires January 22, 2016               [Page 47]
 Internet-Draft                    ACME                         July 2015
 
 
+   On the ACME channel, in addition to network-layer attackers, we also
+   need to account for application-layer man in the middle attacks, and
+   for abusive use of the protocol itself.  Protection against
    application-layer MitM addresses potential attackers such as Content
    Distribution Networks (CDNs) and middleboxes with a TLS MitM
    function.  Preventing abusive use of ACME means ensuring that an
@@ -2678,10 +2681,7 @@ Internet-Draft                    ACME                         July 2015
       B (the MitM) instead of account key A (the legitimate domain
       holder)
 
-   All of the challenges above that require an out-of-band query by the
-   server have a binding to the account private key, such that the only
-   the account private key holder can successfully respond to the
-   validation query:
+
 
 
 
@@ -2689,6 +2689,11 @@ Barnes, et al.          Expires January 22, 2016               [Page 48]
 
 Internet-Draft                    ACME                         July 2015
 
+
+   All of the challenges above that require an out-of-band query by the
+   server have a binding to the account private key, such that the only
+   the account private key holder can successfully respond to the
+   validation query:
 
    o  Simple HTTP: The value provided in the validation request is
       signed by the account private key.
@@ -2733,11 +2738,6 @@ Internet-Draft                    ACME                         July 2015
    More limited forms of delegation can also lead to an unintended party
    gaining the ability to successfully complete a validation
    transaction.  For example, suppose an ACME server follows HTTP
-   redirects in Simple HTTP validation and a web site operator
-   provisions a catch-all redirect rule that redirects requests for
-   unknown resources to different domain.  Then the target of the
-   redirect could use that to get a certificate through Simple HTTP
-
 
 
 
@@ -2746,6 +2746,10 @@ Barnes, et al.          Expires January 22, 2016               [Page 49]
 Internet-Draft                    ACME                         July 2015
 
 
+   redirects in Simple HTTP validation and a web site operator
+   provisions a catch-all redirect rule that redirects requests for
+   unknown resources to different domain.  Then the target of the
+   redirect could use that to get a certificate through Simple HTTP
    validation, since the validation path will not be known to the
    primary server.
 
@@ -2786,6 +2790,18 @@ Internet-Draft                    ACME                         July 2015
    domain this attack can be prevented by requiring the client to
    complete a proof-of-possession challenge.
 
+
+
+
+
+
+
+
+Barnes, et al.          Expires January 22, 2016               [Page 50]
+
+Internet-Draft                    ACME                         July 2015
+
+
 9.3.  Preventing Authorization Hijacking
 
    The account recovery processes described in Section 6.4 allow
@@ -2794,13 +2810,6 @@ Internet-Draft                    ACME                         July 2015
    to prevent these processes from being exploited by an attacker to
    hijack the authorizations attached to one key and assign them to a
    key of the attacker's choosing.
-
-
-
-Barnes, et al.          Expires January 22, 2016               [Page 50]
-
-Internet-Draft                    ACME                         July 2015
-
 
    Recovery takes place in two steps: 1.  Provisioning recovery
    information (contact or recovery key) 2.  Using recovery information
@@ -2841,6 +2850,14 @@ Internet-Draft                    ACME                         July 2015
    o  If the server requires a user to click a link in a message sent to
       a contact address, then the contact channel will need to ensure
       that the message is only available to the legitimate owner of the
+
+
+
+Barnes, et al.          Expires January 22, 2016               [Page 51]
+
+Internet-Draft                    ACME                         July 2015
+
+
       contact address.  Otherwise, a passive attacker could see the link
       and click it first, or an active attacker could redirect the
       message.
@@ -2849,14 +2866,6 @@ Internet-Draft                    ACME                         July 2015
       contact address containing a secret value, then the contact
       channel will need to ensure that an attacker cannot observe the
       secret value and spoof a message from the contact address.
-
-
-
-
-Barnes, et al.          Expires January 22, 2016               [Page 51]
-
-Internet-Draft                    ACME                         July 2015
-
 
    In practice, many contact channels that can be used to reach many
    clients do not provide strong assurances of the types noted above.
@@ -2897,6 +2906,14 @@ Internet-Draft                    ACME                         July 2015
    Before issuing a certificate, however, there are many other checks
    that a CA might need to perform, for example:
 
+
+
+
+Barnes, et al.          Expires January 22, 2016               [Page 52]
+
+Internet-Draft                    ACME                         July 2015
+
+
    o  Has the client agreed to a subscriber agreement?
 
    o  Is the claimed identifier syntactically valid?
@@ -2905,14 +2922,6 @@ Internet-Draft                    ACME                         July 2015
 
       *  If the leftmost label is a '*', then have the appropriate
          checks been applied?
-
-
-
-
-Barnes, et al.          Expires January 22, 2016               [Page 52]
-
-Internet-Draft                    ACME                         July 2015
-
 
       *  Is the name on the Public Suffix List?
 
@@ -2949,6 +2958,18 @@ Internet-Draft                    ACME                         July 2015
    "Automated Certificate Issuance Protocol" draft.  Martin Thomson
    provided helpful guidance in the use of HTTP.
 
+
+
+
+
+
+
+
+Barnes, et al.          Expires January 22, 2016               [Page 53]
+
+Internet-Draft                    ACME                         July 2015
+
+
 11.  References
 
 11.1.  Normative References
@@ -2960,15 +2981,6 @@ Internet-Draft                    ACME                         July 2015
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119, March 1997.
-
-
-
-
-
-Barnes, et al.          Expires January 22, 2016               [Page 53]
-
-Internet-Draft                    ACME                         July 2015
-
 
    [RFC2314]  Kaliski, B., "PKCS #10: Certification Request Syntax
               Version 1.5", RFC 2314, March 1998.
@@ -3007,6 +3019,13 @@ Internet-Draft                    ACME                         July 2015
               Infrastructure Certificate and Certificate Revocation List
               (CRL) Profile", RFC 5280, May 2008.
 
+
+
+Barnes, et al.          Expires January 22, 2016               [Page 54]
+
+Internet-Draft                    ACME                         July 2015
+
+
    [RFC5753]  Turner, S. and D. Brown, "Use of Elliptic Curve
               Cryptography (ECC) Algorithms in Cryptographic Message
               Syntax (CMS)", RFC 5753, January 2010.
@@ -3018,13 +3037,6 @@ Internet-Draft                    ACME                         July 2015
 
    [RFC6570]  Gregorio, J., Fielding, R., Hadley, M., Nottingham, M.,
               and D. Orchard, "URI Template", RFC 6570, March 2012.
-
-
-
-Barnes, et al.          Expires January 22, 2016               [Page 54]
-
-Internet-Draft                    ACME                         July 2015
-
 
    [RFC7159]  Bray, T., "The JavaScript Object Notation (JSON) Data
               Interchange Format", RFC 7159, March 2014.
@@ -3062,6 +3074,14 @@ Internet-Draft                    ACME                         July 2015
               Web Consortium CR CR-cors-20130129, January 2013,
               <http://www.w3.org/TR/2013/CR-cors-20130129>.
 
+
+
+
+Barnes, et al.          Expires January 22, 2016               [Page 55]
+
+Internet-Draft                    ACME                         July 2015
+
+
    [W3C.WD-capability-urls-20140218]
               Tennison, J., "Good Practices for Capability URLs", World
               Wide Web Consortium WD WD-capability-urls-20140218,
@@ -3076,12 +3096,6 @@ Authors' Addresses
    Email: rlb@ipv.sx
 
 
-
-Barnes, et al.          Expires January 22, 2016               [Page 55]
-
-Internet-Draft                    ACME                         July 2015
-
-
    Jacob Hoffman-Andrews
    EFF
 
@@ -3092,20 +3106,6 @@ Internet-Draft                    ACME                         July 2015
    University of Michigan
 
    Email: jdkasten@umich.edu
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

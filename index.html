@@ -1503,12 +1503,12 @@ Content-Language: en
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;simpleHttp&#8221;</dd>
   <dt>token (required, string):</dt>
-  <dd style="margin-left: 8">The value to be used in generation of validation JWS.  This value MUST have at least 128 bits of entropy, in order to prevent an attacker from guessing it.  It MUST NOT contain any non-ASCII characters.</dd>
+  <dd style="margin-left: 8">The value to be used in generation of validation JWS.  This value MUST have at least 128 bits of entropy, in order to prevent an attacker from guessing it.  It MUST NOT contain any characters outside the URL-safe Base64 alphabet.</dd>
 </dl>
 <pre>
 {
   "type": "simpleHttp",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA"
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
 }
 </pre>
 <p id="rfc.section.7.1.p.4">A client responds to this challenge by signing a JWS object and provisioning it as a resource on the HTTP server for the domain in question.  The payload of the JWS MUST be a JSON dictionary containing the fields &#8220;type&#8221;, &#8220;token&#8221;, and &#8220;tls&#8221; from the ACME challenge and response (see below), and no other fields.  If the &#8220;tls&#8221; field is not included in the response, then validation object MUST have its &#8220;tls&#8221; field set to &#8220;true&#8221;.  The JWS MUST be signed with the client&#8217;s account key pair. This JWS is NOT REQUIRED to have a &#8220;nonce&#8221; header parameter (as with the JWS objects that carry ACME request objects), but MUST otherwise meet the guidelines laid out in <a href="#terminology">Section 3</a>.</p>
@@ -1560,12 +1560,12 @@ Content-Language: en
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;dvsni&#8221;</dd>
   <dt>token (required, string):</dt>
-  <dd style="margin-left: 8">A random value with at least 128 bits of entropy, base64-encoded</dd>
+  <dd style="margin-left: 8">The value to be used in generation of validation certificate.  This value MUST have at least 128 bits of entropy, in order to prevent an attacker from guessing it.  It MUST NOT contain any characters outside the URL-safe Base64 alphabet.</dd>
 </dl>
 <pre>
 {
   "type": "dvsni",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJyPCt92wrDoA",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
 }
 </pre>
 <p id="rfc.section.7.2.p.3">In response to the challenge, the client uses its account private key to sign a JWS over a JSON object describing the challenge.  The validation object covered by the signature MUST have the following fields and no others:</p>
@@ -1575,12 +1575,12 @@ Content-Language: en
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;dvsni&#8221;</dd>
   <dt>token (required, string):</dt>
-  <dd style="margin-left: 8">A random value with at least 128 bits of entropy, base64-encoded</dd>
+  <dd style="margin-left: 8">The token value from the server-provided challenge object</dd>
 </dl>
 <pre>
 {
   "type": "dvsni",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJyPCt92wrDoA",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
 }
 </pre>
 <p id="rfc.section.7.2.p.5">The client serializes the validation object to UTF-8, then uses its account private key to sign a JWS with the serialized JSON object as its payload.  This JWS is NOT REQUIRED to have the &#8220;nonce&#8221; header parameter.</p>
@@ -1700,12 +1700,12 @@ Content-Language: en
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;dns&#8221;</dd>
   <dt>token (required, string):</dt>
-  <dd style="margin-left: 8">A random value with at least 128 bits of entropy.  It MUST NOT contain any characters outside the URL-safe Base64 alphabet.</dd>
+  <dd style="margin-left: 8">The value to be used in generation of validation record to be provisioned in DNS.  This value MUST have at least 128 bits of entropy, in order to prevent an attacker from guessing it.  It MUST NOT contain any characters outside the URL-safe Base64 alphabet.</dd>
 </dl>
 <pre>
 {
   "type": "dns",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
 }
 </pre>
 <p id="rfc.section.7.4.p.3">In response to this challenge, the client uses its account private key to sign a JWS over a JSON object describing the challenge.  The validation object covered by the signature MUST have the following fields and no others:</p>
@@ -1715,12 +1715,12 @@ Content-Language: en
   <dt>type (required, string):</dt>
   <dd style="margin-left: 8">The string &#8220;dns&#8221;</dd>
   <dt>token (required, string):</dt>
-  <dd style="margin-left: 8">The token value in the challenge</dd>
+  <dd style="margin-left: 8">The token value from the server-provided challenge object</dd>
 </dl>
 <pre>
 {
   "type": "dns",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
 }
 </pre>
 <p id="rfc.section.7.4.p.5">The client serializes the validation object to UTF-8, then uses its account private key to sign a JWS with the serialized JSON object as its payload.  This JWS is NOT REQUIRED to have the &#8220;nonce&#8221; header parameter.</p>

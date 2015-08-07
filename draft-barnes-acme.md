@@ -1518,12 +1518,12 @@ type (required, string):
 token (required, string):
 : The value to be used in generation of validation JWS.  This value MUST have at
 least 128 bits of entropy, in order to prevent an attacker from guessing it.
-It MUST NOT contain any non-ASCII characters.
+It MUST NOT contain any characters outside the URL-safe Base64 alphabet.
 
 ~~~~~~~~~~
 {
   "type": "simpleHttp",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA"
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
 }
 ~~~~~~~~~~
 
@@ -1617,12 +1617,14 @@ type (required, string):
 : The string "dvsni"
 
 token (required, string):
-: A random value with at least 128 bits of entropy, base64-encoded
+: The value to be used in generation of validation certificate.  This value MUST have at
+least 128 bits of entropy, in order to prevent an attacker from guessing it.
+It MUST NOT contain any characters outside the URL-safe Base64 alphabet.
 
 ~~~~~~~~~~
 {
   "type": "dvsni",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJyPCt92wrDoA",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
 }
 ~~~~~~~~~~
 
@@ -1634,12 +1636,12 @@ type (required, string):
 : The string "dvsni"
 
 token (required, string):
-: A random value with at least 128 bits of entropy, base64-encoded
+: The token value from the server-provided challenge object
 
 ~~~~~~~~~~
 {
   "type": "dvsni",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJyPCt92wrDoA",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
 }
 ~~~~~~~~~~
 
@@ -1826,13 +1828,15 @@ type (required, string):
 : The string "dns"
 
 token (required, string):
-: A random value with at least 128 bits of entropy.  It MUST NOT contain any
-characters outside the URL-safe Base64 alphabet.
+: The value to be used in generation of validation record to be provisioned
+in DNS.  This value MUST have at least 128 bits of entropy, in order to
+prevent an attacker from guessing it.  It MUST NOT contain any characters
+outside the URL-safe Base64 alphabet.
 
 ~~~~~~~~~~
 {
   "type": "dns",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
 }
 ~~~~~~~~~~
 
@@ -1844,12 +1848,12 @@ type (required, string):
 : The string "dns"
 
 token (required, string):
-: The token value in the challenge
+: The token value from the server-provided challenge object
 
 ~~~~~~~~~~
 {
   "type": "dns",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ+PCt92wr+oA",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
 }
 ~~~~~~~~~~
 

@@ -1859,12 +1859,12 @@ The client serializes the validation object to UTF-8, then uses its account
 private key to sign a JWS with the serialized JSON object as its payload.  This
 JWS is NOT REQUIRED to have the "nonce" header parameter.
 
-The record provisioned to the DNS is the SHA-256 of the JWS encoded in UTF-8.
-The client constructs the validation domain name by appending the label
-"_acme-challenge" to the domain name being validated, then provisions a TXT
-record with the signature value under that name. For example, if the domain
-name being validated is "example.com", then the client would provision the
-following DNS record:
+The record provisioned to the DNS is the base64-encoded SHA-256 of the JWS
+encoded in UTF-8.  The client constructs the validation domain name by
+appending the label "_acme-challenge" to the domain name being validated, then
+provisions a TXT record with the signature value under that name. For example,
+if the domain name being validated is "example.com", then the client would
+provision the following DNS record:
 
 ~~~~~~~~~~
 _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"

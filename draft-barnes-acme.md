@@ -1892,8 +1892,7 @@ validation (required, JWS):
 
 To validate a DNS challenge, the server performs the following steps:
 
-1. Verify the validation JWS using the account key for which this challenge was
-   issued
+1. Verify the validation JWS using the account key.
 2. Decode the payload of the JWS as UTF-8 encoded JSON
 3. Verify that there are exactly two fields in the decoded object, and that:
   * The "type" field is set to "dns"

@@ -1428,7 +1428,7 @@ mechanism to prove possession of a given identifier.  In all practical cases,
 CAs rely on a variety of means to test whether an entity applying for a
 certificate with a given identifier actually controls that identifier.
 
-Challenges provide the server with assurance the an account key holder is also
+Challenges provide the server with assurance that an account key holder is also
 the entity that controls an identifier.  For each type of challenge, it must be
 the case that in order for an entity to successfully complete the challenge the
 entity must both:

@@ -1863,7 +1863,7 @@ JWS is NOT REQUIRED to have the "nonce" header parameter.
 
 The record provisioned to the DNS is the "signature" value from the JWS, i.e.,
 the base64-encoded signature value.  The client constructs the validation domain
-name by appending the label "_acme-challenge" to the domain name being
+name by prepending the label "_acme-challenge" to the domain name being
 validated, then provisions a TXT record with the signature value under that
 name. For example, if the domain name being validated is "example.com", then the
 client would provision the following DNS record:

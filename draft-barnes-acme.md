@@ -1394,11 +1394,15 @@ signed either with an account key pair or the key pair in the certificate.
 Before revoking a certificate, the server MUST verify at least one of these
 conditions applies:
 
-* the public key of the key pair signing the request matches the public key in
+* The public key of the key pair signing the request matches the account that
+  was originally used to issue the certificate.
+
+* The public key of the key pair signing the request matches the public key in
   the certificate.
 
-* the key pair signing the request is an account key, and the corresponding
+* The key pair signing the request is an account key, and the corresponding
   account is authorized to act for all of the identifier(s) in the certificate.
+  This is useful for revoking certificates after a domain transfer, for instance.
 
 If the revocation succeeds, the server responds with status code 200 (OK).  If
 the revocation fails, the server returns an error.

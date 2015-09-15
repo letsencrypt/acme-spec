@@ -1591,7 +1591,7 @@ domain by verifying that the resource was provisioned as expected.
 "{scheme}://{domain}/.well-known/acme-challenge/", where:
   * the scheme field is set to "http" if the "tls" field in the response is
     present and set to false, and "https" otherwise;
-  * the domain field is set to the domain name being verified; and
+  * the domain field is set to the domain name being verified
 2. Verify that the resulting URI is well-formed.
 3. Dereference the URI using an HTTP or HTTPS GET request.  If using HTTPS, the
 ACME server MUST ignore the certificate provided by the HTTPS server.
@@ -1641,8 +1641,12 @@ and "key" value matches the client's account key.
 }
 ~~~~~~~~~~
 
-In response to the challenge, the client decodes the authorized keys object and
-computes its SHA-256 digest Z.  The client then encodes Z in hexadecimal form.
+In response to the challenge, the client MUST decode and parse the authorized
+keys object and verify that it contains exactly one entry, whose "token" and
+"key" attributes match the token for this challenge and the client's account
+key.  The client then computes the SHA-256 digest Z of the JSON-encoded
+authorized keys object (without base64-encoding), and encodes Z in hexadecimal
+form.
 
 The client will generate a self-signed certificate with the
 subjectAlternativeName extension containing the dNSName
@@ -1670,7 +1674,7 @@ of the domain by verifying that the TLS server was configured appropriately.
    client.
 4. Open a TLS connection to the domain name being validated on port 443,
    presenting the value "\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid" in the SNI
-   field.
+   field (where the comparison is case-insensitive).
 5. Verify that the certificate contains a subjectAltName extension with the
    dNSName of "\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid".
 
@@ -1826,13 +1830,18 @@ and "key" value matches the client's account key.
 }
 ~~~~~~~~~~
 
-In response to the challenge, the client decodes the authorized keys object and
-computes its SHA-256 digest.  The record provisioned to the DNS is the base64
-encoding of this digest.  The client constructs the validation domain name by
-appending the label "_acme-challenge" to the domain name being validated, then
-provisions a TXT record with the digest value under that name. For example,
-if the domain name being validated is "example.com", then the client would
-  provision the following DNS record:
+In response to the challenge, the client MUST decode and parse the authorized
+keys object and verify that it contains exactly one entry, whose "token" and
+"key" attributes match the token for this challenge and the client's account
+key.  The client then computes the SHA-256 digest of the JSON-encoded
+authorized keys object (without base64-encoding).
+
+The record provisioned to the DNS is the base64 encoding of this digest.  The
+client constructs the validation domain name by prepending the label
+"_acme-challenge" to the domain name being validated, then provisions a TXT
+record with the digest value under that name. For example, if the domain name
+being validated is "example.com", then the client would provision the following
+DNS record:
 
 ~~~~~~~~~~
 _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"

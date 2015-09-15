@@ -594,7 +594,7 @@ ECDH key exchange, based on the system used by CMS {{RFC5753}}:
 * Select a hash algorithm according to the curve being used:
   * For "P-256", use SHA-256
   * For "P-384", use SHA-384
-  * For "P-521", use SHA-512
+  * For "P-512", use SHA-512
 * Derive the shared secret value using the KDF in Section 3.6.1 of {{SEC1}}
   using Z and the selected hash algorithm, and with the UTF-8 encoding of the
   label as the SharedInfo value

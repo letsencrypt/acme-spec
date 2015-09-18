@@ -1625,8 +1625,15 @@ The challenge proceeds as follows: The ACME server sends the client a random val
 type (required, string):
 : The string "dvsni"
 
-r (required, string):
-: A random 32-byte octet, Base64-encoded
+token (required, string):
+: The value to be used in generation of validation JWS.  This value MUST have at
+least 128 bits of entropy, in order to prevent an attacker from guessing it.
+It MUST NOT contain any characters outside the URL-safe Base64 alphabet.
+
+authorizedKeys (required, string):
+: A serialized authorized keys object, base64-encoded. This object MUST have
+only one entry, whose token value matches the "token" value in the challenge,
+and "key" value matches the client's account key.
 
 n (required, int):
 : Number of DVSNI iterations
@@ -1637,7 +1644,8 @@ ports (required, array of int):
 ~~~~~~~~~~
 {
   "type": "dvsni",
-  "r": "Tyq0La3slT7tqQ0wlOiXnCY2vyez7Zo5blgPJ1xt5xI",
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA",
+  "authorizedKeys": "odyHtABZt47RZfacMq3zL...xIWRXBCCvl61bYo7ATU6Z4"
   "n": 25,
   "ports": [443],
 }
@@ -1646,26 +1654,19 @@ ports (required, array of int):
 In response to the challenge, the client MUST decode and parse the authorized
 keys object and verify that it contains exactly one entry, whose "token" and
 "key" attributes match the token for this challenge and the client's account
-key.  The client then computes the SHA-256 digest Z of the JSON-encoded
-authorized keys object (without base64-encoding), and encodes Z in hexadecimal
-form.
+key.  The client then computes the SHA-256 digest Z0 of the JSON-encoded
+authorized keys object (without base64-encoding), and encodes Z0 in hexadecimal
+form. The client then generates Z1...Z(n-1) where Zi is computed as the
+hexadecimal(SHA256(Z(i-1))).
 
-The client will generate a self-signed certificate with the
-subjectAlternativeName extension containing the dNSName
-"\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid".  The client will then configure the TLS
+The client will generate a self-signed certificate for each iteration of Zi
+with the subjectAlternativeName extension containing the dNSName
+"\<Zi[0:32]\>.\<Zi[32:64]\>.acme.invalid".  The client will then configure the TLS
 server at the domain such that when a handshake is initiated with the Server
-Name Indication extension set to "\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid", the
+Name Indication extension set to "\<Zi[0:32]\>.\<Zi[32:64]\>.acme.invalid", the
 generated test certificate is presented.
 
-1. Decode the server's random value R
-2. Generate R1...R(n-1) where Ri is computed as the SHA256 of R(i-1)
-3. For each iteration of R, generate a self-signed certificate with a subjectAltName extension containing the dNSName value:
-  1. A name formed by hex encoding "\<Ri\>[0:32].\<Ri\>[32:64].acme.invalid", referred to as the "DNS R name".
-4. Configure the TLS server such that when a client presents the DNS R name in the SNI field, the server presents the generated certificate.
-
-The client SHOULD introduce its own entropy into each certificates, for example, by using a random serial number.
-
-The client's responds with the following values.
+The client's responds with the chosen port.
 
 type (required, string):
 : The string "dvsni"
@@ -1680,24 +1681,24 @@ port (required, int):
 }
 ~~~~~~~~~~
 
-Given a Challenge/Response pair, the ACME server verifies the client's control of the domain by verifying that the TLS server was configured as expected:
+Given a Challenge/Response pair, the ACME server verifies the client's control
+of the domain by verifying that the TLS server was configured appropriately.
 
 1. Choose a set of DVSNI iterations to check.
-2. For each iteration, open a TLS connection to the domain name being validated on the specified port, presenting the appropriate DNS R name in the SNI field.
-3. Verify the following properties of the certificates provided by the TLS server:
-  * It is a valid self-signed certificate
-  * The public key is the public key for the key pair being authorized
-  * It contains a subjectAltName matching the DNS R name
-
-It is RECOMMENDED that the ACME server verify an appropriate number of R value iterations to avoid default virtual host vulnerabilities in shared hosting environments.
-
-1. Compute the Z-value from the authorized keys object in the same way as the
-   client.
-4. Open a TLS connection to the domain name being validated on port 443,
-   presenting the value "\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid" in the SNI
-   field (where the comparison is case-insensitive).
-5. Verify that the certificate contains a subjectAltName extension with the
+2. For each iteration, compute the Z-value from the authorized keys object in
+   the same way as the client.
+3. Open a TLS connection to the domain name being validated on the requested
+   port, presenting the value "\<Zi[0:32]\>.\<Zi[32:64]\>.acme.invalid" in the
+   SNI field (where the comparison is case-insensitive).
+4. Verify that the certificate contains a subjectAltName extension with the
    dNSName of "\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid".
+
+It is RECOMMENDED that the ACME server verify an appropriate number of Z value
+iterations to avoid default virtual host vulnerabilities in shared hosting
+environments.
+
+It is RECOMMENDED clients respond with DVSNI certificates for only the Z values
+specified by the CA.
 
 It is RECOMMENDED that the ACME server validation TLS connections from multiple
 vantage points to reduce the risk of DNS hijacking attacks.

@@ -1670,7 +1670,7 @@ type (required, string):
 : The string "dvsni"
 
 port (required, int):
-: One of the valid ports specified by the server, Base64-encoded
+: One of the valid ports specified by the server
 
 ~~~~~~~~~~
 {

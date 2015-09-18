@@ -1620,8 +1620,6 @@ specific connection attempts utilizing the Server Name Indication extension
 reconfigured server and verifying a particular challenge certificate is
 presented.
 
-The challenge proceeds as follows: The ACME server sends the client a random value R, a number of challenge iterations, N, and a list of acceptable ports for which to perform the challenge. The client responds with a chosen port.  The server initiates multiple TLS connection on the client's specified port to one or more of the IPv4 or IPv6 hosts with the domain name being validated.  In the handshake, the ACME server sets the Server Name Indication extension to "\<Ri[0:32]\>.\<Ri[32:64]\>.acme.invalid" where Ri is calculated by SHA256(Ri-1).  The TLS server (i.e., the ACME client) should respond with a valid self-signed certificate containing the domain name "\<Ri[0:32]\>.\<Ri[32:64]\>.acme.invalid".
-
 type (required, string):
 : The string "dvsni"
 

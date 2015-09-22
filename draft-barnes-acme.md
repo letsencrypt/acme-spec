@@ -1540,8 +1540,8 @@ type (required, string):
 : The string "simpleHttp"
 
 token (required, string):
-: The value to be used in generation of validation JWS.  This value MUST have at
-least 128 bits of entropy, in order to prevent an attacker from guessing it.
+: The value to be used in generation of the validation JWS.  This value MUST have
+at least 128 bits of entropy, in order to prevent an attacker from guessing it.
 It MUST NOT contain any characters outside the URL-safe Base64 alphabet.
 
 ~~~~~~~~~~
@@ -1613,12 +1613,18 @@ failed.
 ## Domain Validation with Server Name Indication (DVSNI)
 
 The Domain Validation with Server Name Indication (DVSNI) validation method
-proves control over a domain name by requiring the client to configure a TLS
-server referenced by an A/AAAA record under the domain name to respond to
-specific connection attempts utilizing the Server Name Indication extension
-{{RFC6066}}. The server verifies the client's challenge by accessing the
-reconfigured server and verifying a particular challenge certificate is
-presented.
+proves control over one or more domain names in parallel by showing that the
+client fully controls an HTTPS webserver or other TLS server, which is
+typically equivalent to root or administrator access.  It allows an arbitrary
+number M of domain names to be validated with a constant number of TCP
+connections to the TLS server, though the number of DNS queries remains
+proportional to M.
+
+DVSNI operates by requiring the client to configure a TLS server referenced by
+an A/AAAA record under the domain name to respond to specific connection
+attempts utilizing the Server Name Indication extension {{RFC6066}}. The
+server verifies the client's challenge by accessing the reconfigured server
+and verifying a particular challenge certificate is presented.
 
 type (required, string):
 : The string "dvsni"
@@ -1653,9 +1659,9 @@ In response to the challenge, the client MUST decode and parse the authorized
 keys object and verify that it contains exactly one entry, whose "token" and
 "key" attributes match the token for this challenge and the client's account
 key.  The client then computes the SHA-256 digest Z0 of the JSON-encoded
-authorized keys object (without base64-encoding), and encodes Z0 in hexadecimal
-form. The client then generates Z1...Z(n-1) where Zi is computed as the
-hexadecimal(SHA256(Z(i-1))).
+authorized keys object (without base64-encoding), and encodes Z0 in lower-case
+hexadecimal form. The client then generates Z1...Z(n-1) where Zi is computed
+as the hexadecimal(SHA256(Z(i-1))).
 
 The client will generate a self-signed certificate for each iteration of Zi
 with the subjectAlternativeName extension containing the dNSName
@@ -1682,7 +1688,7 @@ port (required, int):
 Given a Challenge/Response pair, the ACME server verifies the client's control
 of the domain by verifying that the TLS server was configured appropriately.
 
-1. Choose a set of DVSNI iterations to check.
+1. Choose a random subset of the N DVSNI iterations to check.
 2. For each iteration, compute the Z-value from the authorized keys object in
    the same way as the client.
 3. Open a TLS connection to the domain name being validated on the requested
@@ -1691,9 +1697,12 @@ of the domain by verifying that the TLS server was configured appropriately.
 4. Verify that the certificate contains a subjectAltName extension with the
    dNSName of "\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid".
 
-It is RECOMMENDED that the ACME server verify an appropriate number of Z value
-iterations to avoid default virtual host vulnerabilities in shared hosting
-environments.
+It is RECOMMENDED that the ACME server verify an appropriately sized subset of
+the N iterations of Z to ensure that an attacker who can provision certs for a
+default vhost, but not for arbitrary simultaneous vhosts, cannot pass the
+challenge.  For instance testing a subset of 5 of N=25 domains ensures that
+such an attacker has only a one in 25^5 chance of success if they post certs
+Zn in random succession.
 
 It is RECOMMENDED clients respond with DVSNI certificates for only the Z values
 specified by the CA.

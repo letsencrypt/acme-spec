@@ -1613,18 +1613,12 @@ failed.
 ## Domain Validation with Server Name Indication (DVSNI)
 
 The Domain Validation with Server Name Indication (DVSNI) validation method
-proves control over one or more domain names in parallel by showing that the
-client fully controls an HTTPS webserver or other TLS server, which is
-typically equivalent to root or administrator access.  It allows an arbitrary
-number M of domain names to be validated with a constant number of TCP
-connections to the TLS server, though the number of DNS queries remains
-proportional to M.
-
-DVSNI operates by requiring the client to configure a TLS server referenced by
-an A/AAAA record under the domain name to respond to specific connection
-attempts utilizing the Server Name Indication extension {{RFC6066}}. The
-server verifies the client's challenge by accessing the reconfigured server
-and verifying a particular challenge certificate is presented.
+proves control over a domain name by requiring the client to configure a TLS
+server referenced by an A/AAAA record under the domain name to respond to
+specific connection attempts utilizing the Server Name Indication extension
+{{RFC6066}}. The server verifies the client's challenge by accessing the
+reconfigured server and verifying a particular challenge certificate is
+presented.
 
 type (required, string):
 : The string "dvsni"

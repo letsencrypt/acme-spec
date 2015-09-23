@@ -1540,8 +1540,8 @@ type (required, string):
 : The string "simpleHttp"
 
 token (required, string):
-: The value to be used in generation of validation JWS.  This value MUST have at
-least 128 bits of entropy, in order to prevent an attacker from guessing it.
+: The value to be used in generation of the validation JWS.  This value MUST have
+at least 128 bits of entropy, in order to prevent an attacker from guessing it.
 It MUST NOT contain any characters outside the URL-safe Base64 alphabet.
 
 ~~~~~~~~~~
@@ -1624,62 +1624,88 @@ type (required, string):
 : The string "dvsni"
 
 token (required, string):
-: The value to be used in generation of validation certificate.  This value MUST have at
+: The value to be used in generation of validation JWS.  This value MUST have at
 least 128 bits of entropy, in order to prevent an attacker from guessing it.
 It MUST NOT contain any characters outside the URL-safe Base64 alphabet.
 
 authorizedKeys (required, string):
-: A serialized authorized keys object, base64-encoded.  This object MUST have
+: A serialized authorized keys object, base64-encoded. This object MUST have
 only one entry, whose token value matches the "token" value in the challenge,
 and "key" value matches the client's account key.
+
+n (required, int):
+: Number of DVSNI iterations
+
+ports (required, array of int):
+: Acceptable ports to perform the challenge
 
 ~~~~~~~~~~
 {
   "type": "dvsni",
   "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA",
   "authorizedKeys": "odyHtABZt47RZfacMq3zL...xIWRXBCCvl61bYo7ATU6Z4"
+  "n": 25,
+  "ports": [443],
 }
 ~~~~~~~~~~
 
 In response to the challenge, the client MUST decode and parse the authorized
 keys object and verify that it contains exactly one entry, whose "token" and
 "key" attributes match the token for this challenge and the client's account
-key.  The client then computes the SHA-256 digest Z of the JSON-encoded
-authorized keys object (without base64-encoding), and encodes Z in hexadecimal
-form.
+key.  The client then computes the SHA-256 digest Z0 of the JSON-encoded
+authorized keys object (without base64-encoding), and encodes Z0 in lower-case
+hexadecimal form. The client then generates Z1...Z(n-1) where Zi is computed
+as the hexadecimal(SHA256(Z(i-1))).
 
-The client will generate a self-signed certificate with the
-subjectAlternativeName extension containing the dNSName
-"\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid".  The client will then configure the TLS
+The client will generate a self-signed certificate for each iteration of Zi
+with a single subjectAlternativeName extension dNSName that is
+"\<Zi[0:32]\>.\<Zi[32:64]\>.acme.invalid".  The client will then configure the TLS
 server at the domain such that when a handshake is initiated with the Server
-Name Indication extension set to "\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid", the
+Name Indication extension set to "\<Zi[0:32]\>.\<Zi[32:64]\>.acme.invalid", the
 generated test certificate is presented.
 
-The response to the DVSNI challenge simply acknowledges that the client is ready
-to fulfill this challenge.
+The client's responds with the chosen port.
 
 type (required, string):
 : The string "dvsni"
 
+port (required, int):
+: One of the valid ports specified by the server
+
 ~~~~~~~~~~
 {
-  "type": "dvsni"
+  "type": "dvsni",
+  "port": 443,
 }
 ~~~~~~~~~~
 
 Given a Challenge/Response pair, the ACME server verifies the client's control
 of the domain by verifying that the TLS server was configured appropriately.
 
-1. Compute the Z-value from the authorized keys object in the same way as the
-   client.
-4. Open a TLS connection to the domain name being validated on port 443,
-   presenting the value "\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid" in the SNI
-   field (where the comparison is case-insensitive).
-5. Verify that the certificate contains a subjectAltName extension with the
+1. Choose a random subset of the N DVSNI iterations to check.
+2. For each iteration, compute the Z-value from the authorized keys object in
+   the same way as the client.
+3. Open a TLS connection to the domain name being validated on the requested
+   port, presenting the value "\<Zi[0:32]\>.\<Zi[32:64]\>.acme.invalid" in the
+   SNI field (where the comparison is case-insensitive).
+4. Verify that the certificate contains a subjectAltName extension with the
    dNSName of "\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid".
+
+It is RECOMMENDED that the ACME server verify an appropriately sized subset of
+the N iterations of Z to ensure that an attacker who can provision certs for a
+default vhost, but not for arbitrary simultaneous vhosts, cannot pass the
+challenge.  For instance testing a subset of 5 of N=25 domains ensures that
+such an attacker has only a one in 25^5 chance of success if they post certs
+Zn in random succession.
+
+It is RECOMMENDED clients respond with DVSNI certificates for only the Z
+values specified by the CA.  The ACME server MUST ensure that each DVSNI
+certificate contains only the Z value it is searching for, and not multiple Z
+values in a single certificate.
 
 It is RECOMMENDED that the ACME server validation TLS connections from multiple
 vantage points to reduce the risk of DNS hijacking attacks.
+
 
 If all of the above verifications succeed, then the validation is successful.
 Otherwise, the validation fails.

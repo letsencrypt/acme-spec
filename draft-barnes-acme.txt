@@ -117,7 +117,7 @@ Internet-Draft                    ACME                         July 2015
    10. Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .  53
    11. References  . . . . . . . . . . . . . . . . . . . . . . . . .  54
      11.1.  Normative References . . . . . . . . . . . . . . . . . .  54
-     11.2.  Informative References . . . . . . . . . . . . . . . . .  55
+     11.2.  Informative References . . . . . . . . . . . . . . . . .  56
    Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  56
 
 1.  Introduction
@@ -2975,49 +2975,49 @@ Internet-Draft                    ACME                         July 2015
 11.1.  Normative References
 
    [I-D.ietf-appsawg-http-problem]
-              Nottingham, M. and E. Wilde, "Problem Details for HTTP
-              APIs", draft-ietf-appsawg-http-problem-00 (work in
-              progress), September 2014.
+              mnot, m. and E. Wilde, "Problem Details for HTTP APIs",
+              draft-ietf-appsawg-http-problem-01 (work in progress),
+              September 2015.
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
-              Requirement Levels", BCP 14, RFC 2119, March 1997.
+              Requirement Levels", BCP 14, RFC 2119, DOI 10.17487/
+              RFC2119, March 1997,
+              <http://www.rfc-editor.org/info/rfc2119>.
 
    [RFC2314]  Kaliski, B., "PKCS #10: Certification Request Syntax
-              Version 1.5", RFC 2314, March 1998.
+              Version 1.5", RFC 2314, DOI 10.17487/RFC2314, March 1998,
+              <http://www.rfc-editor.org/info/rfc2314>.
 
    [RFC2985]  Nystrom, M. and B. Kaliski, "PKCS #9: Selected Object
-              Classes and Attribute Types Version 2.0", RFC 2985,
-              November 2000.
+              Classes and Attribute Types Version 2.0", RFC 2985, DOI
+              10.17487/RFC2985, November 2000,
+              <http://www.rfc-editor.org/info/rfc2985>.
 
    [RFC2986]  Nystrom, M. and B. Kaliski, "PKCS #10: Certification
-              Request Syntax Specification Version 1.7", RFC 2986,
-              November 2000.
+              Request Syntax Specification Version 1.7", RFC 2986, DOI
+              10.17487/RFC2986, November 2000,
+              <http://www.rfc-editor.org/info/rfc2986>.
 
-   [RFC3339]  Klyne, G., Ed. and C. Newman, "Date and Time on the
-              Internet: Timestamps", RFC 3339, July 2002.
+   [RFC3339]  Klyne, G. and C. Newman, "Date and Time on the Internet:
+              Timestamps", RFC 3339, DOI 10.17487/RFC3339, July 2002,
+              <http://www.rfc-editor.org/info/rfc3339>.
 
    [RFC3986]  Berners-Lee, T., Fielding, R., and L. Masinter, "Uniform
               Resource Identifier (URI): Generic Syntax", STD 66, RFC
-              3986, January 2005.
+              3986, DOI 10.17487/RFC3986, January 2005,
+              <http://www.rfc-editor.org/info/rfc3986>.
 
-   [RFC4514]  Zeilenga, K., "Lightweight Directory Access Protocol
+   [RFC4514]  Zeilenga, K., Ed., "Lightweight Directory Access Protocol
               (LDAP): String Representation of Distinguished Names", RFC
-              4514, June 2006.
+              4514, DOI 10.17487/RFC4514, June 2006,
+              <http://www.rfc-editor.org/info/rfc4514>.
 
    [RFC4648]  Josefsson, S., "The Base16, Base32, and Base64 Data
-              Encodings", RFC 4648, October 2006.
+              Encodings", RFC 4648, DOI 10.17487/RFC4648, October 2006,
+              <http://www.rfc-editor.org/info/rfc4648>.
 
-   [RFC5226]  Narten, T. and H. Alvestrand, "Guidelines for Writing an
-              IANA Considerations Section in RFCs", BCP 26, RFC 5226,
-              May 2008.
 
-   [RFC5246]  Dierks, T. and E. Rescorla, "The Transport Layer Security
-              (TLS) Protocol Version 1.2", RFC 5246, August 2008.
 
-   [RFC5280]  Cooper, D., Santesson, S., Farrell, S., Boeyen, S.,
-              Housley, R., and W. Polk, "Internet X.509 Public Key
-              Infrastructure Certificate and Certificate Revocation List
-              (CRL) Profile", RFC 5280, May 2008.
 
 
 
@@ -3026,31 +3026,69 @@ Barnes, et al.          Expires January 22, 2016               [Page 54]
 Internet-Draft                    ACME                         July 2015
 
 
+   [RFC5226]  Narten, T. and H. Alvestrand, "Guidelines for Writing an
+              IANA Considerations Section in RFCs", BCP 26, RFC 5226,
+              DOI 10.17487/RFC5226, May 2008,
+              <http://www.rfc-editor.org/info/rfc5226>.
+
+   [RFC5246]  Dierks, T. and E. Rescorla, "The Transport Layer Security
+              (TLS) Protocol Version 1.2", RFC 5246, DOI 10.17487/
+              RFC5246, August 2008,
+              <http://www.rfc-editor.org/info/rfc5246>.
+
+   [RFC5280]  Cooper, D., Santesson, S., Farrell, S., Boeyen, S.,
+              Housley, R., and W. Polk, "Internet X.509 Public Key
+              Infrastructure Certificate and Certificate Revocation List
+              (CRL) Profile", RFC 5280, DOI 10.17487/RFC5280, May 2008,
+              <http://www.rfc-editor.org/info/rfc5280>.
+
    [RFC5753]  Turner, S. and D. Brown, "Use of Elliptic Curve
               Cryptography (ECC) Algorithms in Cryptographic Message
-              Syntax (CMS)", RFC 5753, January 2010.
+              Syntax (CMS)", RFC 5753, DOI 10.17487/RFC5753, January
+              2010, <http://www.rfc-editor.org/info/rfc5753>.
 
-   [RFC5988]  Nottingham, M., "Web Linking", RFC 5988, October 2010.
+   [RFC5988]  Nottingham, M., "Web Linking", RFC 5988, DOI 10.17487/
+              RFC5988, October 2010,
+              <http://www.rfc-editor.org/info/rfc5988>.
 
-   [RFC6066]  Eastlake, D., "Transport Layer Security (TLS) Extensions:
-              Extension Definitions", RFC 6066, January 2011.
+   [RFC6066]  Eastlake 3rd, D., "Transport Layer Security (TLS)
+              Extensions: Extension Definitions", RFC 6066, DOI
+              10.17487/RFC6066, January 2011,
+              <http://www.rfc-editor.org/info/rfc6066>.
 
    [RFC6570]  Gregorio, J., Fielding, R., Hadley, M., Nottingham, M.,
-              and D. Orchard, "URI Template", RFC 6570, March 2012.
+              and D. Orchard, "URI Template", RFC 6570, DOI 10.17487/
+              RFC6570, March 2012,
+              <http://www.rfc-editor.org/info/rfc6570>.
 
-   [RFC7159]  Bray, T., "The JavaScript Object Notation (JSON) Data
-              Interchange Format", RFC 7159, March 2014.
+   [RFC7159]  Bray, T., Ed., "The JavaScript Object Notation (JSON) Data
+              Interchange Format", RFC 7159, DOI 10.17487/RFC7159, March
+              2014, <http://www.rfc-editor.org/info/rfc7159>.
 
    [RFC7469]  Evans, C., Palmer, C., and R. Sleevi, "Public Key Pinning
-              Extension for HTTP", RFC 7469, April 2015.
+              Extension for HTTP", RFC 7469, DOI 10.17487/RFC7469, April
+              2015, <http://www.rfc-editor.org/info/rfc7469>.
 
    [RFC7515]  Jones, M., Bradley, J., and N. Sakimura, "JSON Web
-              Signature (JWS)", RFC 7515, May 2015.
+              Signature (JWS)", RFC 7515, DOI 10.17487/RFC7515, May
+              2015, <http://www.rfc-editor.org/info/rfc7515>.
 
-   [RFC7517]  Jones, M., "JSON Web Key (JWK)", RFC 7517, May 2015.
 
-   [RFC7518]  Jones, M., "JSON Web Algorithms (JWA)", RFC 7518, May
-              2015.
+
+
+
+Barnes, et al.          Expires January 22, 2016               [Page 55]
+
+Internet-Draft                    ACME                         July 2015
+
+
+   [RFC7517]  Jones, M., "JSON Web Key (JWK)", RFC 7517, DOI 10.17487/
+              RFC7517, May 2015,
+              <http://www.rfc-editor.org/info/rfc7517>.
+
+   [RFC7518]  Jones, M., "JSON Web Algorithms (JWA)", RFC 7518, DOI
+              10.17487/RFC7518, May 2015,
+              <http://www.rfc-editor.org/info/rfc7518>.
 
    [SEC1]     Standards for Efficient Cryptography Group, "SEC 1:
               Elliptic Curve Cryptography", May 2009,
@@ -3063,24 +3101,19 @@ Internet-Draft                    ACME                         July 2015
               Improve Transaction Identity", draft-vixie-dnsext-
               dns0x20-00 (work in progress), March 2008.
 
-   [RFC2818]  Rescorla, E., "HTTP Over TLS", RFC 2818, May 2000.
+   [RFC2818]  Rescorla, E., "HTTP Over TLS", RFC 2818, DOI 10.17487/
+              RFC2818, May 2000,
+              <http://www.rfc-editor.org/info/rfc2818>.
 
    [RFC3552]  Rescorla, E. and B. Korver, "Guidelines for Writing RFC
-              Text on Security Considerations", BCP 72, RFC 3552, July
-              2003.
+              Text on Security Considerations", BCP 72, RFC 3552, DOI
+              10.17487/RFC3552, July 2003,
+              <http://www.rfc-editor.org/info/rfc3552>.
 
    [W3C.CR-cors-20130129]
               Kesteren, A., "Cross-Origin Resource Sharing", World Wide
               Web Consortium CR CR-cors-20130129, January 2013,
               <http://www.w3.org/TR/2013/CR-cors-20130129>.
-
-
-
-
-Barnes, et al.          Expires January 22, 2016               [Page 55]
-
-Internet-Draft                    ACME                         July 2015
-
 
    [W3C.WD-capability-urls-20140218]
               Tennison, J., "Good Practices for Capability URLs", World
@@ -3094,6 +3127,15 @@ Authors' Addresses
    Mozilla
 
    Email: rlb@ipv.sx
+
+
+
+
+
+
+Barnes, et al.          Expires January 22, 2016               [Page 56]
+
+Internet-Draft                    ACME                         July 2015
 
 
    Jacob Hoffman-Andrews
@@ -3133,4 +3175,18 @@ Authors' Addresses
 
 
 
-Barnes, et al.          Expires January 22, 2016               [Page 56]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Barnes, et al.          Expires January 22, 2016               [Page 57]

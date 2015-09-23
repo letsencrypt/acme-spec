@@ -1658,7 +1658,7 @@ hexadecimal form. The client then generates Z1...Z(n-1) where Zi is computed
 as the hexadecimal(SHA256(Z(i-1))).
 
 The client will generate a self-signed certificate for each iteration of Zi
-with the subjectAlternativeName extension containing the dNSName
+with a single subjectAlternativeName extension dNSName that is
 "\<Zi[0:32]\>.\<Zi[32:64]\>.acme.invalid".  The client will then configure the TLS
 server at the domain such that when a handshake is initiated with the Server
 Name Indication extension set to "\<Zi[0:32]\>.\<Zi[32:64]\>.acme.invalid", the
@@ -1698,11 +1698,14 @@ challenge.  For instance testing a subset of 5 of N=25 domains ensures that
 such an attacker has only a one in 25^5 chance of success if they post certs
 Zn in random succession.
 
-It is RECOMMENDED clients respond with DVSNI certificates for only the Z values
-specified by the CA.
+It is RECOMMENDED clients respond with DVSNI certificates for only the Z
+values specified by the CA.  The ACME server MUST ensure that each DVSNI
+certificate contains only the Z value it is searching for, and not multiple Z
+values in a single certificate.
 
 It is RECOMMENDED that the ACME server validation TLS connections from multiple
 vantage points to reduce the risk of DNS hijacking attacks.
+
 
 If all of the above verifications succeed, then the validation is successful.
 Otherwise, the validation fails.

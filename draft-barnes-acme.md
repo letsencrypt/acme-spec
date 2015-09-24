@@ -1179,7 +1179,6 @@ Host: example.com
 {
   "resource": "challenge",
   "type": "simpleHttp",
-  "tls": false
 }
 /* Signed as JWS */
 ~~~~~~~~~~
@@ -1563,23 +1562,16 @@ the HTTP server for the domain in question.
 ~~~~~~~~~~
 
 The resource MUST be provisioned under the fixed path
-".well-known/acme-challenge/".
-
-The client's response to this challenge indicates whether it would prefer for
-the validation request to be sent over TLS:
+".well-known/acme-challenge/".  Because many webservers allocate a default
+HTTPS virtual host to a particular low-privilege tenant user in a subtle and
+non-intuitive manner, the challenge must be completed over HTTP, not HTTPS.
 
 type (required, string):
 : The string "simpleHttp"
 
-tls (optional, boolean, default true):
-: If this attribute is present and set to "false", the server will perform its
-validation check over unencrypted HTTP (on port 80) rather than over HTTPS.
-Otherwise the check will be done over HTTPS, on port 443.
-
 ~~~~~~~~~~
 {
   "type": "simpleHttp",
-  "tls": false
 }
 /* Signed as JWS */
 ~~~~~~~~~~

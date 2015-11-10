@@ -3,9 +3,9 @@
 [![Build Status](https://travis-ci.org/letsencrypt/acme-spec.svg)]
 (https://travis-ci.org/letsencrypt/acme-spec)
 
-[Latest Version](https://letsencrypt.github.io/acme-spec/)
+[As HTML](https://letsencrypt.github.io/acme-spec/)
 
-Note: This repository is only for issues and pull requests specific to Let's Encrypt. For everything else please use the [IETF ACME WG repository](https://github.com/ietf-wg-acme/acme).
+Note: This repository is only for issues and pull requests specific to Let's Encrypt and is not guaranteed to reflect the current state the of the ACME protocol. For a more up-to-date version of this document, please use the [IETF ACME WG repository](https://github.com/ietf-wg-acme/acme).
 
 ACME is a protocol for automating the management of domain-validation certificates, based on a simple JSON-over-HTTPS interface.  This repository contains the specification for ACME.
 

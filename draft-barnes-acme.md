@@ -1061,7 +1061,7 @@ field. If the recovery process has failed, the server sends an error code (e.g.,
 If the recovery process has succeeded, then the server will send a 200 (OK)
 response, containing the full registration object, with any necessary
 information copied from the old registration).  The client may now use this in
-the same way as if he had gotten it from a new-registration transaction.
+the same way as if they had gotten it from a new-registration transaction.
 
 ## Identifier Authorization
 
@@ -1996,7 +1996,7 @@ identifier in question.
 
 Validation responses need to be bound to an account key pair in order to avoid
 situations where an ACME MitM can switch out a legitimate domain holder's
-account key for one of his choosing, e.g.:
+account key for one of their choosing, e.g.:
 
 * Legitimate domain holder registers account key pair A
 * MitM registers account key pair B
@@ -2082,8 +2082,8 @@ channel can observe the correct validation response and even replay it, but that
 response can only be used with the account key for which it was generated.
 
 An active attacker on the validation channel can subvert the ACME process, by
-performing normal ACME transactions and providing a validation response for his
-own account key.  The risks due to hosting providers noted above are a
+performing normal ACME transactions and providing a validation response for
+their own account key.  The risks due to hosting providers noted above are a
 particular case.  For identifiers where the server already has some credential
 associated with the domain this attack can be prevented by requiring the client
 to complete a proof-of-possession challenge.
@@ -2171,9 +2171,9 @@ subtree of the DNS.
 ## CA Policy Considerations
 
 The controls on issuance enabled by ACME are focused on validating that a
-certificate applicant controls the identifier he claims.  Before issuing a
-certificate, however, there are many other checks that a CA might need to
-perform, for example:
+certificate applicant controls the identifier the client claims.  Before
+issuing a certificate, however, there are many other checks that a CA might
+need to perform, for example:
 
 * Has the client agreed to a subscriber agreement?
 * Is the claimed identifier syntactically valid?

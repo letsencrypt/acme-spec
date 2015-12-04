@@ -1,3 +1,7 @@
+# THIS IS NOT THE IETF PROTOCOL SPEC
+
+All new work should go here: https://github.com/ietf-wg-acme/acme/
+
 # Automated Certificate Management Environment (ACME)
 
 [![Build Status](https://travis-ci.org/letsencrypt/acme-spec.svg)]

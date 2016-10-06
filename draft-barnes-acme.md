@@ -1263,6 +1263,7 @@ Accept: application/pkix-cert
 {
   "resource": "new-cert",
   "csr": "5jNudRx6Ye4HzKEqT5...FS6aKdZeGsysoCo4H9P",
+  "authorizations": ["https://example.com/authz/asdf"],
 }
 /* Signed as JWS */
 ~~~~~~~~~~

@@ -1,21 +1,8 @@
-# THIS IS NOT THE IETF PROTOCOL SPEC
+# NOTE: This Repository is Deprecated
 
-All new work should go here: https://github.com/ietf-wg-acme/acme/
+This repository is not active and may not accurately reflect what Let's Encrypt currently implements. It's retained only for history.
 
-# Automated Certificate Management Environment (ACME)
-
-[![Build Status](https://travis-ci.org/letsencrypt/acme-spec.svg)]
-(https://travis-ci.org/letsencrypt/acme-spec)
-
-[As HTML](https://letsencrypt.github.io/acme-spec/)
-
-Note: This repository is only for issues and pull requests specific to Let's Encrypt and is not guaranteed to reflect the current state the of the ACME protocol. For a more up-to-date version of this document, please use the [IETF ACME WG repository](https://github.com/ietf-wg-acme/acme).
-
-ACME is a protocol for automating the management of domain-validation certificates, based on a simple JSON-over-HTTPS interface.  This repository contains the specification for ACME.
-
-We're using the IETF toolchain and formats for this specification.  The "source" version of the specification is the markdown version, `draft-barnes-acme.md`.  Other versions are generated from that, and the versions in the repo may be out of date.
-
-This spec is a work in progress.  Eventually, we hope to move it to the IETF process to become an RFC, but for now -- pull requests welcome!
+All new work happens here: https://github.com/ietf-wg-acme/acme/
 
 ## Quickstart
 
@@ -35,5 +22,3 @@ source venv/bin/activate
 pip install xml2rfc
 gem install kramdown-rfc2629
 ```
-
-You can also use a prototype [web version](http://ipv.sx/draftr/) of these tools.

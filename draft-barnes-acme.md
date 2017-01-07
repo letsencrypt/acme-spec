@@ -456,7 +456,7 @@ dictionary with parameters required to validate the challenge, as specified in
 combinations (optional, array of arrays of integers):
 : A collection of sets of
 challenges, each of which would be sufficient to prove possession of the
-identifier. Clients complete a set of challenges that that covers at least one
+identifier. Clients complete a set of challenges that covers at least one
 set in this array. Challenges are identified by their indices in the challenges
 array.  If no "combinations" element is included in an authorization object, the
 client completes all challenges.

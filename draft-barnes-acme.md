@@ -1649,9 +1649,8 @@ The client serializes the validation object to UTF-8, then uses its account
 private key to sign a JWS with the serialized JSON object as its payload.  This
 JWS is NOT REQUIRED to have the "nonce" header parameter.
 
-The client will compute Z, the SHA-256 of the "signature" value from the JWS.
-The hash is calculated over the base64-encoded signature string.  Z is encoded
-in hexadecimal form.
+The client will compute Z, the SHA-256 of the JWS encoded in UTF-8.
+Z is encoded in hexadecimal form.
 
 The client will generate a self-signed certificate with the
 subjectAlternativeName extension containing the dNSName
@@ -1682,8 +1681,7 @@ validation (required, string):
 Given a Challenge/Response pair, the ACME server verifies the client's control
 of the domain by verifying that the TLS server was configured appropriately.
 
-1. Verify the validation JWS using the account key for which the challenge
-   was issued.
+1. Verify the validation JWS using the account key.
 2. Decode the payload of the JWS as UTF-8 encoded JSON.
 3. Verify that there are exactly two fields in the decoded object, and that:
   * The "type" field is set to "dvsni"
@@ -1861,12 +1859,12 @@ The client serializes the validation object to UTF-8, then uses its account
 private key to sign a JWS with the serialized JSON object as its payload.  This
 JWS is NOT REQUIRED to have the "nonce" header parameter.
 
-The record provisioned to the DNS is the "signature" value from the JWS, i.e.,
-the base64-encoded signature value.  The client constructs the validation domain
-name by appending the label "_acme-challenge" to the domain name being
-validated, then provisions a TXT record with the signature value under that
-name. For example, if the domain name being validated is "example.com", then the
-client would provision the following DNS record:
+The record provisioned to the DNS is the base64-encoded SHA-256 of the JWS
+encoded in UTF-8.  The client constructs the validation domain name by
+appending the label "_acme-challenge" to the domain name being validated, then
+provisions a TXT record with the signature value under that name. For example,
+if the domain name being validated is "example.com", then the client would
+provision the following DNS record:
 
 ~~~~~~~~~~
 _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
@@ -1894,15 +1892,14 @@ validation (required, JWS):
 
 To validate a DNS challenge, the server performs the following steps:
 
-1. Verify the validation JWS using the account key for which this challenge was
-   issued
+1. Verify the validation JWS using the account key.
 2. Decode the payload of the JWS as UTF-8 encoded JSON
 3. Verify that there are exactly two fields in the decoded object, and that:
   * The "type" field is set to "dns"
   * The "token" field matches the "token" value in the challenge
 4. Query for TXT records under the validation domain name
-5. Verify that the contents of one of the TXT records match the "signature"
-value in the "validation" JWS
+5. Verify that the contents of one of the TXT records match the base64-encoded
+SHA-256 of the "validation" JWS.
 
 If all of the above verifications succeed, then the validation is successful.
 If no DNS record is found, or DNS record and response payload do not pass these

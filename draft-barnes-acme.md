@@ -1500,6 +1500,30 @@ validation of domain names.  If ACME is extended in the future to support other
 types of identifier, there will need to be new Challenge types, and they will
 need to specify which types of identifier they apply to.
 
+## Authorized Keys Objects
+
+Several of the challenges in this document makes use of an "authorized keys"
+object.  Such an object is a JSON array of objects, where each object encodes an
+authorization for a specific account key to fulfill a specific challenge.
+
+token (required, string):
+: The "token" field from the challenge object
+
+key (required, JWK):
+: The account key being authorized
+
+~~~~~~~~~~
+[
+  {
+    "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA",
+    "key": /* account key, as a JWK object */
+  }
+]
+~~~~~~~~~~
+
+A JSON array is used so that a client can use a single authorized keys object to
+satisfy several challenges at once.
+
 ## Simple HTTP
 
 With Simple HTTP validation, the client in an ACME transaction proves its
@@ -1527,30 +1551,19 @@ It MUST NOT contain any characters outside the URL-safe Base64 alphabet.
 }
 ~~~~~~~~~~
 
-A client responds to this challenge by signing a JWS object and provisioning it
-as a resource on the HTTP server for the domain in question.  The payload of the
-JWS MUST be a JSON dictionary containing the fields "type", "token", and
-"tls" from the ACME challenge and response (see below), and no other fields.  If
-the "tls" field is not included in the response, then validation object MUST
-have its "tls" field set to "true".  The JWS MUST be signed with the client's
-account key pair. This JWS is NOT REQUIRED to have a "nonce" header parameter
-(as with the JWS objects that carry ACME request objects), but MUST otherwise
-meet the guidelines laid out in {{terminology}}.
+A client responds to this challenge by creating an authorized keys object for
+this challenge and the client's account key and provisioning it as a resource on
+the HTTP server for the domain in question.
 
 ~~~~~~~~~~
-{
-  "type": "simpleHttp",
+[{
   "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA",
-  "tls": false
-}
+  "key": /* account key, as a JWK object */
+}]
 ~~~~~~~~~~
 
-The path at which the resource is provisioned is comprised of the fixed prefix
-".well-known/acme-challenge/", followed by the "token" value in the challenge.
-
-~~~~~~~~~~
-.well-known/acme-challenge/evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA
-~~~~~~~~~~
+The resource MUST be provisioned under the fixed path
+".well-known/acme-challenge/".
 
 The client's response to this challenge indicates whether it would prefer for
 the validation request to be sent over TLS:
@@ -1575,25 +1588,19 @@ Given a Challenge/Response pair, the server verifies the client's control of the
 domain by verifying that the resource was provisioned as expected.
 
 1. Form a URI by populating the URI template {{RFC6570}}
-"{scheme}://{domain}/.well-known/acme-challenge/{token}", where:
+"{scheme}://{domain}/.well-known/acme-challenge/", where:
   * the scheme field is set to "http" if the "tls" field in the response is
     present and set to false, and "https" otherwise;
-  * the domain field is set to the domain name being verified; and
-  * the token field is the token provided in the challenge.
+  * the domain field is set to the domain name being verified
 2. Verify that the resulting URI is well-formed.
 3. Dereference the URI using an HTTP or HTTPS GET request.  If using HTTPS, the
 ACME server MUST ignore the certificate provided by the HTTPS server.
 4. Verify that the Content-Type header of the response is either absent, or has
-the value "application/jose+json".
-5. Verify that the body of the response is a valid JWS, signed with the client's
-account key.
-6. Verify that the payload of the JWS meets the following criteria:
-  * it is a valid JSON dictionary;
-  * it has exactly three fields;
-  * its "type" field is set to "simpleHttp";
-  * its "token" field is equal to the "token" field in the challenge;
-  * its "tls" field is equal to the "tls" field in the response, or "true" if
-    the "tls" field was absent.
+the value "application/json".
+5. Verify that the body of the response is well-formed authorized keys object.
+6. Verify that for at least one of the entries in the authorized keys object
+  * the "token" value is the same as the "token" value for this challenge
+  * the "key" value is the account key used to issue this challenge
 
 Comparisons of the "token" field MUST be performed in terms of
 Unicode code points, taking into account the encodings of the stored nonce and
@@ -1621,37 +1628,25 @@ token (required, string):
 least 128 bits of entropy, in order to prevent an attacker from guessing it.
 It MUST NOT contain any characters outside the URL-safe Base64 alphabet.
 
-~~~~~~~~~~
-{
-  "type": "dvsni",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
-}
-~~~~~~~~~~
-
-In response to the challenge, the client uses its account private key to sign a
-JWS over a JSON object describing the challenge.  The validation object covered
-by the signature MUST have the following fields and no others:
-
-type (required, string):
-: The string "dvsni"
-
-token (required, string):
-: The token value from the server-provided challenge object
+authorizedKeys (required, string):
+: A serialized authorized keys object, base64-encoded.  This object MUST have
+only one entry, whose token value matches the "token" value in the challenge,
+and "key" value matches the client's account key.
 
 ~~~~~~~~~~
 {
   "type": "dvsni",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA",
+  "authorizedKeys": "odyHtABZt47RZfacMq3zL...xIWRXBCCvl61bYo7ATU6Z4"
 }
 ~~~~~~~~~~
 
-The client serializes the validation object to UTF-8, then uses its account
-private key to sign a JWS with the serialized JSON object as its payload.  This
-JWS is NOT REQUIRED to have the "nonce" header parameter.
-
-The client will compute Z, the SHA-256 of the "signature" value from the JWS.
-The hash is calculated over the base64-encoded signature string.  Z is encoded
-in hexadecimal form.
+In response to the challenge, the client MUST decode and parse the authorized
+keys object and verify that it contains exactly one entry, whose "token" and
+"key" attributes match the token for this challenge and the client's account
+key.  The client then computes the SHA-256 digest Z of the JSON-encoded
+authorized keys object (without base64-encoding), and encodes Z in hexadecimal
+form.
 
 The client will generate a self-signed certificate with the
 subjectAlternativeName extension containing the dNSName
@@ -1660,37 +1655,26 @@ server at the domain such that when a handshake is initiated with the Server
 Name Indication extension set to "\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid", the
 generated test certificate is presented.
 
-The response to the DVSNI challenge provides the validation JWS to the server.
+The response to the DVSNI challenge simply acknowledges that the client is ready
+to fulfill this challenge.
 
 type (required, string):
 : The string "dvsni"
 
-validation (required, string):
-: The JWS object computed with the validation object and the account key
-
 ~~~~~~~~~~
 {
-  "type": "dvsni",
-  "validation": {
-    "header": { "alg": "RS256" },
-    "payload": "qzu9...6bjn",
-    "signature": "gfj9XqFv07e1wU66hSLYkiFqYakPSjAu8TsyXRg85nM"
-  }
+  "type": "dvsni"
 }
 ~~~~~~~~~~
 
 Given a Challenge/Response pair, the ACME server verifies the client's control
 of the domain by verifying that the TLS server was configured appropriately.
 
-1. Verify the validation JWS using the account key for which the challenge
-   was issued.
-2. Decode the payload of the JWS as UTF-8 encoded JSON.
-3. Verify that there are exactly two fields in the decoded object, and that:
-  * The "type" field is set to "dvsni"
-  * The "token" field matches the "token" value in the challenge
+1. Compute the Z-value from the authorized keys object in the same way as the
+   client.
 4. Open a TLS connection to the domain name being validated on port 443,
    presenting the value "\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid" in the SNI
-   field.
+   field (where the comparison is case-insensitive).
 5. Verify that the certificate contains a subjectAltName extension with the
    dNSName of "\<Z[0:32]\>.\<Z[32:64]\>.acme.invalid".
 
@@ -1833,76 +1817,53 @@ in DNS.  This value MUST have at least 128 bits of entropy, in order to
 prevent an attacker from guessing it.  It MUST NOT contain any characters
 outside the URL-safe Base64 alphabet.
 
-~~~~~~~~~~
-{
-  "type": "dns",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
-}
-~~~~~~~~~~
-
-In response to this challenge, the client uses its account private key to sign a
-JWS over a JSON object describing the challenge.  The validation object covered
-by the signature MUST have the following fields and no others:
-
-type (required, string):
-: The string "dns"
-
-token (required, string):
-: The token value from the server-provided challenge object
+authorizedKeys (required, string):
+: A serialized authorized keys object, base64-encoded.  This object MUST have
+only one entry, whose token value matches the "token" value in the challenge,
+and "key" value matches the client's account key.
 
 ~~~~~~~~~~
 {
   "type": "dns",
-  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
+  "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA",
+  "authorizedKeys": "odyHtABZt47RZfacMq3zL...xIWRXBCCvl61bYo7ATU6Z4"
 }
 ~~~~~~~~~~
 
-The client serializes the validation object to UTF-8, then uses its account
-private key to sign a JWS with the serialized JSON object as its payload.  This
-JWS is NOT REQUIRED to have the "nonce" header parameter.
+In response to the challenge, the client MUST decode and parse the authorized
+keys object and verify that it contains exactly one entry, whose "token" and
+"key" attributes match the token for this challenge and the client's account
+key.  The client then computes the SHA-256 digest of the JSON-encoded
+authorized keys object (without base64-encoding).
 
-The record provisioned to the DNS is the "signature" value from the JWS, i.e.,
-the base64-encoded signature value.  The client constructs the validation domain
-name by appending the label "_acme-challenge" to the domain name being
-validated, then provisions a TXT record with the signature value under that
-name. For example, if the domain name being validated is "example.com", then the
-client would provision the following DNS record:
+The record provisioned to the DNS is the base64 encoding of this digest.  The
+client constructs the validation domain name by prepending the label
+"_acme-challenge" to the domain name being validated, then provisions a TXT
+record with the digest value under that name. For example, if the domain name
+being validated is "example.com", then the client would provision the following
+DNS record:
 
 ~~~~~~~~~~
 _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
 ~~~~~~~~~~
 
-The response to a DNS challenge provides the validation JWS to the server.
+The response to the DNS challenge simply acknowledges that the client is ready
+to fulfill this challenge.
 
 type (required, string):
 : The string "dns"
 
-validation (required, JWS):
-: The JWS object computed with the validation object and the account key
-
 ~~~~~~~~~~
 {
   "type": "dns"
-  "clientPublicKey": { "kty": "EC", ... },
-  "validation": {
-    "header": { "alg": "HS256" },
-    "payload": "qzu9...6bjn",
-    "signature": "gfj9XqFv07e1wU66hSLYkiFqYakPSjAu8TsyXRg85nM"
-  }
 }
 ~~~~~~~~~~
 
 To validate a DNS challenge, the server performs the following steps:
 
-1. Verify the validation JWS using the account key for which this challenge was
-   issued
-2. Decode the payload of the JWS as UTF-8 encoded JSON
-3. Verify that there are exactly two fields in the decoded object, and that:
-  * The "type" field is set to "dns"
-  * The "token" field matches the "token" value in the challenge
-4. Query for TXT records under the validation domain name
-5. Verify that the contents of one of the TXT records match the "signature"
-value in the "validation" JWS
+1. Compute the SHA-256 digest of the authorized keys object
+2. Query for TXT records under the validation domain name
+3. Verify that the contents of one of the TXT records matches the digest value
 
 If all of the above verifications succeed, then the validation is successful.
 If no DNS record is found, or DNS record and response payload do not pass these

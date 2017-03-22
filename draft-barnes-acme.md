@@ -1,6 +1,6 @@
 # THIS DOCUMENT IS DEPRECATED
 
-This repository is not active and will not accurately reflect what Let's Encrypt implements. 
+**This repository is not active and will not accurately reflect what Let's Encrypt implements.**
 
 It's retained only for history.
 
